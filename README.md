@@ -84,7 +84,7 @@ y = sin(x)^2 + cos(x)^2
 
 Graph expressions are parsed into an abstract syntax tree before evaluation, avoiding repeated parsing during curve rendering.
 
-The current renderer uses fixed-interval sampling with heuristic discontinuity detection.
+The graphing renderer uses adaptive screen-space curve sampling with recursive subdivision based on approximation error. Discontinuity detection remains heuristic, and arbitrary high-frequency or discontinuous functions are not guaranteed to be reconstructed accurately.
 
 ### Exact Rational Calculator
 
