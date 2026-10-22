@@ -46,6 +46,8 @@ The following targets were built:
 | `RationalCore` | Static library | PASS |
 | `RationalCLI` | Executable | PASS |
 | `RationalCoreTests` | Test executable | PASS |
+| `RationalViewportTests` | Test executable | PASS |
+| `RationalCurveSamplerTests` | Test executable | PASS |
 | `RationalStudio` | Qt desktop executable | PASS |
 
 Qt's automatic Meta-Object Compiler generation completed successfully.
