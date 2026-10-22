@@ -1,5 +1,4 @@
 #include "GraphCanvas.hpp"
-#include "CurveSampler.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -359,35 +358,6 @@ namespace rationalstudio {
                 continue;
             }
 
-            // Generate adaptive, Qt-independent drawing geometry.
-            const CurveSamples samples = sampleExplicitCurve(
-                viewport_,
-                [&](double worldX) {
-                    return curve.function->evaluate(
-                        worldX,
-                        lastAnswer_,
-                        angleMode_
-                    );
-                }
-            );
-
-            // Translate the sampling result into a Qt drawing path.
-            QPainterPath path;
-
-            for (const CurveVertex& point : samples.vertices) {
-                if (point.moveTo) {
-                    path.moveTo(
-                        point.screenX,
-                        point.screenY
-                    );
-                } else {
-                    path.lineTo(
-                        point.screenX,
-                        point.screenY
-                    );
-                }
-            }
-
             p.setPen(
                 QPen(
                     curve.color,
@@ -397,6 +367,56 @@ namespace rationalstudio {
                      Qt::RoundJoin
                 )
             );
+
+            QPainterPath path;
+
+            bool prevValid = false;
+            double prevY = 0;
+
+            // Two physical pixels per evaluation;
+            // expressions are parsed only on edit.
+            for (
+                int sx = 0;
+            sx <= width() + 2;
+            sx += 2
+            ) {
+                const double x =
+                screenToWorld({double(sx), 0}).x();
+
+                const double y =
+                curve.function->evaluate(
+                    x,
+                    lastAnswer_,
+                    angleMode_
+                );
+
+                const double sy =
+                worldToScreen({0, y}).y();
+
+                const bool finite =
+                std::isfinite(sy) &&
+                std::abs(sy) < 1e7;
+
+                if (!finite) {
+                    prevValid = false;
+                    continue;
+                }
+
+                // Discontinuous graphs are deliberately
+                // split rather than connected.
+                const bool jump =
+                prevValid &&
+                std::abs(sy - prevY) > height() * 0.7;
+
+                if (!prevValid || jump) {
+                    path.moveTo(double(sx), sy);
+                } else {
+                    path.lineTo(double(sx), sy);
+                }
+
+                prevValid = true;
+                prevY = sy;
+            }
 
             p.drawPath(path);
         }

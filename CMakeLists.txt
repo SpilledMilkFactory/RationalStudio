@@ -10,12 +10,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Mathematical Core
 # ---------------------------------------------------------
 
-# The mathematical core is Qt-independent.
+# The mathematical core is independent of Qt.
 add_library(RationalCore STATIC
     src/core/Rational.cpp
     src/core/Expression.cpp
     src/core/GraphViewport.cpp
-    src/core/CurveSampler.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -56,6 +55,7 @@ include(CTest)
 
 if(BUILD_TESTING)
 
+    # Existing mathematical regression tests.
     add_executable(RationalCoreTests
         tests/CoreTests.cpp
     )
@@ -69,6 +69,7 @@ if(BUILD_TESTING)
         COMMAND RationalCoreTests
     )
 
+    # Qt-independent viewport regression tests.
     add_executable(RationalViewportTests
         tests/GraphViewportTests.cpp
     )
@@ -84,24 +85,6 @@ if(BUILD_TESTING)
     add_test(
         NAME RationalViewportTests
         COMMAND RationalViewportTests
-    )
-
-    # Adaptive curve sampling tests.
-    add_executable(RationalCurveSamplerTests
-        tests/CurveSamplerTests.cpp
-    )
-
-    target_link_libraries(RationalCurveSamplerTests PRIVATE
-        RationalCore
-    )
-
-    target_compile_options(RationalCurveSamplerTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )
-
-    add_test(
-        NAME RationalCurveSamplerTests
-        COMMAND RationalCurveSamplerTests
     )
 
 endif()
