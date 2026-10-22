@@ -104,6 +104,28 @@ if(BUILD_TESTING)
         COMMAND RationalCurveSamplerTests
     )
 
+    # ---------------------------------------------------------
+    # Undefined Function Domain Tests
+    # GitHub Issue #16
+    # ---------------------------------------------------------
+
+    add_executable(RationalCurveDomainTests
+        tests/CurveDomainTests.cpp
+    )
+
+    target_link_libraries(RationalCurveDomainTests PRIVATE
+        RationalCore
+    )
+
+    target_compile_options(RationalCurveDomainTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )
+
+    add_test(
+        NAME RationalCurveDomainTests
+        COMMAND RationalCurveDomainTests
+    )
+
 endif()
 
 # ---------------------------------------------------------

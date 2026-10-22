@@ -6,10 +6,9 @@
 #include <utility>
 
 namespace rationalstudio {
-
     namespace {
 
-        // Match the M0 renderer's protection against extreme painter coordinates.
+        // Protect QPainter from unreasonably large screen-space coordinates.
         constexpr double kMaxDrawingCoordinate = 1e7;
 
         struct Probe {
@@ -76,9 +75,16 @@ namespace rationalstudio {
                         viewport_.screenToWorldX(screenX)
                     );
                 } catch (...) {
-                    // Treat user-supplied evaluation failures
-                    // as undefined points.
+                    // Domain errors thrown by a callback
+                    // have the same effect as NaN.
                 }
+
+                // Do not send non-finite or out-of-range
+                // coordinates to QPainter.
+                //
+                // The sample is treated as unrenderable
+                // even if the mathematical function
+                // returns a finite value of extreme magnitude.
 
                 const double screenY =
                 viewport_.worldToScreenY(worldY);
@@ -86,8 +92,10 @@ namespace rationalstudio {
                 return {
                     screenX,
                     screenY,
+                    std::isfinite(worldY) &&
                     std::isfinite(screenY) &&
-                    std::abs(screenY) <= kMaxDrawingCoordinate
+                    std::abs(screenY) <=
+                    kMaxDrawingCoordinate
                 };
             }
 
@@ -104,11 +112,12 @@ namespace rationalstudio {
                     return;
                 }
 
-                // Preserve the M0 large-jump break as a
-                // conservative safeguard.
+                // Retain the baseline large-jump safeguard.
                 //
-                // Thorough discontinuity classification
-                // belongs to issues #16-17.
+                // Improved asymptote classification and
+                // steep-line preservation are issues
+                // #17 and #18.
+
                 if (
                     std::abs(b.y - a.y) >
                     viewport_.height() * 0.7
@@ -137,21 +146,77 @@ namespace rationalstudio {
 
                 lastX_ = b.x;
                 lastY_ = b.y;
+
                 connected_ = true;
             }
 
             static double deviation(
                 const Probe& a,
                 const Probe& b,
-                const Probe& middle
+                const Probe& interior
             ) noexcept {
                 const double expected = std::lerp(
                     a.y,
                     b.y,
-                    (middle.x - a.x) / (b.x - a.x)
+                    (interior.x - a.x) / (b.x - a.x)
                 );
 
-                return std::abs(middle.y - expected);
+                return std::abs(
+                    interior.y - expected
+                );
+            }
+
+            // Final intervals must not bridge a sampled
+            // undefined subinterval.
+            //
+            // Test two interior locations even at the
+            // refinement limit.
+            //
+            // If either location is invalid, deliberately
+            // omit the segment and break the path.
+            //
+            // This can leave a sub-pixel gap near a boundary.
+            // It does not attempt to infer a domain endpoint
+            // from finite samples.
+
+            void appendTerminalHalf(
+                const Probe& a,
+                const Probe& b
+            ) {
+                if (
+                    !a.drawable ||
+                    !b.drawable ||
+                    !(b.x > a.x)
+                ) {
+                    disconnect();
+                    return;
+                }
+
+                const double span =
+                b.x - a.x;
+
+                const Probe q1 = probe(
+                    a.x + span * 0.25
+                );
+
+                if (result_.truncated) {
+                    return;
+                }
+
+                const Probe q3 = probe(
+                    a.x + span * 0.75
+                );
+
+                if (result_.truncated) {
+                    return;
+                }
+
+                if (!q1.drawable || !q3.drawable) {
+                    disconnect();
+                    return;
+                }
+
+                append(a, b);
             }
 
             void refine(
@@ -163,9 +228,10 @@ namespace rationalstudio {
                     return;
                 }
 
-                const double span = b.x - a.x;
+                const double span =
+                b.x - a.x;
 
-                if (span <= 0.0) {
+                if (!(span > 0.0)) {
                     return;
                 }
 
@@ -191,14 +257,24 @@ namespace rationalstudio {
                     deviation(a, b, mid) <=
                     options_.tolerancePixels;
 
-                    // Quarter probes catch some symmetric
-                    // or inflected features that look straight
-                    // when only the endpoints and midpoint
-                    // are used.
-                    if (accurate && span > 6.0) {
+                    // Check quarter points even for
+                    // short accepted chords.
+                    //
+                    // The M1-02 optimization skipped
+                    // these below six pixels, potentially
+                    // bridging a narrow undefined pocket.
+                    //
+                    // Sample checks remain an approximation,
+                    // not a mathematical proof of continuity.
+
+                    if (accurate) {
                         const Probe q1 = probe(
                             a.x + span * 0.25
                         );
+
+                        if (result_.truncated) {
+                            return;
+                        }
 
                         const Probe q3 = probe(
                             a.x + span * 0.75
@@ -236,13 +312,21 @@ namespace rationalstudio {
                         depth + 1
                     );
                 } else {
-                    // At the refinement limit,
-                    // retain only drawable halves.
+                    // At the refinement limit, do not
+                    // assume that finite endpoints imply
+                    // a valid interior.
                     //
-                    // A later reliability issue will refine
-                    // pole/domain boundary treatment.
-                    append(a, mid);
-                    append(mid, b);
+                    // Each drawable half gets its own
+                    // interior domain checks before
+                    // a segment is emitted.
+
+                    appendTerminalHalf(a, mid);
+
+                    if (result_.truncated) {
+                        return;
+                    }
+
+                    appendTerminalHalf(mid, b);
                 }
             }
 
@@ -276,7 +360,8 @@ namespace rationalstudio {
             options.coarseStepPixels <= 0.0 ||
             options.coarseStepPixels > 256.0 ||
             options.minStepPixels < 0.125 ||
-            options.minStepPixels > options.coarseStepPixels ||
+            options.minStepPixels >
+            options.coarseStepPixels ||
             options.tolerancePixels <= 0.0 ||
             options.maxDepth > 16 ||
             options.maxEvaluations < 4
