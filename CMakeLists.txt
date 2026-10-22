@@ -126,6 +126,27 @@ if(BUILD_TESTING)
         COMMAND RationalCurveDomainTests
     )
 
+    # ---------------------------------------------------------
+    # Finite Discontinuity and Asymptote Regression Tests
+    # GitHub Issue #17
+    # --------------------------------------------------------- 
+
+    add_executable(RationalCurveDiscontinuityTests
+        tests/CurveDiscontinuityTests.cpp
+    )   
+
+    target_link_libraries(RationalCurveDiscontinuityTests PRIVATE
+        RationalCore
+    )   
+
+    target_compile_options(RationalCurveDiscontinuityTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )   
+
+    add_test(
+        NAME RationalCurveDiscontinuityTests
+        COMMAND RationalCurveDiscontinuityTests
+    )
 endif()
 
 # ---------------------------------------------------------

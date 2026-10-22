@@ -6,6 +6,7 @@
 #include <utility>
 
 namespace rationalstudio {
+
     namespace {
 
         // Protect QPainter from unreasonably large screen-space coordinates.
@@ -112,19 +113,14 @@ namespace rationalstudio {
                     return;
                 }
 
-                // Retain the baseline large-jump safeguard.
+                // A large vertical change is not, by itself,
+                // a discontinuity.
                 //
-                // Improved asymptote classification and
-                // steep-line preservation are issues
-                // #17 and #18.
-
-                if (
-                    std::abs(b.y - a.y) >
-                    viewport_.height() * 0.7
-                ) {
-                    disconnect();
-                    return;
-                }
+                // A steep straight line may be perfectly
+                // continuous.
+                //
+                // The caller verifies the chord with
+                // interior probes before append().
 
                 if (
                     !connected_ ||
@@ -166,18 +162,28 @@ namespace rationalstudio {
                 );
             }
 
-            // Final intervals must not bridge a sampled
-            // undefined subinterval.
+            // At the recursion limit, validate the shape
+            // of each terminal chord.
             //
-            // Test two interior locations even at the
-            // refinement limit.
+            // Both sides of a jump or a pole can have
+            // finite endpoint values.
             //
-            // If either location is invalid, deliberately
-            // omit the segment and break the path.
+            // Validity checks alone (issue #16) are
+            // therefore insufficient.
             //
-            // This can leave a sub-pixel gap near a boundary.
-            // It does not attempt to infer a domain endpoint
-            // from finite samples.
+            // Probes inside the chord must approximately
+            // agree with linear interpolation before
+            // we draw a connection.
+            //
+            // If they do not, leave a short gap rather than
+            // inventing geometry across an unresolved
+            // discontinuity.
+            //
+            // This is a screen-space heuristic.
+            //
+            // An arbitrary discontinuity could lie
+            // between all probes; issue #17 does not
+            // promise formal continuity certification.
 
             void appendTerminalHalf(
                 const Probe& a,
@@ -192,11 +198,18 @@ namespace rationalstudio {
                     return;
                 }
 
-                const double span =
-                b.x - a.x;
+                const double span = b.x - a.x;
 
                 const Probe q1 = probe(
                     a.x + span * 0.25
+                );
+
+                if (result_.truncated) {
+                    return;
+                }
+
+                const Probe mid = probe(
+                    a.x + span * 0.5
                 );
 
                 if (result_.truncated) {
@@ -211,7 +224,48 @@ namespace rationalstudio {
                     return;
                 }
 
-                if (!q1.drawable || !q3.drawable) {
+                if (
+                    !q1.drawable ||
+                    !mid.drawable ||
+                    !q3.drawable
+                ) {
+                    disconnect();
+                    return;
+                }
+
+                // Compare actual interior evaluations
+                // against the straight-line approximation.
+                //
+                // A large deviation indicates that the
+                // chord is not a sufficiently reliable
+                // representation of the function.
+
+                const double error = std::max({
+                    deviation(a, b, q1),
+                                              deviation(a, b, mid),
+                                              deviation(a, b, q3)
+                });
+
+                // Use a slightly looser tolerance at the
+                // terminal subdivision level.
+                //
+                // This allows very short, smoothly curved
+                // intervals to remain drawable without
+                // introducing excessive subpixel gaps.
+                //
+                // Sharp jumps and pole crossings generally
+                // exhibit substantially larger residuals.
+
+                const double terminalTolerance =
+                std::max(
+                    2.0,
+                    options_.tolerancePixels * 2.0
+                );
+
+                if (
+                    !std::isfinite(error) ||
+                    error > terminalTolerance
+                ) {
                     disconnect();
                     return;
                 }
@@ -228,8 +282,7 @@ namespace rationalstudio {
                     return;
                 }
 
-                const double span =
-                b.x - a.x;
+                const double span = b.x - a.x;
 
                 if (!(span > 0.0)) {
                     return;
@@ -260,9 +313,9 @@ namespace rationalstudio {
                     // Check quarter points even for
                     // short accepted chords.
                     //
-                    // The M1-02 optimization skipped
+                    // The earlier optimization skipped
                     // these below six pixels, potentially
-                    // bridging a narrow undefined pocket.
+                    // bridging narrow undefined regions.
                     //
                     // Sample checks remain an approximation,
                     // not a mathematical proof of continuity.
@@ -313,12 +366,13 @@ namespace rationalstudio {
                     );
                 } else {
                     // At the refinement limit, do not
-                    // assume that finite endpoints imply
-                    // a valid interior.
+                    // assume that finite endpoints
+                    // imply a valid or continuous interior.
                     //
-                    // Each drawable half gets its own
-                    // interior domain checks before
-                    // a segment is emitted.
+                    // Each terminal half receives
+                    // additional interior probes.
+                    //
+                    // Inconsistent intervals are omitted.
 
                     appendTerminalHalf(a, mid);
 
