@@ -3,31 +3,37 @@
 **Project Version:** 0.1.0  
 **Verification Date:** October 22, 2026  
 **Platform:** Linux  
-**Overall Status:** Initial application build and functional smoke tests passed.
+**Compiler:** GCC 15.2.0  
+**Language Standard:** C++20  
+**Overall Status:** PASS — Verified Linux build, automated regression tests, and manual application testing.
 
-This document records the build and test results for the initial Rational Studio application.
+This document records the build, automated test, sanitizer, and manual verification results for the current Rational Studio implementation.
 
-It distinguishes automated test coverage from manually verified functionality and identifies areas that have not yet undergone independent verification.
+The purpose of this report is to establish a reproducible verification baseline and distinguish demonstrated functionality from areas that have not yet undergone independent testing.
+
+Passing the recorded tests does not imply exhaustive mathematical correctness or compatibility with untested platforms.
 
 ---
 
 ## 1. Build Environment
 
-The application was built and tested on a native Linux development workstation.
+The application was compiled and tested on a native Linux development workstation.
 
 | Component | Configuration |
 |---|---|
 | Operating System | Linux |
-| Compiler | GCC 15.2.0 |
+| C++ Compiler | GCC 15.2.0 |
 | Language Standard | C++20 |
 | Build System | CMake |
+| Build Generator | Ninja |
 | GUI Framework | Qt Widgets |
 | Exact Integer Arithmetic | Boost.Multiprecision |
 | Test Framework | CTest |
+| Primary Build Configuration | Debug |
 
-The project uses Qt 6 for its primary development target.
+Qt 6 is the project's preferred development target.
 
-The exact Qt library version selected by CMake was not recorded in the captured build output.
+The exact Qt library version selected during configuration was not recorded in the supplied CMake output.
 
 Windows compilation and runtime compatibility have not yet been independently verified.
 
@@ -37,38 +43,55 @@ Windows compilation and runtime compatibility have not yet been independently ve
 
 **Result: PASS**
 
-The initial application was successfully configured, compiled, and linked.
+The application was successfully configured and compiled using GCC 15.2.0.
 
-The following targets were built:
+### Configuration
+
+```bash
+cmake -S . -B build-issue16 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+```
+
+CMake completed compiler detection, dependency discovery, configuration, and generation without reporting errors.
+
+### Compilation
+
+```bash
+cmake --build build-issue16 --parallel
+```
+
+### Recorded Result
+
+```text
+[21/21] Linking CXX executable RationalStudio
+```
+
+The build completed successfully.
+
+### Build Targets
 
 | Target | Type | Result |
 |---|---|---|
 | `RationalCore` | Static library | PASS |
 | `RationalCLI` | Executable | PASS |
+| `RationalStudio` | Qt desktop executable | PASS |
 | `RationalCoreTests` | Test executable | PASS |
 | `RationalViewportTests` | Test executable | PASS |
 | `RationalCurveSamplerTests` | Test executable | PASS |
-| `RationalStudio` | Qt desktop executable | PASS |
+| `RationalCurveDomainTests` | Test executable | PASS |
 
-Qt's automatic Meta-Object Compiler generation completed successfully.
+No compiler errors, linker errors, or compiler warnings were reported in the supplied build output.
 
-No compiler errors or linker errors were reported.
+### Compiler Diagnostics
 
-### Build Diagnostics
+Earlier development builds identified narrowing-conversion warnings involving integer widget dimensions and Qt floating-point coordinates.
 
-The initial build produced two narrowing-conversion warnings in `GraphCanvas.cpp`.
+The affected code was updated to use explicit conversions.
 
-Both originated from implicit conversions between integer widget dimensions and Qt floating-point coordinates.
+An earlier CMake invocation warning caused by incorrect shell argument escaping was also corrected.
 
-The affected statements were updated to use explicit `qreal` conversions.
+The current recorded Debug configuration and build completed without those warnings.
 
-The initial CMake invocation also produced an extra-path warning caused by shell argument escaping.
-
-The configuration command was corrected.
-
-**Verification note:** These corrections have been applied, but a clean post-correction build has not yet been included in the recorded terminal output.
-
-No compiler diagnostics were disabled to address these warnings.
+No compiler diagnostic suppressions were introduced to resolve them.
 
 ---
 
@@ -76,27 +99,59 @@ No compiler diagnostics were disabled to address these warnings.
 
 **Result: PASS**
 
-CTest completed successfully.
+The complete registered CTest suite passed.
+
+### Test Command
+
+```bash
+ctest --test-dir build-issue16 --output-on-failure
+```
 
 ### Recorded Output
 
 ```text
-Test project: RationalStudio/build
+Test project /home/chris/Documents/CPP_Projects/RationalStudio/build-issue16
 
     Start 1: RationalCoreTests
+1/4 Test #1: RationalCoreTests ................ Passed  0.00 sec
 
-1/1 Test #1: RationalCoreTests ........ Passed
+    Start 2: RationalViewportTests
+2/4 Test #2: RationalViewportTests ............ Passed  0.00 sec
 
-100% tests passed, 0 tests failed out of 1
+    Start 3: RationalCurveSamplerTests
+3/4 Test #3: RationalCurveSamplerTests ........ Passed  0.00 sec
+
+    Start 4: RationalCurveDomainTests
+4/4 Test #4: RationalCurveDomainTests ......... Passed  0.01 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) = 0.02 sec
 ```
 
-The mathematical test executable contains 91 assertions.
+### Test Suite Summary
 
-### Test Coverage
+| Test Executable | Coverage | Result |
+|---|---|---|
+| `RationalCoreTests` | Rational arithmetic and scientific expression evaluation | PASS |
+| `RationalViewportTests` | Coordinate transformations and viewport navigation | PASS |
+| `RationalCurveSamplerTests` | Adaptive curve sampling and approximation | PASS |
+| `RationalCurveDomainTests` | Mathematical domain validation and drawing-path separation | PASS |
 
-The existing test suite exercises:
+All four test executables completed successfully.
 
-**Rational Arithmetic**
+---
+
+## 4. Mathematical Core Verification
+
+**Result: PASS**
+
+The mathematical core regression tests validate rational arithmetic and scientific expression evaluation.
+
+### Rational Arithmetic
+
+Test coverage includes:
+
 - Addition.
 - Subtraction.
 - Multiplication.
@@ -108,7 +163,10 @@ The existing test suite exercises:
 - Rational comparisons.
 - Decimal conversion and rounding.
 
-**Scientific Expressions**
+### Scientific Expressions
+
+Test coverage includes:
+
 - Mathematical expression parsing.
 - Operator precedence.
 - Parentheses.
@@ -122,39 +180,231 @@ The existing test suite exercises:
 - Variable evaluation.
 - Previous-answer references.
 
-**Error Handling**
-- Invalid fractions.
+### Error Handling
+
+Test coverage includes:
+
+- Invalid rational-number input.
 - Malformed mathematical expressions.
 - Division by zero.
-- Undefined real-number results.
+- Undefined mathematical results.
 - Invalid mathematical domains.
 
-### Automated Test Limitations
-
-The current test suite focuses on the Qt-independent mathematical core.
-
-Dedicated automated tests have not yet been implemented for:
-
-- Qt user-interface interactions.
-- Graph-rendering correctness.
-- Coordinate transformations.
-- Viewport navigation.
-- Discontinuity handling.
-- Graph workspace serialization.
-- Image export.
-- Rendering performance.
-
-Passing the existing mathematical tests does not establish correctness for these additional components.
+The mathematical core can be compiled and tested independently of Qt.
 
 ---
 
-## 4. Desktop Application Verification
+## 5. Viewport Verification
 
-**Result: PASS — Manual Smoke Test**
+**Result: PASS**
+
+The graphing viewport uses a Qt-independent implementation for coordinate transformations and navigation mathematics.
+
+Automated regression tests cover:
+
+- World-to-screen coordinate conversion.
+- Screen-to-world coordinate conversion.
+- Coordinate round trips.
+- Viewport dimension changes.
+- Horizontal panning.
+- Vertical panning.
+- Cursor-anchored zooming.
+- Scale validation.
+- Invalid-input rejection.
+- Preservation of viewport state after rejected operations.
+- Selected extreme numerical inputs.
+
+The dedicated viewport test executable completed successfully.
+
+The viewport implementation is integrated into `GraphCanvas`, which delegates mathematical coordinate transformations and navigation operations to the independent component.
+
+---
+
+## 6. Adaptive Curve Sampling Verification
+
+**Result: PASS**
+
+The graphing engine uses adaptive screen-space curve sampling rather than relying exclusively on fixed horizontal sampling intervals.
+
+Automated regression tests cover:
+
+- Straight-line approximation.
+- Nonlinear mathematical functions.
+- Recursive subdivision.
+- Midpoint and quarter-point probing.
+- Screen-space approximation checks.
+- Oscillatory functions.
+- Finite drawing-coordinate validation.
+- Evaluation safety limits.
+- Invalid sampling configurations.
+
+The sampler generates screen-space drawing geometry independently of Qt.
+
+### Verification Scope
+
+The tests establish expected behavior for the selected mathematical functions and sampling configurations.
+
+They do not prove that arbitrary mathematical functions will be reconstructed perfectly.
+
+Highly oscillatory functions and narrow mathematical features may require additional sampling or more sophisticated analysis.
+
+---
+
+## 7. Undefined Function Domain Verification
+
+**Result: PASS**
+
+The adaptive curve sampler performs interior validity checks before accepting sampled curve segments.
+
+The implementation treats non-finite mathematical evaluations and exceptions as invalid samples.
+
+Detected undefined regions cause drawing paths to be disconnected rather than joined across known invalid sample locations.
+
+### Automated Test Coverage
+
+The dedicated domain regression suite covers:
+
+- Closed domain boundaries.
+- Open domain boundaries.
+- Functions with bounded valid regions.
+- Undefined intervals separating valid branches.
+- Narrow undefined regions.
+- Exception-producing mathematical evaluations.
+- NaN and infinity handling.
+- Extreme transformed coordinates.
+- Evaluation safety limits.
+
+Representative mathematical cases include:
+
+```text
+sqrt(x)
+ln(x)
+1/sqrt(x)
+acos(x)
+sqrt((x+0.537)*(0.423-x))
+sqrt((x-0.131)*(x-0.147))
+```
+
+### Regression Verification
+
+A targeted regression test covers a narrow undefined interval embedded within an otherwise valid curve.
+
+The previous sampler could connect drawing geometry across this interval.
+
+The updated implementation detects the invalid region in the specified regression case and preserves the separation between valid curve branches.
+
+### Direct Test Execution
+
+```bash
+./build-issue16/RationalCurveDomainTests
+```
+
+### Recorded Result
+
+```text
+PASS: 2383 CurveDomain assertions
+```
+
+The regression suite completed successfully.
+
+### Limitations
+
+Domain validation relies on sampled mathematical evaluations.
+
+The implementation cannot guarantee detection of every arbitrarily narrow undefined region or every discontinuity.
+
+Finite results on opposite sides of an asymptote may require additional analysis to determine whether connecting them is mathematically appropriate.
+
+These limitations do not invalidate the verified regression cases but remain relevant to graphing accuracy.
+
+---
+
+## 8. AddressSanitizer and UndefinedBehaviorSanitizer
+
+**Result: PASS — Qt-Independent Components**
+
+The mathematical core and associated test executables were compiled and tested using AddressSanitizer and UndefinedBehaviorSanitizer.
+
+### Configuration
+
+```bash
+cmake -S . -B build-issue16-asan \
+    -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DRATIONALSTUDIO_BUILD_GUI=OFF \
+    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+    -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+```
+
+### Compilation
+
+```bash
+cmake --build build-issue16-asan --parallel
+```
+
+### Recorded Result
+
+```text
+[15/15] Linking CXX executable RationalCLI
+```
+
+The sanitizer-enabled build completed successfully.
+
+### Test Execution
+
+```bash
+ctest --test-dir build-issue16-asan --output-on-failure
+```
+
+### Recorded Output
+
+```text
+Test project /home/chris/Documents/CPP_Projects/RationalStudio/build-issue16-asan
+
+    Start 1: RationalCoreTests
+1/4 Test #1: RationalCoreTests ................ Passed  0.04 sec
+
+    Start 2: RationalViewportTests
+2/4 Test #2: RationalViewportTests ............ Passed  0.01 sec
+
+    Start 3: RationalCurveSamplerTests
+3/4 Test #3: RationalCurveSamplerTests ........ Passed  0.02 sec
+
+    Start 4: RationalCurveDomainTests
+4/4 Test #4: RationalCurveDomainTests ......... Passed  0.04 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) = 0.11 sec
+```
+
+All four test executables passed under the sanitizer-enabled configuration.
+
+No sanitizer failures were reported in the supplied output.
+
+### Sanitizer Scope
+
+The sanitizer configuration explicitly disables the Qt GUI using:
+
+```text
+RATIONALSTUDIO_BUILD_GUI=OFF
+```
+
+Consequently, these results validate the Qt-independent components exercised by the test suite.
+
+They do not establish sanitizer coverage for the Qt desktop application or its rendering operations.
+
+---
+
+## 9. Desktop Application Verification
+
+**Result: PASS — Manual Functional Verification**
 
 The Qt desktop application compiled and launched successfully on Linux.
 
-Manual interaction confirmed that the application and its principal calculator functionality were operational.
+Manual testing was reported successful for the prescribed graphical verification procedures.
+
+### Application Workspaces
 
 The application provides three primary workspaces:
 
@@ -162,23 +412,53 @@ The application provides three primary workspaces:
 2. Graphing Calculator.
 3. Exact Fractions.
 
-The initial GUI layout and basic application interactions were manually exercised.
+### Graphing Verification
 
-### Scope
+Manual graphing checks included the prescribed representative functions with restricted mathematical domains, alongside regression checks of existing graphing interactions.
 
-This verification establishes that the initial graphical application launches and operates in its development environment.
+Representative expressions included:
 
-It does not constitute exhaustive functional, accessibility, rendering, or performance testing.
+```text
+y = sqrt(x)
+y = ln(x)
+y = 1/sqrt(x)
+y = acos(x)
+y = sqrt((x+0.537)*(0.423-x))
+y = sqrt((x-0.131)*(x-0.147))
+y = sqrt(-1)
+y = sin(x)
+```
 
-No automated Qt GUI tests have been recorded for this version.
+The manual verification was reported successful.
+
+### Interaction Regression Testing
+
+The prescribed manual verification also covered existing application interactions, including:
+
+- Mouse panning.
+- Scroll-wheel zooming.
+- Window resizing.
+- Coordinate inspection.
+- Multiple simultaneous graph expressions.
+- Curve visibility controls.
+- Graph workspace saving and loading.
+- PNG image export.
+
+No functional failures were reported during these checks.
+
+### Scope and Limitations
+
+These results represent manual functional verification performed in the development environment.
+
+They do not constitute automated Qt GUI testing, exhaustive rendering validation, accessibility verification, or comprehensive performance benchmarking.
 
 ---
 
-## 5. Terminal Application Verification
+## 10. Terminal Application Verification
 
-**Result: PASS**
+**Result: PASS — Previously Verified Baseline**
 
-The standalone terminal calculator compiled and executed successfully.
+The standalone terminal calculator was previously compiled and manually verified.
 
 ### Input
 
@@ -201,95 +481,134 @@ The standalone terminal calculator compiled and executed successfully.
 
 The observed result matched the expected result.
 
-The terminal application uses the same mathematical core as the Qt desktop application.
+The CLI continues to use the shared `RationalCore` mathematical library.
+
+The current test run confirms that the CLI target builds successfully. The supplied verification session did not include a separate new interactive CLI test.
 
 ---
 
-## 6. Sanitizer Verification
-
-No AddressSanitizer or UndefinedBehaviorSanitizer run using the current GCC 15.2.0 development environment is documented in the captured terminal output.
-
-The Qt application has not yet undergone documented sanitizer verification.
-
-Sanitizer coverage should be evaluated separately from standard compilation and functional testing.
-
----
-
-## 7. Platform Verification
+## 11. Platform Verification
 
 | Platform | Compilation | Runtime | Status |
 |---|---|---|---|
-| Linux | PASS | PASS | Initial baseline verified |
+| Linux | PASS | PASS | Verified |
 | Windows | Not tested | Not tested | Unverified |
 
-The implementation uses C++20, CMake, and Qt APIs intended to support cross-platform development.
+The application uses C++20, CMake, and Qt APIs intended to support cross-platform development.
 
-Windows support has not yet been demonstrated through a native build or runtime test.
+Windows support has not yet been demonstrated through native compilation, packaging, or runtime testing.
+
+The current verified implementation targets the Linux development environment.
 
 ---
 
-## 8. Reproduction Instructions
+## 12. Remaining Verification Limitations
 
-The following commands can be used to reproduce a Release build using Ninja on a Linux system with the required dependencies installed.
+The following areas have not yet undergone comprehensive verification:
 
-### Configure
+- Automated Qt GUI interaction testing.
+- Direct validation of rendered image output.
+- Exhaustive mathematical discontinuity detection.
+- Classification of vertical asymptotes.
+- Preservation of every steep continuous curve.
+- Highly oscillatory and sub-pixel mathematical features.
+- Rendering performance with large numbers of active curves.
+- Persistent curve-geometry caching.
+- Automated Linux and Windows CI builds.
+- Native Windows compilation and runtime behavior.
+- Sanitizer testing of the complete Qt GUI.
+- Release-build verification of the current graphing changes.
+
+These are limitations of the current verification scope rather than evidence of known failures in every listed area.
+
+---
+
+## 13. Reproduction Instructions
+
+The following commands reproduce the recorded Debug and sanitizer-enabled configurations on a compatible Linux development system.
+
+### Debug Configuration
 
 ```bash
-cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
 ```
 
 ### Compile
 
 ```bash
-cmake --build build-release --parallel
+cmake --build build-debug --parallel
 ```
 
 ### Run Automated Tests
 
 ```bash
-ctest --test-dir build-release --output-on-failure
+ctest --test-dir build-debug --output-on-failure
 ```
 
 ### Launch the Desktop Application
 
 ```bash
-./build-release/RationalStudio
+./build-debug/RationalStudio
 ```
 
-### Launch the Terminal Application
+### Sanitizer Configuration
 
 ```bash
-./build-release/RationalCLI
+cmake -S . -B build-asan \
+    -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DRATIONALSTUDIO_BUILD_GUI=OFF \
+    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+    -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
 ```
 
-These commands provide a reproducible verification procedure but do not imply that every configuration has been independently executed.
+### Compile and Test
+
+```bash
+cmake --build build-asan --parallel
+
+ctest --test-dir build-asan --output-on-failure
+```
+
+The commands above use generic build-directory names.
+
+The recorded verification results in this report were obtained using the development directories `build-issue16` and `build-issue16-asan`.
 
 ---
 
-## 9. Verification Summary
+## 14. Verification Summary
 
 | Verification Area | Result |
 |---|---|
-| CMake configuration | PASS |
-| C++ compilation | PASS |
+| CMake Debug configuration | PASS |
+| GCC 15.2.0 compilation | PASS |
 | Static library linkage | PASS |
-| Desktop executable linkage | PASS |
+| Qt desktop executable linkage | PASS |
 | CLI executable linkage | PASS |
-| Automated mathematical tests | PASS |
-| Desktop application smoke test | PASS |
-| Terminal calculator smoke test | PASS |
-| Post-warning-fix clean rebuild | Pending recorded verification |
+| Mathematical core tests | PASS |
+| Viewport regression tests | PASS |
+| Adaptive curve sampling tests | PASS |
+| Undefined-domain regression tests | PASS |
+| Complete Debug CTest suite | 4/4 PASS |
+| AddressSanitizer test suite | 4/4 PASS |
+| UndefinedBehaviorSanitizer test suite | 4/4 PASS |
+| Manual Qt GUI verification | PASS |
+| Previous CLI functional verification | PASS |
 | Automated GUI tests | Not performed |
-| Dedicated graph correctness tests | Not performed |
-| GCC 15.2.0 sanitizer tests | Not performed |
+| Current graphing Release build | Not verified |
 | Windows build verification | Not performed |
+| Windows runtime verification | Not performed |
 
 ### Overall Assessment
 
-Rational Studio v0.1.0 has a functional Linux application baseline.
+Rational Studio v0.1.0 has a functional and verified Linux development baseline.
 
-The numerical library, desktop application, and terminal calculator compiled successfully. The mathematical regression suite passed, and both application executables were manually exercised.
+The current implementation successfully compiled using GCC 15.2.0. All four registered CTest executables passed under both the standard Debug and sanitizer-enabled configurations.
 
-The initial build provides a reproducible foundation for further development.
+Manual verification of the Qt graphical application was also reported successful.
 
-This verification record does not imply complete mathematical correctness, exhaustive GUI testing, or confirmed compatibility with untested platforms.
+The graphing engine now includes independently testable viewport mathematics, adaptive screen-space curve sampling, and improved validation of sampled undefined mathematical regions.
+
+The recorded results establish a verified foundation for continued development.
+
+They do not imply exhaustive mathematical correctness, complete GUI test coverage, or compatibility with platforms that have not yet been tested.
