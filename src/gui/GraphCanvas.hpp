@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Expression.hpp"
+#include "GraphViewport.hpp"
 
 #include <QColor>
 #include <QPointF>
+#include <QString>
 #include <QWidget>
 
 #include <functional>
@@ -13,6 +15,7 @@
 class QMouseEvent;
 class QWheelEvent;
 class QPaintEvent;
+class QResizeEvent;
 class QEvent;
 class QPainter;
 
@@ -27,7 +30,6 @@ namespace rationalstudio {
 
     class GraphCanvas final : public QWidget {
     public:
-
         explicit GraphCanvas(QWidget* parent = nullptr);
 
         void setCurves(std::vector<GraphCurve> curves);
@@ -45,15 +47,15 @@ namespace rationalstudio {
         );
 
         double centerX() const noexcept {
-            return centerX_;
+            return viewport_.centerX();
         }
 
         double centerY() const noexcept {
-            return centerY_;
+            return viewport_.centerY();
         }
 
         double pixelsPerUnit() const noexcept {
-            return pixelsPerUnit_;
+            return viewport_.pixelsPerUnit();
         }
 
         void setGridVisible(bool on) {
@@ -69,7 +71,6 @@ namespace rationalstudio {
         std::function<void(const QString&)> onPointerInfo;
 
     protected:
-
         void paintEvent(QPaintEvent*) override;
 
         void mousePressEvent(QMouseEvent* event) override;
@@ -82,8 +83,9 @@ namespace rationalstudio {
 
         void wheelEvent(QWheelEvent* event) override;
 
-    private:
+        void resizeEvent(QResizeEvent* event) override;
 
+    private:
         QPointF worldToScreen(const QPointF& p) const;
 
         QPointF screenToWorld(const QPointF& p) const;
@@ -102,10 +104,8 @@ namespace rationalstudio {
 
         double lastAnswer_ = 0;
 
-        double centerX_ = 0;
-        double centerY_ = 0;
-
-        double pixelsPerUnit_ = 58;
+        // Single authoritative source for viewport mathematics.
+        GraphViewport viewport_;
 
         bool showGrid_ = true;
         bool showAxes_ = true;
