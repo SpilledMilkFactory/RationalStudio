@@ -23,6 +23,12 @@ namespace rationalstudio {
         double minStepPixels = 0.375;
         unsigned maxDepth = 9;
 
+        // Extra, bounded subdivision for finite terminal chords whose
+        // approximation error remains high. This recovers steep continuous
+        // curves without broadly relaxing discontinuity checks. Setting this
+        // to zero retains the former terminal rejection behavior.
+        unsigned maxTerminalRefinement = 8;
+
         // A per-call safety ceiling; a comprehensive, cross-curve sampling
         // budget and scheduling policy are tracked separately in issue #21.
         std::size_t maxEvaluations = 65536;
