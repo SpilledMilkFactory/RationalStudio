@@ -6,12 +6,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# The mathematical core is Qt-free and can be tested
-# without any GUI packages.
+# ---------------------------------------------------------
+# Mathematical Core
+# ---------------------------------------------------------
 
+# The mathematical core is independent of Qt.
 add_library(RationalCore STATIC
     src/core/Rational.cpp
     src/core/Expression.cpp
+    src/core/GraphViewport.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -22,11 +25,13 @@ target_compile_options(RationalCore PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
 )
 
-# Optional terminal calculator.
+# ---------------------------------------------------------
+# Command-Line Application
+# ---------------------------------------------------------
 
 option(
     RATIONALSTUDIO_BUILD_CLI
-    "Build the original-style CLI counterpart"
+    "Build the standalone CLI calculator"
     ON
 )
 
@@ -42,12 +47,15 @@ if(RATIONALSTUDIO_BUILD_CLI)
 
 endif()
 
-# Automated tests.
+# ---------------------------------------------------------
+# Automated Testing
+# ---------------------------------------------------------
 
 include(CTest)
 
 if(BUILD_TESTING)
 
+    # Existing mathematical regression tests.
     add_executable(RationalCoreTests
         tests/CoreTests.cpp
     )
@@ -61,9 +69,29 @@ if(BUILD_TESTING)
         COMMAND RationalCoreTests
     )
 
+    # Qt-independent viewport regression tests.
+    add_executable(RationalViewportTests
+        tests/GraphViewportTests.cpp
+    )
+
+    target_link_libraries(RationalViewportTests PRIVATE
+        RationalCore
+    )
+
+    target_compile_options(RationalViewportTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )
+
+    add_test(
+        NAME RationalViewportTests
+        COMMAND RationalViewportTests
+    )
+
 endif()
 
-# Qt desktop application.
+# ---------------------------------------------------------
+# Qt Desktop Application
+# ---------------------------------------------------------
 
 option(
     RATIONALSTUDIO_BUILD_GUI

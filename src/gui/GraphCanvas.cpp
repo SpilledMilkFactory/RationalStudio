@@ -6,18 +6,18 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QPaintEvent>
+#include <QResizeEvent>
 #include <QWheelEvent>
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
+#include <utility>
 
 namespace rationalstudio {
 
     namespace {
 
         QPointF mousePoint(QMouseEvent* e) {
-
             #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             return e->position();
             #else
@@ -26,7 +26,6 @@ namespace rationalstudio {
         }
 
         QPointF wheelPoint(QWheelEvent* e) {
-
             #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             return e->position();
             #else
@@ -35,7 +34,6 @@ namespace rationalstudio {
         }
 
         QString numberLabel(double value) {
-
             if (std::abs(value) < 1e-12) {
                 value = 0;
             }
@@ -43,11 +41,9 @@ namespace rationalstudio {
             return QString::number(value, 'g', 6);
         }
 
-        // Grid lines get closer/farther by
-        // 1, 2, 5, or 10 times a power of ten.
-
+        // Grid lines get closer/farther by 1, 2, 5,
+        // or 10 times a power of ten.
         double gridStep(double unitsPerPixel) {
-
             const double target = 85.0 * unitsPerPixel;
 
             const double power = std::pow(
@@ -76,33 +72,34 @@ namespace rationalstudio {
         setCursor(Qt::CrossCursor);
 
         setAttribute(Qt::WA_OpaquePaintEvent);
+
+        (void)viewport_.setDimensions(
+            std::max(1, width()),
+                                      std::max(1, height())
+        );
     }
 
     void GraphCanvas::setCurves(
         std::vector<GraphCurve> curves
     ) {
-
         curves_ = std::move(curves);
 
         update();
     }
 
     void GraphCanvas::setAngleMode(AngleMode mode) {
-
         angleMode_ = mode;
 
         update();
     }
 
     void GraphCanvas::setLastAnswer(double answer) {
-
         lastAnswer_ = answer;
 
         update();
     }
 
     void GraphCanvas::resetView() {
-
         setView(0, 0, 58);
     }
 
@@ -111,52 +108,30 @@ namespace rationalstudio {
         double y,
         double pixelsPerUnit
     ) {
-
-        if (
-            !std::isfinite(x) ||
-            !std::isfinite(y) ||
-            !std::isfinite(pixelsPerUnit) ||
-            pixelsPerUnit < 0.1 ||
-            pixelsPerUnit > 20000
-        ) {
-            return;
+        if (viewport_.setView(x, y, pixelsPerUnit)) {
+            update();
         }
-
-        centerX_ = x;
-        centerY_ = y;
-        pixelsPerUnit_ = pixelsPerUnit;
-
-        update();
     }
 
     QPointF GraphCanvas::worldToScreen(
         const QPointF& p
     ) const {
-
         return {
-            width() * 0.5 +
-            (p.x() - centerX_) * pixelsPerUnit_,
-
-            height() * 0.5 -
-            (p.y() - centerY_) * pixelsPerUnit_
+            viewport_.worldToScreenX(p.x()),
+            viewport_.worldToScreenY(p.y())
         };
     }
 
     QPointF GraphCanvas::screenToWorld(
         const QPointF& p
     ) const {
-
         return {
-            centerX_ +
-            (p.x() - width() * 0.5) / pixelsPerUnit_,
-
-            centerY_ -
-            (p.y() - height() * 0.5) / pixelsPerUnit_
+            viewport_.screenToWorldX(p.x()),
+            viewport_.screenToWorldY(p.y())
         };
     }
 
     void GraphCanvas::paintEvent(QPaintEvent*) {
-
         QPainter p(this);
 
         p.fillRect(
@@ -198,7 +173,6 @@ namespace rationalstudio {
     }
 
     void GraphCanvas::drawGrid(QPainter& p) const {
-
         const QPointF min = screenToWorld({
             0.0,
             static_cast<qreal>(height())
@@ -209,13 +183,13 @@ namespace rationalstudio {
                                           0.0
         });
 
-        const double step =
-        gridStep(1.0 / pixelsPerUnit_);
+        const double step = gridStep(
+            1.0 / viewport_.pixelsPerUnit()
+        );
 
         p.setFont(QFont("Sans Serif", 9));
 
         if (showGrid_) {
-
             p.setPen(
                 QPen(QColor("#253243"), 1)
             );
@@ -224,7 +198,6 @@ namespace rationalstudio {
             std::ceil(min.x() / step) * step;
 
             for (int i = 0; i < 250; ++i) {
-
                 const double x = firstX + i * step;
 
                 if (x > max.x()) {
@@ -244,7 +217,6 @@ namespace rationalstudio {
             std::ceil(min.y() / step) * step;
 
             for (int i = 0; i < 250; ++i) {
-
                 const double y = firstY + i * step;
 
                 if (y > max.y()) {
@@ -262,7 +234,6 @@ namespace rationalstudio {
         }
 
         if (showAxes_) {
-
             p.setPen(
                 QPen(QColor("#8396ad"), 1.4)
             );
@@ -274,7 +245,6 @@ namespace rationalstudio {
                 origin.y() > -2 &&
                 origin.y() < height() + 2
             ) {
-
                 p.drawLine(
                     QPointF(0, origin.y()),
                            QPointF(width(), origin.y())
@@ -285,7 +255,6 @@ namespace rationalstudio {
                 origin.x() > -2 &&
                 origin.x() < width() + 2
             ) {
-
                 p.drawLine(
                     QPointF(origin.x(), 0),
                            QPointF(origin.x(), height())
@@ -318,7 +287,6 @@ namespace rationalstudio {
         std::ceil(min.x() / step) * step;
 
         for (int i = 0; i < 250; ++i) {
-
             const double x = firstX + i * step;
 
             if (x > max.x()) {
@@ -349,7 +317,6 @@ namespace rationalstudio {
         std::ceil(min.y() / step) * step;
 
         for (int i = 0; i < 250; ++i) {
-
             const double y = firstY + i * step;
 
             if (y > max.y()) {
@@ -378,13 +345,11 @@ namespace rationalstudio {
     }
 
     void GraphCanvas::drawCurves(QPainter& p) const {
-
         p.save();
 
         p.setClipRect(rect());
 
         for (const auto& curve : curves_) {
-
             if (
                 !curve.enabled ||
                 !curve.function ||
@@ -406,18 +371,15 @@ namespace rationalstudio {
             QPainterPath path;
 
             bool prevValid = false;
-
             double prevY = 0;
 
-            // Two physical pixels per evaluation.
-            // Expressions are parsed only on edit.
-
+            // Two physical pixels per evaluation;
+            // expressions are parsed only on edit.
             for (
                 int sx = 0;
             sx <= width() + 2;
             sx += 2
             ) {
-
                 const double x =
                 screenToWorld({double(sx), 0}).x();
 
@@ -436,24 +398,19 @@ namespace rationalstudio {
                 std::abs(sy) < 1e7;
 
                 if (!finite) {
-
                     prevValid = false;
                     continue;
                 }
 
                 // Discontinuous graphs are deliberately
                 // split rather than connected.
-
                 const bool jump =
                 prevValid &&
                 std::abs(sy - prevY) > height() * 0.7;
 
                 if (!prevValid || jump) {
-
                     path.moveTo(double(sx), sy);
-
                 } else {
-
                     path.lineTo(double(sx), sy);
                 }
 
@@ -468,7 +425,6 @@ namespace rationalstudio {
     }
 
     void GraphCanvas::drawTrace(QPainter& p) const {
-
         const QPointF world =
         screenToWorld(pointer_);
 
@@ -478,7 +434,6 @@ namespace rationalstudio {
         double distance = 24;
 
         for (const auto& curve : curves_) {
-
             if (
                 !curve.enabled ||
                 !curve.function ||
@@ -508,7 +463,6 @@ namespace rationalstudio {
             std::abs(screenY - pointer_.y());
 
             if (dy < distance) {
-
                 distance = dy;
                 nearest = &curve;
                 nearestY = y;
@@ -519,19 +473,16 @@ namespace rationalstudio {
             return;
         }
 
-        const QPointF point =
-        worldToScreen({
+        const QPointF point = worldToScreen({
             world.x(),
-                      nearestY
+                                            nearestY
         });
 
         p.setPen(
             QPen(nearest->color, 2)
         );
 
-        p.setBrush(
-            QColor("#101722")
-        );
+        p.setBrush(QColor("#101722"));
 
         p.drawEllipse(
             point,
@@ -574,9 +525,7 @@ namespace rationalstudio {
 
         p.setPen(Qt::NoPen);
 
-        p.setBrush(
-            QColor("#263649")
-        );
+        p.setBrush(QColor("#263649"));
 
         p.drawRoundedRect(
             QRectF(
@@ -589,9 +538,7 @@ namespace rationalstudio {
             5
         );
 
-        p.setPen(
-            QColor("#f4f7fb")
-        );
+        p.setPen(QColor("#f4f7fb"));
 
         p.drawText(
             QRectF(
@@ -606,7 +553,6 @@ namespace rationalstudio {
     }
 
     void GraphCanvas::updatePointerStatus() const {
-
         if (!onPointerInfo) {
             return;
         }
@@ -620,7 +566,6 @@ namespace rationalstudio {
         double bestDistance = 24;
 
         for (const auto& curve : curves_) {
-
             if (
                 !curve.enabled ||
                 !curve.function ||
@@ -648,7 +593,6 @@ namespace rationalstudio {
             );
 
             if (dy < bestDistance) {
-
                 bestDistance = dy;
                 nearest = &curve;
                 nearestY = y;
@@ -656,7 +600,6 @@ namespace rationalstudio {
         }
 
         if (nearest) {
-
             onPointerInfo(
                 nearest->label +
                 QString("  (%1, %2)").arg(
@@ -664,9 +607,7 @@ namespace rationalstudio {
                                           numberLabel(nearestY)
                 )
             );
-
         } else {
-
             onPointerInfo(
                 QString("x = %1,  y = %2").arg(
                     numberLabel(world.x()),
@@ -676,40 +617,29 @@ namespace rationalstudio {
         }
     }
 
-    void GraphCanvas::mousePressEvent(
-        QMouseEvent* e
-    ) {
-
+    void GraphCanvas::mousePressEvent(QMouseEvent* e) {
         if (e->button() == Qt::LeftButton) {
-
             dragging_ = true;
 
             lastDrag_ = mousePoint(e);
 
-            setCursor(
-                Qt::ClosedHandCursor
-            );
+            setCursor(Qt::ClosedHandCursor);
         }
     }
 
-    void GraphCanvas::mouseMoveEvent(
-        QMouseEvent* e
-    ) {
-
+    void GraphCanvas::mouseMoveEvent(QMouseEvent* e) {
         pointer_ = mousePoint(e);
 
         pointerInside_ = true;
 
         if (dragging_) {
-
             const QPointF delta =
             pointer_ - lastDrag_;
 
-            centerX_ -=
-            delta.x() / pixelsPerUnit_;
-
-            centerY_ +=
-            delta.y() / pixelsPerUnit_;
+            (void)viewport_.panPixels(
+                delta.x(),
+                                      delta.y()
+            );
 
             lastDrag_ = pointer_;
         }
@@ -719,12 +649,8 @@ namespace rationalstudio {
         update();
     }
 
-    void GraphCanvas::mouseReleaseEvent(
-        QMouseEvent* e
-    ) {
-
+    void GraphCanvas::mouseReleaseEvent(QMouseEvent* e) {
         if (e->button() == Qt::LeftButton) {
-
             dragging_ = false;
 
             setCursor(Qt::CrossCursor);
@@ -733,14 +659,10 @@ namespace rationalstudio {
         update();
     }
 
-    void GraphCanvas::leaveEvent(
-        QEvent* e
-    ) {
-
+    void GraphCanvas::leaveEvent(QEvent* e) {
         pointerInside_ = false;
 
         if (onPointerInfo) {
-
             onPointerInfo("Ready");
         }
 
@@ -749,39 +671,34 @@ namespace rationalstudio {
         QWidget::leaveEvent(e);
     }
 
-    void GraphCanvas::wheelEvent(
-        QWheelEvent* e
-    ) {
-
-        const QPointF at =
-        wheelPoint(e);
-
-        const QPointF worldBefore =
-        screenToWorld(at);
+    void GraphCanvas::wheelEvent(QWheelEvent* e) {
+        const QPointF at = wheelPoint(e);
 
         const double factor = std::pow(
             1.12,
             e->angleDelta().y() / 120.0
         );
 
-        pixelsPerUnit_ = std::clamp(
-            pixelsPerUnit_ * factor,
-            0.5,
-            5000.0
+        (void)viewport_.zoomAt(
+            factor,
+            at.x(),
+                               at.y()
         );
-
-        const QPointF worldAfter =
-        screenToWorld(at);
-
-        centerX_ +=
-        worldBefore.x() - worldAfter.x();
-
-        centerY_ +=
-        worldBefore.y() - worldAfter.y();
 
         update();
 
         e->accept();
+    }
+
+    void GraphCanvas::resizeEvent(QResizeEvent* e) {
+        QWidget::resizeEvent(e);
+
+        (void)viewport_.setDimensions(
+            e->size().width(),
+                                      e->size().height()
+        );
+
+        update();
     }
 
 } // namespace rationalstudio
