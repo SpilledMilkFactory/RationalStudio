@@ -147,6 +147,29 @@ if(BUILD_TESTING)
         NAME RationalCurveDiscontinuityTests
         COMMAND RationalCurveDiscontinuityTests
     )
+
+    # ---------------------------------------------------------
+    # Preserve Continuous Curves With Steep Gradients
+    # GitHub Issue #18
+    # ---------------------------------------------------------
+
+    add_executable(RationalCurveSteepTests
+        tests/CurveSteepTests.cpp
+    )   
+
+    target_link_libraries(RationalCurveSteepTests PRIVATE
+        RationalCore
+    )   
+
+    target_compile_options(RationalCurveSteepTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )   
+
+    add_test(
+        NAME RationalCurveSteepTests
+        COMMAND RationalCurveSteepTests
+    )
+
 endif()
 
 # ---------------------------------------------------------
