@@ -74,6 +74,8 @@ y = floor(x)
 
 **Viewport resizing and boundary safety.** Grid lines and labels are positioned in bounded screen space, with checks for finite coordinates and representable grid spacing. During rapid resizing, obsolete scheduled redraws are cancelled and geometry is rebuilt for the current widget dimensions. Invalid dimensions and non-finite viewport settings are rejected or skipped without painting corrupted geometry. Very large but finite viewport centers may intentionally suppress grid markers when floating-point precision cannot support reliable positions; zoom and mathematical precision limitations still apply.
 
+**Performance benchmarking (Issue #25).** Optional, non-CTest benchmark executables measure sampling callback and geometry-assembly cost, cold invalidated and warm cached offscreen Qt repaint times, and wheel/drag navigation event-to-preview and event-to-refreshed-geometry delays across one, four, and eight active curves. Repeated Release runs emit CSV and JSON with median and 95th-percentile timings. These measurements are environment-dependent; offscreen raster timing is not physical display latency or a frame-rate guarantee.
+
 **Important limitation:** Finite sampling cannot establish continuity for every mathematical function. Narrow singularities, unobserved domain gaps, high-frequency oscillations, and extreme nonlinear features may still be missed or approximated imperfectly. Additional terminal refinement improves selected steep continuous curves but does not guarantee their reconstruction. Cached geometry is rebuilt when required inputs change; persistent caching does not eliminate the cost of sampling during navigation.
 
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
@@ -156,6 +158,13 @@ RationalStudio/
 │       ├── MainWindow.cpp
 │       ├── GraphCanvas.hpp
 │       └── GraphCanvas.cpp
+├── benchmarks/
+│   ├── BenchmarkMetrics.hpp
+│   ├── GraphSamplingBench.cpp
+│   └── GraphCanvasBench.cpp
+├── scripts/
+│   ├── run_issue25_benchmarks.sh
+│   └── summarize_issue25.py
 └── tests/
     ├── CoreTests.cpp
     ├── GraphViewportTests.cpp
@@ -173,7 +182,8 @@ RationalStudio/
     ├── GraphViewportBoundaryTests.cpp
     ├── GraphCanvasBoundaryTests.cpp
     ├── GraphRegressionMatrixTests.cpp
-    └── GraphCanvasRegressionMatrixTests.cpp
+    ├── GraphCanvasRegressionMatrixTests.cpp
+    └── GraphBenchmarkStatisticsTests.cpp
 ```
 
 ## Requirements
@@ -253,7 +263,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers seventeen test executables; core-only builds register twelve:
+With GUI and testing enabled, CTest registers eighteen test executables; core-only builds register thirteen:
 
 | Executable | Focus |
 |---|---|
@@ -274,12 +284,43 @@ With GUI and testing enabled, CTest registers seventeen test executables; core-o
 | `RationalGraphCanvasBoundaryTests` | Offscreen Qt resize transitions, extreme zoom/center safety, stale-refresh cancellation, and invalid-view rollback. |
 | `RationalGraphRegressionMatrixTests` | End-to-end Qt-free regression matrix of viewport transforms, zoom anchoring, sampled chord accuracy, restricted domains, discontinuities, and callback budgets. |
 | `RationalGraphCanvasRegressionMatrixTests` | Qt offscreen regression matrix of caching, navigation, resizing, invalid views, evaluation budgets, and domain/discontinuity rendering. |
+| `RationalGraphBenchmarkStatisticsTests` | Qt-independent benchmark statistics, CSV/JSON output, and argument validation helpers; no performance thresholds. |
 
 Run the configured suite:
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
+
+### Graph performance benchmarks (Issue #25)
+
+The optional `RATIONALSTUDIO_BUILD_BENCHMARKS` CMake option (default `OFF`)
+adds `RationalGraphSamplingBench` and, when the GUI is enabled,
+`RationalGraphCanvasBench`. The executables are **not CTests** and contain no
+absolute timing pass/fail thresholds. A separate
+`RationalGraphBenchmarkStatisticsTests` CTest verifies percentile calculations,
+CSV/JSON escaping, and report generation without testing host speed.
+
+Build and record measurements using a Release configuration:
+
+```bash
+cmake -S . -B build-issue25-release -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DRATIONALSTUDIO_BUILD_BENCHMARKS=ON
+cmake --build build-issue25-release --parallel
+bash scripts/run_issue25_benchmarks.sh
+```
+
+Results appear in `benchmark-results/issue25/` as raw CSV, grouped JSON,
+and `RESULTS.md`. The harness measures one, four and eight active curves with
+representative smooth, steep, discontinuous and restricted-domain functions.
+The sampling benchmark records callback counts and sampling/geometry assembly
+cost. The offscreen Qt benchmark records cold, invalidated painting versus
+warm cached painting, and synthetic wheel and drag burst responsiveness.
+Control CPU load and governor, record the toolchain/Qt/display context, run
+repeated trials, and review median/p95. No before/after FPS claim is supported
+without a comparably measured earlier baseline. Synthetic Qt events and
+offscreen paints do not measure actual monitor presentation latency.
 
 ### AddressSanitizer and UndefinedBehaviorSanitizer
 

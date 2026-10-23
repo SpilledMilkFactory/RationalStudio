@@ -264,6 +264,24 @@ if(BUILD_TESTING)
         LABELS "graphing;regression;core"
     )
 
+    # -----------------------------------------------------------------------------
+    # Issue #25 — Benchmark Statistics/Output Correctness (not a speed threshold)
+    # -----------------------------------------------------------------------------
+
+    add_executable(RationalGraphBenchmarkStatisticsTests
+        tests/GraphBenchmarkStatisticsTests.cpp
+    )
+    target_include_directories(RationalGraphBenchmarkStatisticsTests PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks"
+    )
+
+    add_test(NAME RationalGraphBenchmarkStatisticsTests
+             COMMAND RationalGraphBenchmarkStatisticsTests)
+
+    set_tests_properties(RationalGraphBenchmarkStatisticsTests PROPERTIES
+        LABELS "graphing;benchmark;core;regression"
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -281,6 +299,7 @@ if(BUILD_TESTING)
         RationalGraphRepaintSchedulerTests
         RationalGraphViewportBoundaryTests
         RationalGraphRegressionMatrixTests
+        RationalGraphBenchmarkStatisticsTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -288,6 +307,32 @@ if(BUILD_TESTING)
         )
 
     endforeach()
+
+endif()
+
+# ---------------------------------------------------------
+# Qt-independent benchmark 
+# ---------------------------------------------------------
+
+option(RATIONALSTUDIO_BUILD_BENCHMARKS
+    "Build optional graphing benchmark executables"
+    OFF
+)
+
+if(RATIONALSTUDIO_BUILD_BENCHMARKS)
+    add_executable(RationalGraphSamplingBench
+        benchmarks/GraphSamplingBench.cpp
+    )
+
+    target_include_directories(RationalGraphSamplingBench PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks"
+    )
+
+    target_link_libraries(RationalGraphSamplingBench PRIVATE RationalCore)
+    
+    target_compile_options(RationalGraphSamplingBench PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )
 
 endif()
 
@@ -482,6 +527,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
             LABELS "graphing;regression;qt;offscreen"
             TIMEOUT 30
         )
+
+    # ---------------------------------------------------------    
+    # Issue #25 — Qt offscreen benchmark
+    # ---------------------------------------------------------
+
+        if(RATIONALSTUDIO_BUILD_BENCHMARKS)
+            add_executable(RationalGraphCanvasBench
+                benchmarks/GraphCanvasBench.cpp
+                src/gui/GraphCanvas.hpp
+                src/gui/GraphCanvas.cpp
+            )
+            target_include_directories(RationalGraphCanvasBench PRIVATE
+                "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+            )
+            target_link_libraries(RationalGraphCanvasBench PRIVATE
+                RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+            )
+            target_compile_options(RationalGraphCanvasBench PRIVATE
+                $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+            )
+        endif()
 
     endif()
 
