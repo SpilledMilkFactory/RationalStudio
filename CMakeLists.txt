@@ -195,7 +195,22 @@ if(BUILD_TESTING)
         NAME RationalCurveGeometryCacheTests
         COMMAND RationalCurveGeometryCacheTests
     )
+    # -----------------------------------------------------
+    # Issue #21 — Shared Mathematical Evaluation Budget
+    # -----------------------------------------------------
 
+    add_executable(RationalCurveEvaluationBudgetTests
+        tests/CurveEvaluationBudgetTests.cpp
+    )
+
+    target_link_libraries(RationalCurveEvaluationBudgetTests PRIVATE 
+        RationalCore
+    )
+
+    add_test(
+        NAME RationalCurveEvaluationBudgetTests
+        COMMAND RationalCurveEvaluationBudgetTests
+    )
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -209,6 +224,7 @@ if(BUILD_TESTING)
         RationalCurveSteepTests
         RationalViewportPrecisionTests
         RationalCurveGeometryCacheTests
+        RationalCurveEvaluationBudgetTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -307,7 +323,33 @@ if(RATIONALSTUDIO_BUILD_GUI)
             PROPERTIES
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )   
+    # ---------------------------------------------------------
+    # Issue #21 — bounded GraphCanvas sampling work per repaint
+    # --------------------------------------------------------- 
+        add_executable(RationalGraphCanvasBudgetTests
+            tests/GraphCanvasBudgetTests.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )
+        target_include_directories(RationalGraphCanvasBudgetTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalGraphCanvasBudgetTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalGraphCanvasBudgetTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(
+            NAME RationalGraphCanvasBudgetTests
+            COMMAND RationalGraphCanvasBudgetTests
+        )
+        set_tests_properties(RationalGraphCanvasBudgetTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
 
+        
     endif()
 
 endif()

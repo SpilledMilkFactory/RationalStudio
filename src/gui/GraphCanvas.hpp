@@ -22,6 +22,20 @@ class QPainter;
 
 namespace rationalstudio {
 
+// Deterministic CPU evaluation limits. They bound callback counts per
+// individual geometry build and per paint, not callback wall-clock time.
+struct GraphSamplingLimits {
+    std::size_t maxEvaluationsPerCurve = 8192;
+    std::size_t maxEvaluationsPerPaint = 32768;
+};
+
+struct GraphSamplingDiagnostics {
+    std::size_t lastPaintEvaluations = 0;
+    std::size_t totalEvaluations = 0;
+    std::size_t truncatedCurveBuilds = 0;
+    std::size_t lastPaintDeferredCurves = 0;
+};
+
 struct GraphCurve {
     QColor color;
     std::shared_ptr<const Expression> function;
@@ -35,6 +49,16 @@ public:
     void setCurves(std::vector<GraphCurve> curves);
     void setAngleMode(AngleMode mode);
     void setLastAnswer(double ans);
+    // Updating limits invalidates existing paths, including previously
+    // truncated paths. Reject invalid settings without mutating state.
+    [[nodiscard]] bool setSamplingLimits(GraphSamplingLimits limits);
+    [[nodiscard]] GraphSamplingLimits samplingLimits() const noexcept {
+        return samplingLimits_;
+    }
+    [[nodiscard]] GraphSamplingDiagnostics samplingDiagnostics() const noexcept {
+        return samplingDiagnostics_;
+    }
+
     void resetView();
     void setView(double centerX, double centerY, double pixelsPerUnit);
     double centerX() const noexcept { return viewport_.centerX(); }
@@ -72,6 +96,9 @@ private:
     GraphViewport viewport_;
     CurveGeometryCache<QPainterPath> geometryCache_;
     std::size_t geometryBuildCount_ = 0;
+    GraphSamplingLimits samplingLimits_;
+    GraphSamplingDiagnostics samplingDiagnostics_;
+    bool deferredRepaintQueued_ = false;
     bool showGrid_ = true;
     bool showAxes_ = true;
     bool dragging_ = false;

@@ -8,6 +8,7 @@
 #include <QFontMetrics>
 #include <QPaintEvent>
 #include <QResizeEvent>
+#include <QTimer>
 #include <QWheelEvent>
 
 #include <algorithm>
@@ -76,6 +77,25 @@ void GraphCanvas::setLastAnswer(double answer) {
     geometryCache_.invalidateAll();
     update();
 }
+bool GraphCanvas::setSamplingLimits(GraphSamplingLimits limits) {
+    // Four evaluations is the smallest budget accepted by CurveSampler.
+    constexpr std::size_t kMaxConfiguredEvaluations = 10000000;
+    if (limits.maxEvaluationsPerCurve < 4 ||
+        limits.maxEvaluationsPerPaint < 4 ||
+        limits.maxEvaluationsPerCurve > kMaxConfiguredEvaluations ||
+        limits.maxEvaluationsPerPaint > kMaxConfiguredEvaluations) {
+        return false;
+    }
+    if (samplingLimits_.maxEvaluationsPerCurve == limits.maxEvaluationsPerCurve &&
+        samplingLimits_.maxEvaluationsPerPaint == limits.maxEvaluationsPerPaint) {
+        return true;
+    }
+    samplingLimits_ = limits;
+    geometryCache_.invalidateAll();
+    update();
+    return true;
+}
+
 void GraphCanvas::resetView() { setView(0, 0, 58); }
 void GraphCanvas::setView(double x, double y, double pixelsPerUnit) {
     const double oldX = viewport_.centerX();
@@ -165,31 +185,97 @@ void GraphCanvas::drawGrid(QPainter& p) const {
 void GraphCanvas::drawCurves(QPainter& p) {
     p.save();
     p.setClipRect(rect());
+
+    // Count only drawable, currently dirty curves. Cached/hidden entries
+    // consume no geometry budget. Reserve work for several dirty curves
+    // rather than letting the first pathological one consume the frame.
+    std::size_t dirty = 0;
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        const auto& curve = curves_[i];
+        if (curve.enabled && curve.function && curve.function->valid() &&
+            !geometryCache_.isReady(i)) ++dirty;
+    }
+
+    CurveEvaluationBudget paintBudget(samplingLimits_.maxEvaluationsPerPaint);
+    std::size_t deferred = 0;
+
     for (std::size_t index = 0; index < curves_.size(); ++index) {
         const auto& curve = curves_[index];
         if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
 
-        // Qt-owned cache: QPainterPath is rebuilt only when the expression
-        // identity or mathematical inputs (viewport/angle/ans) change.
-        const QPainterPath& path = geometryCache_.getOrBuild(index, [&] {
-            const CurveSamples samples = sampleExplicitCurve(
-                viewport_,
-                [&](double x) {
-                    return curve.function->evaluate(x, lastAnswer_, angleMode_);
-                });
-            QPainterPath result;
-            for (const CurveVertex& point : samples.vertices) {
-                if (point.moveTo) result.moveTo(point.screenX, point.screenY);
-                else result.lineTo(point.screenX, point.screenY);
+        if (!geometryCache_.isReady(index)) {
+            // When there is insufficient budget for even four callback
+            // evaluations, leave the entry unbuilt. A queued next paint
+            // receives a fresh budget and will attempt it again.
+            if (paintBudget.remaining() < 4) {
+                ++deferred;
+                continue;
             }
-            ++geometryBuildCount_;
-            return result;
-        });
+
+            // The 1024-callback reservation helps avoid producing heavily
+            // truncated paths for many visible curves. It is a soft
+            // allocation floor, not an addition to the shared hard cap.
+            const std::size_t allocationFloor =
+                std::min<std::size_t>(1024, samplingLimits_.maxEvaluationsPerCurve);
+            const std::size_t fairShare = dirty
+                ? paintBudget.remaining() / dirty
+                : paintBudget.remaining();
+            const std::size_t quota = std::min({
+                samplingLimits_.maxEvaluationsPerCurve,
+                paintBudget.remaining(),
+                std::max(allocationFloor, fairShare)
+            });
+
+            CurveSamplingOptions options;
+            options.maxEvaluations = quota;
+            (void)geometryCache_.getOrBuild(index, [&] {
+                const CurveSamples samples = sampleExplicitCurve(
+                    viewport_,
+                    [&](double x) {
+                        return curve.function->evaluate(x, lastAnswer_, angleMode_);
+                    },
+                    options,
+                    &paintBudget
+                );
+
+                if (samples.truncated) {
+                    ++samplingDiagnostics_.truncatedCurveBuilds;
+                }
+
+                // A budget-truncated path can contain incomplete geometry.
+                // It is cached deliberately to avoid indefinite re-sampling
+                // on every mouse move. Changing limits or mathematical
+                // inputs invalidates and rebuilds the path.
+                QPainterPath result;
+                for (const CurveVertex& point : samples.vertices) {
+                    if (point.moveTo) result.moveTo(point.screenX, point.screenY);
+                    else result.lineTo(point.screenX, point.screenY);
+                }
+                ++geometryBuildCount_;
+                return result;
+            });
+            --dirty;
+        }
 
         p.setPen(QPen(curve.color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        p.drawPath(path);
+        p.drawPath(geometryCache_.readyGeometry(index));
     }
+
+    samplingDiagnostics_.lastPaintEvaluations = paintBudget.consumed();
+    samplingDiagnostics_.totalEvaluations += paintBudget.consumed();
+    samplingDiagnostics_.lastPaintDeferredCurves = deferred;
     p.restore();
+
+    if (deferred != 0 && !deferredRepaintQueued_) {
+        deferredRepaintQueued_ = true;
+        // Defer continuation out of paintEvent. The queued event paints
+        // remaining dirty curves with its own per-paint evaluation limit.
+        // Fine-grained event coalescing/cancellation remains Issue #22.
+        QTimer::singleShot(0, this, [this] {
+            deferredRepaintQueued_ = false;
+            update();
+        });
+    }
 }
 
 void GraphCanvas::drawTrace(QPainter& p) const {
