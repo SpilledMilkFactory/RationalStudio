@@ -214,7 +214,7 @@ if(BUILD_TESTING)
     )
 
     # -----------------------------------------------------
-    # Issue #22 — Graph Rendering and Navigation Scheduling
+    # Issue #22 — Graph Rendering & Navigation Scheduling
     # -----------------------------------------------------
 
     add_executable(RationalGraphRepaintSchedulerTests
@@ -231,6 +231,21 @@ if(BUILD_TESTING)
     )
 
     # -----------------------------------------------------
+    # Issue #23 — Viewport Boundaries & Safe Grid Layout
+    # -----------------------------------------------------
+
+    add_executable(RationalGraphViewportBoundaryTests
+        tests/GraphViewportBoundaryTests.cpp
+    )
+
+    target_link_libraries(RationalGraphViewportBoundaryTests PRIVATE
+        RationalCore
+    )
+
+    add_test(NAME RationalGraphViewportBoundaryTests
+             COMMAND RationalGraphViewportBoundaryTests)
+
+    # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
@@ -245,6 +260,7 @@ if(BUILD_TESTING)
         RationalCurveGeometryCacheTests
         RationalCurveEvaluationBudgetTests
         RationalGraphRepaintSchedulerTests
+        RationalGraphViewportBoundaryTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -396,7 +412,30 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalGraphCanvasSchedulingTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
-        
+    # ---------------------------------------------------------    
+    # Issue #23 — offscreen resizing / boundary integration
+    # ---------------------------------------------------------
+        add_executable(RationalGraphCanvasBoundaryTests
+            tests/GraphCanvasBoundaryTests.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )
+        target_include_directories(RationalGraphCanvasBoundaryTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalGraphCanvasBoundaryTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalGraphCanvasBoundaryTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalGraphCanvasBoundaryTests
+                 COMMAND RationalGraphCanvasBoundaryTests)
+        set_tests_properties(RationalGraphCanvasBoundaryTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
+
     endif()
 
 endif()
