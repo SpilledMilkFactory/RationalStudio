@@ -195,6 +195,7 @@ if(BUILD_TESTING)
         NAME RationalCurveGeometryCacheTests
         COMMAND RationalCurveGeometryCacheTests
     )
+
     # -----------------------------------------------------
     # Issue #21 — Shared Mathematical Evaluation Budget
     # -----------------------------------------------------
@@ -211,6 +212,24 @@ if(BUILD_TESTING)
         NAME RationalCurveEvaluationBudgetTests
         COMMAND RationalCurveEvaluationBudgetTests
     )
+
+    # -----------------------------------------------------
+    # Issue #22 — Graph Rendering and Navigation Scheduling
+    # -----------------------------------------------------
+
+    add_executable(RationalGraphRepaintSchedulerTests
+        tests/GraphRepaintSchedulerTests.cpp
+    )
+
+    target_link_libraries(RationalGraphRepaintSchedulerTests PRIVATE
+        RationalCore
+    )
+
+    add_test(
+        NAME RationalGraphRepaintSchedulerTests
+        COMMAND RationalGraphRepaintSchedulerTests
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -225,6 +244,7 @@ if(BUILD_TESTING)
         RationalViewportPrecisionTests
         RationalCurveGeometryCacheTests
         RationalCurveEvaluationBudgetTests
+        RationalGraphRepaintSchedulerTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -326,6 +346,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
     # ---------------------------------------------------------
     # Issue #21 — bounded GraphCanvas sampling work per repaint
     # --------------------------------------------------------- 
+
         add_executable(RationalGraphCanvasBudgetTests
             tests/GraphCanvasBudgetTests.cpp
             src/gui/GraphCanvas.hpp
@@ -349,6 +370,32 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
 
+    # ---------------------------------------------------------
+    # Issue #22 — interactive repaint coalescing in GraphCanvas
+    # ---------------------------------------------------------
+
+        add_executable(RationalGraphCanvasSchedulingTests
+            tests/GraphCanvasSchedulingTests.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )
+        target_include_directories(RationalGraphCanvasSchedulingTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalGraphCanvasSchedulingTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalGraphCanvasSchedulingTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(
+            NAME RationalGraphCanvasSchedulingTests
+            COMMAND RationalGraphCanvasSchedulingTests
+        )
+        set_tests_properties(RationalGraphCanvasSchedulingTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
         
     endif()
 

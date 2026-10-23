@@ -70,6 +70,8 @@ y = floor(x)
 
 **Bounded sampling evaluations.** The graph renderer applies configurable per-curve and shared per-paint callback limits when rebuilding cached geometry. A Qt-independent `CurveEvaluationBudget` tracks evaluations across multiple curves; budget exhaustion is reported, and curves that cannot be processed within one paint are deferred to a later repaint. Budget-limited geometry can be incomplete. These limits bound callback counts, not the duration of an individual evaluation or overall frame time.
 
+**Coalesced navigation redraws.** Rapid mouse-wheel zooming and mouse-drag panning use a short (16 ms target) coalescing interval. During that interval, existing cached curve paths can be shown through a temporary screen-space transform without resampling each intermediate viewport. At the next scheduled refresh, stale geometry is rebuilt for the latest viewport. Budget-deferred paints are timer-paced and obsolete queued requests are cancelled when newer inputs supersede them. Sampling remains on the Qt GUI thread; no hard frame-time or latency guarantee is implied.
+
 **Important limitation:** Finite sampling cannot establish continuity for every mathematical function. Narrow singularities, unobserved domain gaps, high-frequency oscillations, and extreme nonlinear features may still be missed or approximated imperfectly. Additional terminal refinement improves selected steep continuous curves but does not guarantee their reconstruction. Cached geometry is rebuilt when required inputs change; persistent caching does not eliminate the cost of sampling during navigation.
 
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
@@ -114,9 +116,10 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveEvaluationBudget` | Qt-independent callback accounting shared across curve-sampling operations, with explicit exhaustion reporting. |
+| `GraphRepaintScheduler` | Qt-independent navigation coalescing, generation tracking, and cancellation of obsolete deferred repaint requests. |
 | `CurveGeometryCache` | Qt-independent, expression-identity-based cache management, lazy geometry construction, reuse, and invalidation. |
 
-The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds use per-curve and per-paint evaluation limits; deferred curves are processed by subsequent paint events. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
+The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds use per-curve and per-paint evaluation limits. Interactive navigation coalesces refreshes and temporarily transforms cached paths, while budget-deferred curves are handled through paced later paints. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
 
 `RationalCLI` links against `RationalCore` without using Qt.
 
@@ -142,7 +145,8 @@ RationalStudio/
 │   │   ├── GraphViewport.cpp
 │   │   ├── CurveSampler.hpp
 │   │   ├── CurveSampler.cpp
-│   │   └── CurveGeometryCache.hpp
+│   │   ├── CurveGeometryCache.hpp
+│   │   └── GraphRepaintScheduler.hpp
 │   └── gui/
 │       ├── MainWindow.hpp
 │       ├── MainWindow.cpp
@@ -159,7 +163,9 @@ RationalStudio/
     ├── CurveGeometryCacheTests.cpp
     ├── GraphCanvasCacheTests.cpp
     ├── CurveEvaluationBudgetTests.cpp
-    └── GraphCanvasBudgetTests.cpp
+    ├── GraphCanvasBudgetTests.cpp
+    ├── GraphRepaintSchedulerTests.cpp
+    └── GraphCanvasSchedulingTests.cpp
 ```
 
 ## Requirements
@@ -237,7 +243,7 @@ ctest --test-dir build-core --output-on-failure
 
 ## Testing
 
-With GUI and testing enabled, CTest registers eleven test executables; core-only builds register nine:
+With GUI and testing enabled, CTest registers thirteen test executables; core-only builds register ten:
 
 | Executable | Focus |
 |---|---|
@@ -252,6 +258,8 @@ With GUI and testing enabled, CTest registers eleven test executables; core-only
 | `RationalGraphCanvasCacheTests` | Offscreen Qt widget rendering: cached `QPainterPath` reuse and invalidation; only built when the GUI is enabled. |
 | `RationalCurveEvaluationBudgetTests` | Exact callback accounting, per-curve and shared budgets, zero-budget behavior, invalid callbacks, and deterministic multi-curve cap sweeps. |
 | `RationalGraphCanvasBudgetTests` | Qt offscreen per-paint budget enforcement, deferral of uncached curves, diagnostics, and cache invalidation after limit changes. |
+| `RationalGraphRepaintSchedulerTests` | Qt-independent coalescing, generation control, stale deferred-work cancellation, and deterministic event-burst sweeps. |
+| `RationalGraphCanvasSchedulingTests` | Offscreen Qt integration for wheel-event coalescing, transformed-path preview, deferred regeneration, and cancellation of superseded viewport refreshes. |
 
 Run the configured suite:
 
@@ -318,7 +326,7 @@ Expressions are parsed into an abstract syntax tree before evaluation. Exponenti
 - **Rational arithmetic:** Exact integer fractions; decimal displays are rounded approximations (up to 15 places in the current GUI).
 - **Graphing:** Explicit Cartesian `y = f(x)` only. Adaptive sampling includes bounded secondary refinement to preserve steep continuous curves. Domain and discontinuity detection rely on finite numerical samples and cannot guarantee correct rendering of every mathematical function.
 - **Viewport precision:** Viewport navigation uses double-precision coordinates and precision-aware pan/zoom calculations. Operations that cannot be represented within the configured screen-space error tolerance are rejected without modifying viewport state. Arbitrary-precision navigation is not supported.
-- **Rendering:** Unchanged `QPainterPath` geometry is cached and reused across ordinary repaints. Invalidated paths are rebuilt under per-curve and per-paint callback budgets; some geometry may be truncated or deferred. Mathematical callbacks still execute on the GUI thread. Callback-count ceilings are not wall-clock deadlines or a measured frame-time guarantee.
+- **Rendering:** Valid paths are cached, and rapid navigation coalesces geometry refreshes with temporary affine previews. Invalidated paths rebuild under per-curve/per-paint callback budgets; some geometry may be truncated or deferred. Sampling and other mathematical callbacks remain on the GUI thread. Coalescing and callback ceilings do not guarantee frame time, input latency, or increased FPS.
 - **Not yet supported:** Implicit, parametric, or polar graphs; complex arithmetic; matrices; interactive named-variable sliders; symbolic algebra; numerical integration and differentiation; and inequality shading.
 - **Platform verification:** Linux verified; native Windows and Qt 5 builds not yet verified.
 
