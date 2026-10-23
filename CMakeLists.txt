@@ -170,6 +170,28 @@ if(BUILD_TESTING)
         COMMAND RationalCurveSteepTests
     )
 
+    # ---------------------------------------------------------
+    # Viewport Precision and Navigation Stability
+    # GitHub Issue #19
+    # --------------------------------------------------------- 
+
+    add_executable(RationalViewportPrecisionTests
+        tests/GraphViewportPrecisionTests.cpp
+    )   
+
+    target_link_libraries(RationalViewportPrecisionTests PRIVATE
+        RationalCore
+    )   
+
+    target_compile_options(RationalViewportPrecisionTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )   
+
+    add_test(
+        NAME RationalViewportPrecisionTests
+        COMMAND RationalViewportPrecisionTests
+    )
+
 endif()
 
 # ---------------------------------------------------------
