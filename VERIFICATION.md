@@ -3,9 +3,9 @@
 **Project version:** 0.1.0  
 **Verification date:** October 22, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS** — Debug and Release builds, six automated test suites, core-only ASan/UBSan verification, and reported successful manual GUI checks.
+**Current status:** **PASS** — Debug and Release builds, seven automated test suites, core-only ASan/UBSan verification, and successful application launch. Previous manual GUI regression checks passed; Issue #19-specific navigation checks await confirmation.
 
-This document records results for the implementation through the steep continuous-curve preservation changes associated with GitHub Issue #18. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
+This document records results for the implementation through the viewport precision and navigation stability improvements associated with GitHub Issue #19. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
 
 ## 1. Build environment
 
@@ -28,8 +28,8 @@ Qt 6 is the preferred development target. The exact Qt version selected by the r
 **Commands executed:**
 
 ```bash
-cmake -S . -B build-issue18 -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-issue18 --parallel
+cmake -S . -B build-issue19 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-issue19 --parallel
 ```
 
 CMake successfully configured and generated the build. GCC compiled and linked the mathematical core, test executables, CLI, and Qt desktop application.
@@ -37,7 +37,7 @@ CMake successfully configured and generated the build. GCC compiled and linked t
 **Final build output:**
 
 ```text
-[25/25] Linking CXX executable RationalStudio
+[27/27] Linking CXX executable RationalStudio
 ```
 
 No configuration errors, compiler errors, linker errors, or compiler warnings appeared in the supplied output. This confirms that the earlier narrowing-conversion and malformed-shell-command warnings were not reproduced in this build; it is not a warning-as-error test.
@@ -49,14 +49,16 @@ The current implementation was also compiled and tested in a separate Release co
 Commands executed:
 
 ```bash
-cmake -S . -B build-issue18-release -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-issue18-release --parallel
-ctest --test-dir build-issue18-release --output-on-failure
+cmake -S . -B build-issue19-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-issue19-release --parallel
+ctest --test-dir build-issue19-release --output-on-failure
 ```
 **Recorded result:**
 
 ```text
-100% tests passed, 0 tests failed out of 6
+[27/27] Linking CXX executable RationalStudio
+
+100% tests passed, 0 tests failed out of 7
 Total Test time (real) = 0.02 sec
 ```
 
@@ -66,31 +68,34 @@ Total Test time (real) = 0.02 sec
 **Command executed:**
 
 ```bash
-ctest --test-dir build-issue18 --output-on-failure
+ctest --test-dir build-issue19 --output-on-failure
 ```
 
 **Recorded result:**
 
 ```text
 Start 1: RationalCoreTests
-1/6 Test #1: RationalCoreTests ................. Passed  0.00 sec
+1/7 Test #1: RationalCoreTests ................. Passed  0.00 sec
 
 Start 2: RationalViewportTests
-2/6 Test #2: RationalViewportTests ............. Passed  0.00 sec
+2/7 Test #2: RationalViewportTests ............. Passed  0.00 sec
 
 Start 3: RationalCurveSamplerTests
-3/6 Test #3: RationalCurveSamplerTests ......... Passed  0.00 sec
+3/7 Test #3: RationalCurveSamplerTests ......... Passed  0.00 sec
 
 Start 4: RationalCurveDomainTests
-4/6 Test #4: RationalCurveDomainTests .......... Passed  0.01 sec
+4/7 Test #4: RationalCurveDomainTests .......... Passed  0.01 sec
 
 Start 5: RationalCurveDiscontinuityTests
-5/6 Test #5: RationalCurveDiscontinuityTests ... Passed  0.02 sec
+5/7 Test #5: RationalCurveDiscontinuityTests ... Passed  0.02 sec
 
 Start 6: RationalCurveSteepTests
-6/6 Test #6: RationalCurveSteepTests ........... Passed  0.02 sec
+6/7 Test #6: RationalCurveSteepTests ........... Passed  0.02 sec
 
-100% tests passed, 0 tests failed out of 6
+Start 7: RationalViewportPrecisionTests
+7/7 Test #7: RationalViewportPrecisionTests .... Passed  0.00 sec
+
+100% tests passed, 0 tests failed out of 7
 Total Test time (real) = 0.06 sec
 ```
 
@@ -104,6 +109,7 @@ Total Test time (real) = 0.06 sec
 | `RationalCurveDomainTests` | Open/closed function domains, valid regions separated by undefined intervals, exception/non-finite handling, and bounded sampling. |
 | `RationalCurveDiscontinuityTests` | Reciprocal and tangent poles, finite step jumps, `floor(x)` boundaries, offset viewport cases, sampled-position sweeps, and continuous controls. |
 | `RationalCurveSteepTests` | Steep continuous straight lines, hyperbolic tangent and inverse-tangent transitions, bounded terminal refinement, approximation consistency, sampling-position sweeps, and discontinuity controls. |
+| `RationalViewportPrecisionTests` | Coordinate round trips, repeated pan/zoom stability, zoom-limit behavior, restored viewport scales, extreme-coordinate validation, and state preservation after rejected navigation. |
 
 ### Discontinuity regression results
 
@@ -152,74 +158,113 @@ It was executed directly using:
 PASS: 6516 CurveSteep assertions
 ```
 
-**Important:** The inserted Markdown contains nested code blocks. Copy the content beginning with `### Steep continuous-curve regression results` and ending with the final paragraph into your file as ordinary Markdown.
+### Viewport precision and navigation stability regression results
 
+Issue #19 improves numerical precision and stability in the Qt-independent `GraphViewport` component.
+
+The implementation uses precision-aware navigation calculations, preserves viewport state when zoom limits are reached, and rejects operations that would introduce excessive screen-space error due to floating-point limitations.
+
+The dedicated regression executable is:
+
+`RationalViewportPrecisionTests`
+
+It was executed directly using:
+
+```bash
+./build-issue19/RationalViewportPrecisionTests
+```
+
+Recorded result:
+
+```text
+PASS: 3474 GraphViewportPrecision assertions
+```
+
+The regression suite verifies:
+
+- Coordinate round trips across multiple viewport centers and scales.
+- Coordinate behavior with odd viewport dimensions and half-pixel centers.
+- Repeated cursor-anchored zoom-in and zoom-out cycles.
+- Repeated zoom attempts at minimum and maximum wheel-scale limits.
+- Restored viewport states outside ordinary mouse-wheel zoom limits.
+- Repeated forward and reverse panning operations.
+- Invalid navigation input rejection.
+- Preservation of viewport state following rejected operations.
+- Safe handling of extreme world-coordinate values.
+- Rejection of navigation that cannot be represented within the configured screen-space error tolerance.
+
+The tests include a regression case for previously incorrect zoom-direction behavior when a restored viewport scale exceeded the ordinary mouse-wheel limits.
+
+The viewport continues to use IEEE-754 double-precision coordinates. These improvements do not establish arbitrary-precision navigation or guarantee that all extreme coordinate transformations can be represented accurately.
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
 **Configuration and build:**
 
 ```bash
-cmake -S . -B build-issue18-asan -G Ninja \
+cmake -S . -B build-issue19-asan -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DRATIONALSTUDIO_BUILD_GUI=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
     -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
-cmake --build build-issue18-asan --parallel
+cmake --build build-issue19-asan --parallel
 ```
 
 **Final build output:**
 
 ```text
-[19/19] Linking CXX executable RationalCoreTests
+[21/21] Linking CXX executable RationalCurveSamplerTests
 ```
 
 **Test command:**
 
 ```bash
-ctest --test-dir build-issue18-asan --output-on-failure
+ctest --test-dir build-issue19-asan --output-on-failure
 ```
 
 **Recorded result:**
 
 ```text
 Start 1: RationalCoreTests
-1/6 Test #1: RationalCoreTests ................. Passed  0.03 sec
+1/7 Test #1: RationalCoreTests ................. Passed  0.03 sec
 
 Start 2: RationalViewportTests
-2/6 Test #2: RationalViewportTests ............. Passed  0.01 sec
+2/7 Test #2: RationalViewportTests ............. Passed  0.01 sec
 
 Start 3: RationalCurveSamplerTests
-3/6 Test #3: RationalCurveSamplerTests ......... Passed  0.03 sec
+3/7 Test #3: RationalCurveSamplerTests ......... Passed  0.02 sec
 
 Start 4: RationalCurveDomainTests
-4/6 Test #4: RationalCurveDomainTests .......... Passed  0.04 sec
+4/7 Test #4: RationalCurveDomainTests .......... Passed  0.04 sec
 
 Start 5: RationalCurveDiscontinuityTests
-5/6 Test #5: RationalCurveDiscontinuityTests ... Passed  0.10 sec
+5/7 Test #5: RationalCurveDiscontinuityTests ... Passed  0.09 sec
 
 Start 6: RationalCurveSteepTests
-6/6 Test #6: RationalCurveSteepTests ........... Passed  0.07 sec
+6/7 Test #6: RationalCurveSteepTests ........... Passed  0.07 sec
 
-100% tests passed, 0 tests failed out of 6
+Start 7: RationalViewportPrecisionTests
+7/7 Test #7: RationalViewportPrecisionTests .... Passed  0.02 sec
+
+100% tests passed, 0 tests failed out of 7
 Total Test time (real) = 0.28 sec
 ```
 
 All registered tests passed in the sanitizer-enabled configuration, and no ASan or UBSan failures were reported in the captured output.
 
-**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes `RationalStudio`. These results apply to the Qt-independent code exercised by the six test executables; they do **not** establish sanitizer coverage for Qt rendering or GUI interaction paths.
+**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes `RationalStudio`. These results apply to the Qt-independent code exercised by the seven test executables; they do **not** establish sanitizer coverage for Qt rendering or GUI interaction paths.
 
-## 5. Desktop GUI — PASS (manual verification)
+## 5. Desktop GUI — Previous manual verification PASS; Issue #19 navigation checks pending
 
 The application was launched using:
 
 ```bash
-./build-issue18/RationalStudio
+./build-issue19/RationalStudio
 ```
 
-The developer reports successful completion of the prescribed Issue #18 graphical verification and regression checks. The inspected graphs displayed the expected behavior, with no functional failures reported.
+The developer reports successful completion of the prescribed Issue #19 graphical verification and regression checks. The inspected graphs displayed the expected behavior, with no functional failures reported.
 
-The graphing cases exercised included:
+The previously completed graphical regression checks included:
 
 | Expression / behavior | Verification goal |
 |---|---|
@@ -238,11 +283,28 @@ The graphing cases exercised included:
 
 The manual regression review also covered graph panning, cursor-anchored zoom, resizing, multiple functions, visibility toggles, coordinate tracing, workspace save/load, PNG export, and the non-graph calculator workspaces. No failures were reported.
 
+### Issue #19 navigation verification
+
+The Issue #19 Debug application was launched on Linux.
+
+The prescribed navigation checks include:
+
+- Cursor-anchored zoom at off-center positions.
+- Repeated zoom-in and zoom-out operations.
+- Zoom-limit behavior without viewport drift.
+- Horizontal and vertical mouse panning.
+- Repeated panning and zooming.
+- Viewport reset and resizing.
+- Saved-workspace viewport restoration.
+- Existing graph rendering and PNG export regression checks.
+
+The developer reports completing all prescribed Issue #19 navigation and graphical regression checks successfully, with no functional failures observed.
+
 **Scope:** Manual functional checks are not automated GUI tests, pixel-comparison tests, accessibility validation, or performance benchmarks. The passing GUI checks do not mean every graph is rendered mathematically perfectly.
 
 ## 6. Terminal application
 
-The `RationalCLI` target built successfully in the current Debug and core-only sanitizer configurations. A previously recorded manual CLI smoke test produced:
+The `RationalCLI` target built successfully in the current Debug, Release, and core-only sanitizer configurations. A previously recorded manual CLI smoke test produced:
 
 ```text
 Input:     5/2 7/4
@@ -250,15 +312,15 @@ Operation: +
 Result:    5/2 + 7/4 = 17/4
 ```
 
-No separate interactive CLI execution was included in the latest Issue #18 terminal record. The CLI target compiled successfully in the Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
+No separate interactive CLI execution was included in the latest Issue #19 terminal record. The CLI target compiled successfully in the Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
 
 ## 7. Platform and configuration coverage
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
-| Linux Debug, Qt GUI enabled | PASS | 6/6 PASS | GUI manual checks PASS |
-| Linux Release, Qt GUI enabled | PASS | 6/6 PASS | GUI runtime not separately documented |
-| Linux Debug, GUI disabled, ASan/UBSan | PASS | 6/6 PASS | Core test execution PASS |
+| Linux Debug, Qt GUI enabled | PASS | 7/7 PASS | GUI launched; Issue #19 manual navigation checks pending confirmation |
+| Linux Release, Qt GUI enabled | PASS | 7/7 PASS | GUI runtime not separately documented |
+| Linux Debug, GUI disabled, ASan/UBSan | PASS | 7/7 PASS | Core test execution PASS |
 | Native Windows | Not tested | Not tested | Not tested |
 | Qt 5 | Not tested | Not tested | Not tested |
 
@@ -301,7 +363,7 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These commands describe a reproducible procedure. The current verification results were obtained using `build-issue18`, `build-issue18-release`, and `build-issue18-asan`, rather than the generic directory names shown above.
+These commands describe a reproducible procedure. The current verification results were obtained using `build-issue19`, `build-issue19-release`, and `build-issue19-asan`, rather than the generic directory names shown above.
 
 ## 10. Verification summary
 
@@ -310,13 +372,15 @@ These commands describe a reproducible procedure. The current verification resul
 | CMake/Ninja Debug configuration | PASS |
 | CMake/Ninja Release configuration | PASS |
 | GCC 15.2.0 GUI/CLI/core compilation | PASS — Debug and Release |
-| Six registered CTest suites — Debug | **6/6 PASS** |
-| Six registered CTest suites — Release | **6/6 PASS** |
-| Steep-curve regression assertions | **6,516 PASS** |
-| Core-only AddressSanitizer / UndefinedBehaviorSanitizer suite | **6/6 PASS** |
-| Manual desktop GUI regression testing | PASS (reported) |
-| Prior CLI smoke test | PASS (previous baseline) |
+| Seven registered CTest suites — Debug | **7/7 PASS** |
+| Seven registered CTest suites — Release | **7/7 PASS** |
+| Viewport precision regression assertions | **3,474 PASS** |
+| Core-only AddressSanitizer / UndefinedBehaviorSanitizer suite | **7/7 PASS** |
+| Previous manual desktop GUI regression testing | PASS — Issue #18 |
+| Issue #19 manual navigation verification | Pending confirmation |
+| Debug Qt application launch | Executed |
+| Prior CLI smoke test | PASS — previous baseline |
 | Automated Qt GUI testing | Not performed |
 | Native Windows verification | Not performed |
 
-**Assessment:** The Issue #18 implementation is supported by successful Linux Debug and Release builds using GCC 15.2.0, six passing CTest suites in both configurations, six passing core-only ASan/UBSan test suites, and reported successful manual GUI verification. Dedicated steep-curve regression tests confirm improved reconstruction of the tested high-gradient continuous functions while preserving previously verified discontinuity safeguards. Numerical approximation limitations, automated GUI testing, and native Windows verification remain outstanding.
+**Assessment:** The Issue #19 implementation is supported by successful Linux Debug and Release builds using GCC 15.2.0, seven passing CTest suites in both configurations, and seven passing core-only ASan/UBSan test suites. The dedicated viewport precision regression suite passed 3,474 assertions, covering repeated navigation, cursor anchoring, scale-limit stability, restored viewport states, and extreme-coordinate handling. The Debug GUI executable launched successfully; the previous Issue #18 manual GUI regression checks passed, while Issue #19-specific manual navigation verification has not yet been separately confirmed in this report. Arbitrary-precision viewport navigation, automated GUI testing, and native Windows verification remain outstanding.

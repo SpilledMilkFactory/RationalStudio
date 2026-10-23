@@ -44,7 +44,7 @@ Scientific calculations use IEEE-754 double-precision floating-point arithmetic;
 The graphing workspace plots multiple explicit Cartesian functions of the form `y = f(x)`.
 
 - Editable expressions with individually configurable curve visibility and colors.
-- Mouse-driven panning, cursor-anchored wheel zooming, and a dynamically spaced Cartesian grid.
+- Mouse-driven panning, precision-aware cursor-anchored wheel zooming, validated navigation limits, and a dynamically spaced Cartesian grid.
 - Axes, coordinate labels, and point inspection near plotted curves.
 - JSON workspace save/load and PNG graph export.
 - Trigonometric expressions evaluated using the selected angle mode.
@@ -67,6 +67,8 @@ y = floor(x)
 **Steep continuous-curve preservation.** When a finite curve interval remains unresolved at the normal subdivision limit, the sampler can perform additional bounded refinement rather than immediately discarding the geometry. This helps preserve sharply changing continuous functions, including steep hyperbolic tangent and arctangent transitions. The additional refinement is configurable through `maxTerminalRefinement` and remains subject to the sampler's evaluation limit. Intervals that cannot be represented reliably are still omitted.
 
 **Important limitation:** Finite sampling cannot establish continuity for every mathematical function. Narrow singularities, unobserved domain gaps, high-frequency oscillations, and extreme nonlinear features may still be missed or approximated imperfectly. Additional terminal refinement improves selected steep continuous curves but does not guarantee their reconstruction. Curve geometry is currently regenerated during repaint; persistent rendering caches are not yet implemented.
+
+**Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
 
@@ -105,7 +107,7 @@ The `RationalCore` static library has **no Qt dependency**. It provides four com
 |---|---|
 | `Rational` | Exact fractions, normalization, parsing, arithmetic, comparisons, and decimal conversion. |
 | `Expression` | Parsing, operator precedence, mathematical functions, constants, and repeated expression evaluation. |
-| `GraphViewport` | Cartesian coordinate transformations, viewport state, panning, cursor-anchored zooming, and validation. |
+| `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 
 The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
@@ -145,7 +147,8 @@ RationalStudio/
     ├── CurveSamplerTests.cpp
     ├── CurveDomainTests.cpp
     ├── CurveDiscontinuityTests.cpp
-    └── CurveSteepTests.cpp
+    ├── CurveSteepTests.cpp
+    └── GraphViewportPrecisionTests.cpp
 ```
 
 ## Requirements
@@ -223,7 +226,7 @@ ctest --test-dir build-core --output-on-failure
 
 ## Testing
 
-CTest currently registers six independently runnable test executables:
+CTest currently registers seven independently runnable test executables:
 
 | Executable | Focus |
 |---|---|
@@ -233,6 +236,7 @@ CTest currently registers six independently runnable test executables:
 | `RationalCurveDomainTests` | Restricted domains, undefined intervals, non-finite results, and path separation. |
 | `RationalCurveDiscontinuityTests` | Finite step jumps, `floor(x)`, reciprocal/tangent poles, sample-position sweeps, and continuous-curve controls. |
 | `RationalCurveSteepTests` | Steep continuous curves, bounded terminal refinement, interpolation accuracy, sampling-position sweeps, and discontinuity regression controls. |
+| `RationalViewportPrecisionTests` | Coordinate precision, repeated pan/zoom stability, zoom-limit behavior, restored viewport scales, extreme coordinates, and transactional state preservation. |
 
 Run the configured suite:
 
@@ -297,7 +301,8 @@ Expressions are parsed into an abstract syntax tree before evaluation. Exponenti
 
 - **Scientific arithmetic:** IEEE-754 `double`, subject to normal floating-point rounding and range constraints; no arbitrary-precision decimal or symbolic arithmetic.
 - **Rational arithmetic:** Exact integer fractions; decimal displays are rounded approximations (up to 15 places in the current GUI).
-- - **Graphing:** Explicit Cartesian `y = f(x)` only. Adaptive sampling includes bounded secondary refinement to improve steep continuous-curve reconstruction. Domain and discontinuity detection remain based on finite numerical samples and cannot guarantee correct rendering of every mathematical function.
+- **Graphing:** Explicit Cartesian `y = f(x)` only. Adaptive sampling includes bounded secondary refinement to preserve steep continuous curves. Domain and discontinuity detection rely on finite numerical samples and cannot guarantee correct rendering of every mathematical function.
+- **Viewport precision:** Viewport navigation uses double-precision coordinates and precision-aware pan/zoom calculations. Operations that cannot be represented within the configured screen-space error tolerance are rejected without modifying viewport state. Arbitrary-precision navigation is not supported.
 - **Rendering:** Repeated repaints currently recompute curve geometry; there is no persistent path cache, background graph worker, or shared frame-time guarantee.
 - **Not yet supported:** Implicit, parametric, or polar graphs; complex arithmetic; matrices; interactive named-variable sliders; symbolic algebra; numerical integration and differentiation; and inequality shading.
 - **Platform verification:** Linux verified; native Windows and Qt 5 builds not yet verified.
