@@ -1,5 +1,6 @@
 #include "GraphCanvas.hpp"
 #include "CurveSampler.hpp"
+#include "GraphGridLayout.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -36,13 +37,6 @@ QPointF wheelPoint(QWheelEvent* e) {
 QString numberLabel(double value) {
     if (std::abs(value) < 1e-12) value = 0;
     return QString::number(value, 'g', 6);
-}
-// Grid lines get closer/farther by 1, 2, 5, or 10 times a power of ten.
-double gridStep(double unitsPerPixel) {
-    const double target = 85.0 * unitsPerPixel;
-    const double power = std::pow(10.0, std::floor(std::log10(target)));
-    const double m = target / power;
-    return (m <= 1 ? 1 : (m <= 2 ? 2 : (m <= 5 ? 5 : 10))) * power;
 }
 } // namespace
 
@@ -162,6 +156,11 @@ void GraphCanvas::paintEvent(QPaintEvent*) {
     QPainter p(this);
     p.fillRect(rect(), QColor("#101722"));
     p.setRenderHint(QPainter::Antialiasing, true);
+    // Qt may transiently report an empty widget or a resize that could not
+    // be committed to GraphViewport. Never paint with stale dimensions.
+    const bool drawableView = width() > 0 && height() > 0 && viewport_.isValid() &&
+        viewport_.width() == width() && viewport_.height() == height();
+    if (!drawableView) return;
     if (showGrid_ || showAxes_) drawGrid(p);
     drawCurves(p);
     if (pointerInside_ && !dragging_) drawTrace(p);
@@ -173,55 +172,88 @@ void GraphCanvas::paintEvent(QPaintEvent*) {
 }
 
 void GraphCanvas::drawGrid(QPainter& p) const {
-    const QPointF min = screenToWorld({0.0, static_cast<qreal>(height())});
-    const QPointF max = screenToWorld({static_cast<qreal>(width()), 0.0});
-    const double step = gridStep(1.0 / viewport_.pixelsPerUnit());
+    // Compute grid positions in bounded screen space. Casting projected
+    // coordinates to int is unsafe at the extreme finite centers accepted
+    // by GraphViewport; the previous implementation also repeated lines
+    // when a world-space step became smaller than one representable ULP.
+    const auto xAxis = graphGridAxis(viewport_.centerX(), width(),
+                                     viewport_.pixelsPerUnit());
+    const auto yAxis = graphGridAxis(viewport_.centerY(), height(),
+                                     viewport_.pixelsPerUnit());
     p.setFont(QFont("Sans Serif", 9));
     if (showGrid_) {
         p.setPen(QPen(QColor("#253243"), 1));
-        double firstX = std::ceil(min.x() / step) * step;
-        for (int i = 0; i < 250; ++i) {
-            const double x = firstX + i * step;
-            if (x > max.x()) break;
-            const double sx = worldToScreen({x, 0}).x();
-            p.drawLine(QPointF(sx, 0), QPointF(sx, height()));
+        if (xAxis) {
+            for (int i = 0; i < 250; ++i) {
+                const double x = std::fma(double(i), xAxis->spacingPixels,
+                                          xAxis->firstPixel);
+                if (x > width()) break;
+                if (x >= 0.0 && std::isfinite(x))
+                    p.drawLine(QPointF(x, 0), QPointF(x, height()));
+            }
         }
-        double firstY = std::ceil(min.y() / step) * step;
-        for (int i = 0; i < 250; ++i) {
-            const double y = firstY + i * step;
-            if (y > max.y()) break;
-            const double sy = worldToScreen({0, y}).y();
-            p.drawLine(QPointF(0, sy), QPointF(width(), sy));
+        if (yAxis) {
+            for (int i = 0; i < 250; ++i) {
+                const double bottomPixels = std::fma(double(i), yAxis->spacingPixels,
+                                                      yAxis->firstPixel);
+                if (bottomPixels > height()) break;
+                const double y = height() - bottomPixels;
+                if (y >= 0.0 && std::isfinite(y))
+                    p.drawLine(QPointF(0, y), QPointF(width(), y));
+            }
         }
     }
+
+    // The world origin may project to an enormous or non-finite position.
+    // Never forward those coordinates to QPainter, even if the viewport's
+    // finite center and scale are otherwise legally configured.
+    const double originX = viewport_.worldToScreenX(0.0);
+    const double originY = viewport_.worldToScreenY(0.0);
     if (showAxes_) {
         p.setPen(QPen(QColor("#8396ad"), 1.4));
-        const QPointF origin = worldToScreen({0, 0});
-        if (origin.y() > -2 && origin.y() < height() + 2)
-            p.drawLine(QPointF(0, origin.y()), QPointF(width(), origin.y()));
-        if (origin.x() > -2 && origin.x() < width() + 2)
-            p.drawLine(QPointF(origin.x(), 0), QPointF(origin.x(), height()));
+        if (std::isfinite(originY) && originY >= -2.0 &&
+            originY <= height() + 2.0)
+            p.drawLine(QPointF(0, originY), QPointF(width(), originY));
+        if (std::isfinite(originX) && originX >= -2.0 &&
+            originX <= width() + 2.0)
+            p.drawLine(QPointF(originX, 0), QPointF(originX, height()));
     }
-    if (!showGrid_) return;
+
+    if (!showGrid_ || width() < 90 || height() < 30) return;
     p.setPen(QColor("#a1b3c7"));
-    const QPointF origin = worldToScreen({0, 0});
-    const double labelY = std::clamp(origin.y() + 6, 4.0, double(height() - 20));
-    const double labelX = std::clamp(origin.x() + 8, 4.0, double(width() - 78));
-    const double firstX = std::ceil(min.x() / step) * step;
-    for (int i = 0; i < 250; ++i) {
-        const double x = firstX + i * step;
-        if (x > max.x()) break;
-        if (std::abs(x) < step * 0.01) continue;
-        const int px = int(worldToScreen({x, 0}).x());
-        p.drawText(QRect(px - 32, int(labelY), 64, 16), Qt::AlignHCenter, numberLabel(x));
+    const double labelY = std::clamp(
+        std::isfinite(originY) ? originY + 6.0 : 6.0,
+        4.0, double(height() - 20));
+    const double labelX = std::clamp(
+        std::isfinite(originX) ? originX + 8.0 : 8.0,
+        4.0, double(width() - 78));
+
+    if (xAxis) {
+        for (int i = 0; i < 250; ++i) {
+            const double x = std::fma(double(i), xAxis->spacingPixels,
+                                      xAxis->firstPixel);
+            if (x > width()) break;
+            const double world = std::fma(double(i), xAxis->spacingWorld,
+                                          xAxis->firstWorld);
+            if (x < 0.0 || !std::isfinite(x) || !std::isfinite(world) ||
+                std::abs(world) < xAxis->spacingWorld * 0.01) continue;
+            p.drawText(QRectF(x - 32.0, labelY, 64.0, 16.0),
+                       Qt::AlignHCenter, numberLabel(world));
+        }
     }
-    const double firstY = std::ceil(min.y() / step) * step;
-    for (int i = 0; i < 250; ++i) {
-        const double y = firstY + i * step;
-        if (y > max.y()) break;
-        if (std::abs(y) < step * 0.01) continue;
-        const int py = int(worldToScreen({0, y}).y());
-        p.drawText(QRect(int(labelX), py - 9, 72, 18), Qt::AlignLeft, numberLabel(y));
+    if (yAxis) {
+        for (int i = 0; i < 250; ++i) {
+            const double bottomPixels = std::fma(double(i), yAxis->spacingPixels,
+                                                  yAxis->firstPixel);
+            if (bottomPixels > height()) break;
+            const double y = height() - bottomPixels;
+            const double world = std::fma(double(i), yAxis->spacingWorld,
+                                          yAxis->firstWorld);
+            if (y < 0.0 || !std::isfinite(y) || !std::isfinite(world) ||
+                std::abs(world) < yAxis->spacingWorld * 0.01) continue;
+            p.drawText(QRectF(labelX, y - 9.0, 72.0, 18.0),
+                       Qt::AlignLeft, numberLabel(world));
+        }
     }
 }
 
@@ -363,6 +395,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
 
 void GraphCanvas::drawTrace(QPainter& p) const {
     const QPointF world = screenToWorld(pointer_);
+    if (!std::isfinite(world.x()) || !std::isfinite(world.y())) return;
     const GraphCurve* nearest = nullptr;
     double nearestY = 0;
     double distance = 24;
@@ -394,6 +427,10 @@ void GraphCanvas::drawTrace(QPainter& p) const {
 void GraphCanvas::updatePointerStatus() const {
     if (!onPointerInfo) return;
     const QPointF world = screenToWorld(pointer_);
+    if (!std::isfinite(world.x()) || !std::isfinite(world.y())) {
+        onPointerInfo("Outside representable viewport range");
+        return;
+    }
     const GraphCurve* nearest = nullptr;
     double nearestY = 0;
     double bestDistance = 24;
@@ -475,10 +512,16 @@ void GraphCanvas::wheelEvent(QWheelEvent* e) {
 
 void GraphCanvas::resizeEvent(QResizeEvent* e) {
     QWidget::resizeEvent(e);
-    if (viewport_.setDimensions(e->size().width(), e->size().height())) {
-        cancelScheduledWork();
-        geometryCache_.invalidateAll();
-    }
+    const int nextWidth = e->size().width();
+    const int nextHeight = e->size().height();
+    if (nextWidth == viewport_.width() && nextHeight == viewport_.height())
+        return; // no changes, and no redundant sampling
+    // A zero-sized transition is not a valid GraphViewport. Cancel work
+    // from the previous dimensions and retain the last valid view; the
+    // paint guard suppresses stale geometry until positive dimensions return.
+    cancelScheduledWork();
+    geometryCache_.invalidateAll();
+    (void)viewport_.setDimensions(nextWidth, nextHeight);
     update();
 }
 } // namespace rationalstudio
