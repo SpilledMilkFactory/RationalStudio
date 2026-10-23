@@ -3,9 +3,9 @@
 **Project version:** 0.1.0  
 **Verification date:** October 23, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS (developer-reported GUI verification)** — Issue #23 GCC 15.2.0 Debug and Release builds (15/15 GUI-enabled CTest each), core-only ASan/UBSan (11/11), 1,884 Qt-independent viewport-boundary assertions and 80 offscreen Qt boundary assertions; manual resize, zoom-limit, and panning regression checks reported successful.
+**Current status:** **PASS (developer-reported GUI verification)** — Issue #24 GCC 15.2.0 Debug and Release builds (17/17 GUI-enabled CTest each), core-only ASan/UBSan (12/12), 5,021 Qt-independent graph regression-matrix assertions and 92 offscreen Qt graph regression-matrix assertions; manual GUI regression verification reported successful.
 
-This document records results for the implementation through the graph resizing and viewport boundary improvements associated with GitHub Issue #23. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
+This document records results for the implementation through the cross-subsystem graph sampling and viewport regression coverage associated with GitHub Issue #24. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
 
 ## 1. Build environment
 
@@ -15,7 +15,7 @@ This document records results for the implementation through the graph resizing 
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #23 application builds | Debug and Release, GUI enabled |
+| Current Issue #24 application builds | Debug and Release, GUI enabled |
 | GUI framework | Qt Widgets |
 | Exact arithmetic | Boost.Multiprecision |
 | Test runner | CTest |
@@ -28,79 +28,81 @@ Qt 6 is the preferred development target. The exact Qt version selected by the r
 **Commands executed:**
 
 ```bash
-cmake -S . -B build-issue23 -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-issue23 --parallel
+cmake -S . -B build-issue24 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-issue24 --parallel
 ```
 
-GCC 15.2.0 successfully configured and built the Qt desktop application, CLI, and registered test executables.
+GCC 15.2.0 configured and built the Qt desktop application, CLI, and regression-test targets successfully. Issue #24 adds tests without changing production rendering algorithms.
 
 **Final recorded Debug build output:**
 
 ```text
-[55/55] Linking CXX executable RationalStudio
+[62/62] Linking CXX executable RationalStudio
 ```
 
-No compiler warnings or errors appeared in the supplied Issue #23 Debug build output. This is not a warnings-as-errors certification. Three deprecated `QMouseEvent` constructor warnings appeared in the **initial Issue #22** build and were subsequently reported fixed; those earlier observations remain historical rather than current Issue #23 warnings.
+No compiler warnings or errors appeared in the supplied Issue #24 Debug build output. This is not a warnings-as-errors certification.
 
 ### Release build — PASS
 
 **Commands executed:**
 
 ```bash
-cmake -S . -B build-issue23-release -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-issue23-release --parallel
-ctest --test-dir build-issue23-release --output-on-failure
+cmake -S . -B build-issue24-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-issue24-release --parallel
+ctest --test-dir build-issue24-release --output-on-failure
 ```
 
 **Final recorded Release build output:**
 
 ```text
-[55/55] Linking CXX executable RationalStudio
+[62/62] Linking CXX executable RationalStudio
 ```
 
 **Recorded Release CTest summary:**
 
 ```text
-100% tests passed, 0 tests failed out of 15
-Total Test time (real) = 0.56 sec
+100% tests passed, 0 tests failed out of 17
+Total Test time (real) = 0.68 sec
 ```
 
-No compiler warnings or errors appeared in the supplied Issue #23 Release build output. A separate interactive Release GUI launch was not recorded; the GUI was launched from the Debug configuration.
+No compiler warnings or errors appeared in the supplied Issue #24 Release build output. No separate interactive Release GUI launch was reported; the developer manually verified the Debug GUI.
 
 ## 3. Automated regression tests — PASS
 
 **Command executed:**
 
 ```bash
-ctest --test-dir build-issue23 --output-on-failure
+ctest --test-dir build-issue24 --output-on-failure
 ```
 
-**Recorded Debug CTest output (all test names and per-test elapsed times):**
+**Recorded Issue #24 Debug CTest results:**
 
 ```text
-1/15 Test #1: RationalCoreTests ... Passed 0.00 sec
-2/15 Test #2: RationalViewportTests ... Passed 0.00 sec
-3/15 Test #3: RationalCurveSamplerTests ... Passed 0.00 sec
-4/15 Test #4: RationalCurveDomainTests ... Passed 0.01 sec
-5/15 Test #5: RationalCurveDiscontinuityTests ... Passed 0.02 sec
-6/15 Test #6: RationalCurveSteepTests ... Passed 0.02 sec
-7/15 Test #7: RationalViewportPrecisionTests ... Passed 0.00 sec
-8/15 Test #8: RationalCurveGeometryCacheTests ... Passed 0.00 sec
-9/15 Test #9: RationalCurveEvaluationBudgetTests ... Passed 0.01 sec
-10/15 Test #10: RationalGraphRepaintSchedulerTests ... Passed 0.00 sec
-11/15 Test #11: RationalGraphViewportBoundaryTests ... Passed 0.00 sec
-12/15 Test #12: RationalGraphCanvasCacheTests ... Passed 0.08 sec
-13/15 Test #13: RationalGraphCanvasBudgetTests ... Passed 0.11 sec
-14/15 Test #14: RationalGraphCanvasSchedulingTests ... Passed 0.29 sec
-15/15 Test #15: RationalGraphCanvasBoundaryTests ... Passed 0.07 sec
+1/17 Test #1: RationalCoreTests ... Passed 0.00 sec
+2/17 Test #2: RationalViewportTests ... Passed 0.00 sec
+3/17 Test #3: RationalCurveSamplerTests ... Passed 0.00 sec
+4/17 Test #4: RationalCurveDomainTests ... Passed 0.01 sec
+5/17 Test #5: RationalCurveDiscontinuityTests ... Passed 0.02 sec
+6/17 Test #6: RationalCurveSteepTests ... Passed 0.02 sec
+7/17 Test #7: RationalViewportPrecisionTests ... Passed 0.00 sec
+8/17 Test #8: RationalCurveGeometryCacheTests ... Passed 0.00 sec
+9/17 Test #9: RationalCurveEvaluationBudgetTests ... Passed 0.01 sec
+10/17 Test #10: RationalGraphRepaintSchedulerTests ... Passed 0.00 sec
+11/17 Test #11: RationalGraphViewportBoundaryTests ... Passed 0.00 sec
+12/17 Test #12: RationalGraphRegressionMatrixTests ... Passed 0.01 sec
+13/17 Test #13: RationalGraphCanvasCacheTests ... Passed 0.07 sec
+14/17 Test #14: RationalGraphCanvasBudgetTests ... Passed 0.11 sec
+15/17 Test #15: RationalGraphCanvasSchedulingTests ... Passed 0.29 sec
+16/17 Test #16: RationalGraphCanvasBoundaryTests ... Passed 0.07 sec
+17/17 Test #17: RationalGraphCanvasRegressionMatrixTests ... Passed 0.12 sec
 
-100% tests passed, 0 tests failed out of 15
-Total Test time (real) = 0.62 sec
+100% tests passed, 0 tests failed out of 17
+Total Test time (real) = 0.74 sec
 ```
 
-**Recorded Issue #23 Release CTest:** 15/15 passed (0.56 seconds total).
+**Recorded Issue #24 Release CTest:** 17/17 passed (0.68 seconds total).
 
-The Issue #23 GUI-enabled suite contains four offscreen Qt widget test executables (cache, budget, scheduling, and boundary) and eleven Qt-independent test executables: fifteen total. The core-only sanitizer configuration excludes Qt and runs eleven tests.
+The Issue #24 GUI-enabled suite includes twelve Qt-independent executables and five offscreen Qt widget executables (cache, budget, scheduling, boundary, and the new cross-feature regression matrix). The Qt-disabled ASan/UBSan configuration runs twelve tests; it does not exercise the five Qt widget suites.
 
 ### Test coverage by executable
 
@@ -121,6 +123,8 @@ The Issue #23 GUI-enabled suite contains four offscreen Qt widget test executabl
 | `RationalGraphCanvasSchedulingTests` | Offscreen Qt wheel/drag scheduling integration, path preview reuse, delayed resampling, and superseded navigation cancellation. |
 | `RationalGraphViewportBoundaryTests` | Invalid viewport input rejection and state preservation, extreme finite centers, bounded grid geometry, and resize-dimension regressions. |
 | `RationalGraphCanvasBoundaryTests` | Offscreen Qt resize and boundary checks, extreme zoom/center rendering, cancellation of stale refreshes, and invalid-view rollback. |
+| `RationalGraphRegressionMatrixTests` | Qt-independent cross-subsystem checks for viewport transformations, cursor-anchored zoom, sampled segment accuracy, restricted/invalid domains, discontinuities, and evaluation ceilings. |
+| `RationalGraphCanvasRegressionMatrixTests` | Offscreen Qt integration checks for cache reuse, navigation, resizing, invalid views, evaluation budgets, and discontinuity/domain rendering. |
 
 ### Discontinuity regression results
 
@@ -328,60 +332,91 @@ PASS: 80 GraphCanvasBoundary assertions
 
 The targeted suites cover invalid view changes and state rollback, extreme finite centers and scales, grid-position safety, repeated dimensions/resize transitions, and renderer invalidation. They do **not** prove arbitrary-precision coordinate behavior, exhaustive geometry correctness, or the absence of every GUI defect. Manual verification of resizing and interaction was also reported successful (Section 5).
 
+### Issue #24 graph sampling and viewport regression matrix results
+
+Issue #24 adds two complementary automated regression matrices without modifying production graph-rendering algorithms. The Qt-independent matrix exercises transformations, cursor-anchored zoom, emitted-segment approximation accuracy, restricted domains, selected finite and infinite discontinuities, and bounded evaluation work. The offscreen Qt matrix checks the combined behavior of viewport navigation, resizing, cached geometry, invalid-view rollback, and rendering controls.
+
+**Qt-independent regression matrix:**
+
+```bash
+./build-issue24/RationalGraphRegressionMatrixTests
+```
+
+Recorded output:
+
+```text
+PASS: 5021 GraphRegressionMatrix assertions
+```
+
+**Offscreen Qt widget regression matrix:**
+
+```bash
+QT_QPA_PLATFORM=offscreen ./build-issue24/RationalGraphCanvasRegressionMatrixTests
+```
+
+Recorded output:
+
+```text
+PASS: 92 GraphCanvasRegressionMatrix assertions
+```
+
+These suites complement the existing focused tests. The reported assertions cover representative mathematical functions, defined tolerances, selected invalid-domain and discontinuity cases, and numerical callback limits; they do not establish exhaustive mathematical correctness, pixel-identical output, end-to-end GUI automation, or a frame-time guarantee. The developer separately reports successful manual GUI verification (Section 5).
+
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
 **Configuration and build:**
 
 ```bash
-cmake -S . -B build-issue23-asan -G Ninja \
+cmake -S . -B build-issue24-asan -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DRATIONALSTUDIO_BUILD_GUI=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
     -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
-cmake --build build-issue23-asan --parallel
+cmake --build build-issue24-asan --parallel
 ```
 
 **Final recorded build output:**
 
 ```text
-[29/29] Linking CXX executable RationalCurveEvaluationBudgetTests
+[31/31] Linking CXX executable RationalCurveDiscontinuityTests
 ```
 
 **Test command:**
 
 ```bash
-ctest --test-dir build-issue23-asan --output-on-failure
+ctest --test-dir build-issue24-asan --output-on-failure
 ```
 
 **Recorded output:**
 
 ```text
-1/11 Test #1: RationalCoreTests ... Passed 0.03 sec
-2/11 Test #2: RationalViewportTests ... Passed 0.01 sec
-3/11 Test #3: RationalCurveSamplerTests ... Passed 0.02 sec
-4/11 Test #4: RationalCurveDomainTests ... Passed 0.04 sec
-5/11 Test #5: RationalCurveDiscontinuityTests ... Passed 0.10 sec
-6/11 Test #6: RationalCurveSteepTests ... Passed 0.08 sec
-7/11 Test #7: RationalViewportPrecisionTests ... Passed 0.02 sec
-8/11 Test #8: RationalCurveGeometryCacheTests ... Passed 0.02 sec
-9/11 Test #9: RationalCurveEvaluationBudgetTests ... Passed 0.03 sec
-10/11 Test #10: RationalGraphRepaintSchedulerTests ... Passed 0.01 sec
-11/11 Test #11: RationalGraphViewportBoundaryTests ... Passed 0.01 sec
+1/12 Test #1: RationalCoreTests ... Passed 0.02 sec
+2/12 Test #2: RationalViewportTests ... Passed 0.01 sec
+3/12 Test #3: RationalCurveSamplerTests ... Passed 0.02 sec
+4/12 Test #4: RationalCurveDomainTests ... Passed 0.04 sec
+5/12 Test #5: RationalCurveDiscontinuityTests ... Passed 0.09 sec
+6/12 Test #6: RationalCurveSteepTests ... Passed 0.07 sec
+7/12 Test #7: RationalViewportPrecisionTests ... Passed 0.01 sec
+8/12 Test #8: RationalCurveGeometryCacheTests ... Passed 0.02 sec
+9/12 Test #9: RationalCurveEvaluationBudgetTests ... Passed 0.03 sec
+10/12 Test #10: RationalGraphRepaintSchedulerTests ... Passed 0.01 sec
+11/12 Test #11: RationalGraphViewportBoundaryTests ... Passed 0.01 sec
+12/12 Test #12: RationalGraphRegressionMatrixTests ... Passed 0.06 sec
 
-100% tests passed, 0 tests failed out of 11
-Total Test time (real) = 0.38 sec
+100% tests passed, 0 tests failed out of 12
+Total Test time (real) = 0.40 sec
 ```
 
-All eleven Qt-independent tests passed in the sanitizer-enabled configuration. No ASan or UBSan failures were reported in the supplied output.
+All twelve Qt-independent tests passed in the sanitizer-enabled configuration. The submitted output reports no ASan or UBSan failures.
 
-**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes the desktop application and four Qt widget tests: `RationalGraphCanvasCacheTests`, `RationalGraphCanvasBudgetTests`, `RationalGraphCanvasSchedulingTests`, and `RationalGraphCanvasBoundaryTests`. The eleven core-only tests do **not** establish sanitizer coverage for Qt rendering or GUI interactions.
+**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes the desktop application and all five Qt widget regression executables. The sanitizer results do **not** establish memory-safety coverage for the Qt renderer or interactive GUI.
 
-## 5. Desktop GUI — PASS (developer-reported Issue #23 manual verification)
+## 5. Desktop GUI — PASS (developer-reported Issue #24 manual verification)
 
-The current Issue #23 Debug application was launched using:
+The current Issue #24 Debug application was launched using:
 
 ```bash
-./build-issue23/RationalStudio
+./build-issue24/RationalStudio
 ```
 
 The developer reports successful completion of the prescribed Issue #19 graphical verification and regression checks. The inspected graphs displayed the expected behavior, with no functional failures reported.
@@ -458,11 +493,17 @@ During the Debug GUI launch, the console printed four `kf.kio.widgets.kdirmodel:
 
 The direct `RationalGraphCanvasBoundaryTests` offscreen suite passed 80 assertions. The full GUI was **not** subjected to GUI-enabled ASan/UBSan or pixel-diff visual testing; manual checks are developer-reported observations.
 
+### Issue #24 manual GUI regression verification
+
+The developer reports completing the Issue #24 manual GUI regression pass successfully after launching the Debug application. No visible graphing, panning, zooming, resizing, or curve-rendering regression was reported. This is a developer-attested interactive check, not a pixel-comparison or automated end-to-end GUI test.
+
+Separately, the new `RationalGraphCanvasRegressionMatrixTests` offscreen suite passed 92 assertions. The combined results provide focused integration coverage but do not guarantee all possible Qt event orders, graph functions, or window-system environments.
+
 **Scope:** Manual functional checks and offscreen widget tests are not complete end-to-end GUI automation, pixel-comparison testing, accessibility validation, or performance benchmarking. The recorded results do not establish mathematically perfect graph rendering.
 
 ## 6. Terminal application
 
-The `RationalCLI` target built successfully in the current Issue #23 Debug, Release, and core-only sanitizer configurations. A historical manual CLI smoke test produced:
+The `RationalCLI` target built successfully in the current Issue #24 Debug, Release, and core-only sanitizer configurations. A historical manual CLI smoke test produced:
 
 ```text
 Input:     5/2 7/4
@@ -470,15 +511,15 @@ Operation: +
 Result:    5/2 + 7/4 = 17/4
 ```
 
-No separate interactive CLI execution was included in the supplied Issue #23 terminal record. The CLI compiled in the Issue #23 Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
+No separate interactive CLI execution was included in the supplied Issue #24 terminal record. The CLI compiled in the Issue #24 Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
 
 ## 7. Platform and configuration coverage
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
-| Linux Debug, Qt GUI enabled (Issue #23) | PASS | 15/15 PASS | Manual GUI verification PASS (reported); offscreen boundary test PASS; nonfatal KDE KIO messages noted |
-| Linux Release, Qt GUI enabled (Issue #23) | PASS | 15/15 PASS | Offscreen Qt widget tests PASS; interactive Release GUI launch not recorded |
-| Linux Debug, GUI disabled, ASan/UBSan (Issue #23) | PASS | 11/11 PASS | Core test execution PASS; Qt GUI excluded |
+| Linux Debug, Qt GUI enabled (Issue #24) | PASS | 17/17 PASS | Manual GUI regression verification PASS (developer-reported); five offscreen Qt suites PASS |
+| Linux Release, Qt GUI enabled (Issue #24) | PASS | 17/17 PASS | Offscreen Qt suites PASS; interactive Release GUI launch not recorded |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #24) | PASS | 12/12 PASS | Core test execution PASS; Qt GUI excluded |
 | Native Windows | Not tested | Not tested | Not tested |
 | Qt 5 | Not tested | Not tested | Not tested |
 
@@ -491,7 +532,7 @@ The following areas remain outside the current verification scope or are known a
 - Highly oscillatory functions may be undersampled.
 - Per-curve and shared per-paint callback-count limits bound evaluation counts, not the time spent in any callback or the total frame time. Budget-limited geometry can be truncated or deferred.
 - Valid `QPainterPath` geometry is cached; rapid navigation uses timer-coalesced refreshes and transformed cached-path previews. Resizes invalidate stale geometry and outdated refresh requests, while bounded pixel-space grid positions avoid unrepresentable label coordinates. At extreme finite centers, grid markers may be suppressed when floating-point precision is insufficient. Sampling remains on the GUI thread under callback budgets; no frame-time, input-latency, or FPS guarantee is claimed.
-- Offscreen Qt `GraphCanvas` cache, budget, scheduling, and viewport-boundary tests exist; full end-to-end GUI automation and rendered-pixel correctness tests have not been established.
+- Five offscreen Qt `GraphCanvas` suites cover cache, budget, scheduling, viewport-boundary, and cross-feature regression behavior. Full end-to-end GUI automation and rendered-pixel correctness testing have not been established.
 - A panning-flicker regression was reported during initial Issue #22 manual verification; the developer subsequently attested that it was corrected and retested.
 - The complete Qt application has not undergone recorded sanitizer testing.
 - Native Windows builds, Qt 5 compatibility, and separate runtime verification of the Release GUI remain unverified.
@@ -522,28 +563,28 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. The current Issue #23 results came from `build-issue23`, `build-issue23-release`, and `build-issue23-asan`.
+These generic commands describe a reproducible procedure. The current Issue #24 results came from `build-issue24`, `build-issue24-release`, and `build-issue24-asan`.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
-| GCC 15.2.0 Debug GUI/CLI/core build — Issue #23 | PASS |
-| GCC 15.2.0 Release GUI/CLI/core build — Issue #23 | PASS |
-| GUI-enabled Debug CTest suite | **15/15 PASS** |
-| GUI-enabled Release CTest suite | **15/15 PASS** |
-| Core-only ASan/UBSan CTest suite | **11/11 PASS** |
-| Viewport boundary regression assertions | **1,884 PASS** |
-| Offscreen Qt `GraphCanvas` boundary assertions | **80 PASS** |
-| Existing viewport/cache/budget/scheduling regression suites | PASS — included in current CTest runs |
-| Issue #23 Debug GUI launch | Executed |
-| Issue #23 manual resizing and boundary verification | PASS — developer-reported |
-| Previous Issue #22 panning flicker | Resolved in prior milestone; no recurrence reported |
-| Issue #23 compiler warnings | None displayed in submitted build output (not a `-Werror` verification) |
-| KDE KIO runtime file-model diagnostics | Four nonfatal messages recorded; cause not established |
+| GCC 15.2.0 Debug GUI/CLI/core build — Issue #24 | PASS |
+| GCC 15.2.0 Release GUI/CLI/core build — Issue #24 | PASS |
+| GUI-enabled Debug CTest suite | **17/17 PASS** |
+| GUI-enabled Release CTest suite | **17/17 PASS** |
+| Core-only ASan/UBSan CTest suite | **12/12 PASS** |
+| Qt-independent graph regression matrix assertions | **5,021 PASS** |
+| Offscreen Qt `GraphCanvas` regression matrix assertions | **92 PASS** |
+| Existing sampling/viewport/cache/budget/scheduler/boundary tests | PASS — included in current CTest runs |
+| Issue #24 Debug GUI launch | Executed |
+| Issue #24 manual GUI regression verification | PASS — developer-reported |
+| Issue #24 compiler warnings | None displayed in supplied output; not a `-Werror` verification |
+| Separate interactive Release GUI verification | Not recorded |
+| Previous Issue #23 KDE KIO diagnostics | Historical observation; not reported in current Issue #24 console output |
 | Prior CLI smoke test | PASS — previous baseline |
 | Full GUI sanitizer coverage | Not performed |
 | End-to-end GUI / pixel-level testing | Not performed |
 | Native Windows verification | Not performed |
 
-**Assessment:** Issue #23 is supported by successful GCC 15.2.0 Linux Debug and Release builds, fifteen passing GUI-enabled CTest executables in both configurations, eleven passing Qt-independent ASan/UBSan tests, 1,884 viewport-boundary assertions, and 80 offscreen Qt boundary assertions. The developer reports successful manual checks of resizing, extreme zoom values, invalid viewport inputs, and existing graph behaviors, with no corrupted geometry and no recurrence of the previously corrected panning flicker. Four KDE KIO file-model diagnostics appeared during GUI execution without reported functional failure; their root cause remains unverified. The core sanitizer configuration does not test Qt, and passing targeted tests do not establish arbitrary-precision viewports, exhaustive pixel correctness, native Windows support, or hard frame-time guarantees.
+**Assessment:** Issue #24 is supported by successful GCC 15.2.0 Linux Debug and Release builds, seventeen passing GUI-enabled CTest executables in each configuration, twelve passing Qt-independent ASan/UBSan tests, 5,021 cross-subsystem core regression assertions, and 92 offscreen Qt widget regression assertions. The developer reports successful manual GUI regression verification. Tests address viewport transformations, zoom anchoring, curve-segment approximation accuracy, selected undefined domains and discontinuities, and evaluation ceilings. This milestone adds regression coverage without changing production rendering algorithms. The results do not establish exhaustive mathematical correctness, pixel-level equality, full GUI sanitizer coverage, native Windows support, or guaranteed frame time.

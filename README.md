@@ -171,7 +171,9 @@ RationalStudio/
     ├── GraphRepaintSchedulerTests.cpp
     ├── GraphCanvasSchedulingTests.cpp
     ├── GraphViewportBoundaryTests.cpp
-    └── GraphCanvasBoundaryTests.cpp
+    ├── GraphCanvasBoundaryTests.cpp
+    ├── GraphRegressionMatrixTests.cpp
+    └── GraphCanvasRegressionMatrixTests.cpp
 ```
 
 ## Requirements
@@ -249,7 +251,9 @@ ctest --test-dir build-core --output-on-failure
 
 ## Testing
 
-With GUI and testing enabled, CTest registers fifteen test executables; core-only builds register eleven:
+**Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
+
+With GUI and testing enabled, CTest registers seventeen test executables; core-only builds register twelve:
 
 | Executable | Focus |
 |---|---|
@@ -268,6 +272,8 @@ With GUI and testing enabled, CTest registers fifteen test executables; core-onl
 | `RationalGraphCanvasSchedulingTests` | Offscreen Qt integration for wheel-event coalescing, transformed-path preview, deferred regeneration, and cancellation of superseded viewport refreshes. |
 | `RationalGraphViewportBoundaryTests` | Transactional rejection of invalid viewport inputs, extreme finite centers, stable pixel-space grid layout, and repeated resize dimensions. |
 | `RationalGraphCanvasBoundaryTests` | Offscreen Qt resize transitions, extreme zoom/center safety, stale-refresh cancellation, and invalid-view rollback. |
+| `RationalGraphRegressionMatrixTests` | End-to-end Qt-free regression matrix of viewport transforms, zoom anchoring, sampled chord accuracy, restricted domains, discontinuities, and callback budgets. |
+| `RationalGraphCanvasRegressionMatrixTests` | Qt offscreen regression matrix of caching, navigation, resizing, invalid views, evaluation budgets, and domain/discontinuity rendering. |
 
 Run the configured suite:
 
@@ -289,7 +295,7 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-An offscreen Qt widget regression test validates graph geometry cache behavior. Comprehensive end-to-end GUI interaction tests and pixel-level rendering tests are not yet included.
+Five offscreen Qt widget regression suites validate geometry caching, budgets, scheduling, boundaries, and cross-feature integration. Comprehensive end-to-end GUI interaction automation and pixel-level rendering tests are not yet included.
 
 See [VERIFICATION.md](VERIFICATION.md) for recorded toolchain, test, sanitizer, and manual GUI results.
 
