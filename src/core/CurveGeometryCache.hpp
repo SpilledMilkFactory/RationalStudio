@@ -67,6 +67,14 @@ public:
         return entry.geometry;
     }
 
+    // Retrieve an already-built path without accidentally constructing
+    // geometry. Callers must check isReady() first.
+    [[nodiscard]] const Geometry& readyGeometry(std::size_t index) const {
+        const Entry& entry = entries_.at(index);
+        if (!entry.ready) throw std::logic_error("geometry is not ready");
+        return entry.geometry;
+    }
+
     [[nodiscard]] std::size_t size() const noexcept { return entries_.size(); }
     [[nodiscard]] bool isReady(std::size_t index) const {
         return entries_.at(index).ready;
