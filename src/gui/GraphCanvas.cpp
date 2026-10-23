@@ -9,6 +9,7 @@
 #include <QPaintEvent>
 #include <QResizeEvent>
 #include <QTimer>
+#include <QTransform>
 #include <QWheelEvent>
 
 #include <algorithm>
@@ -51,6 +52,42 @@ GraphCanvas::GraphCanvas(QWidget* parent) : QWidget(parent) {
     setCursor(Qt::CrossCursor);
     setAttribute(Qt::WA_OpaquePaintEvent);
     (void)viewport_.setDimensions(std::max(1, width()), std::max(1, height()));
+    geometryViewport_ = viewport_;
+
+    navigationTimer_.setSingleShot(true);
+    navigationTimer_.setInterval(GraphRepaintScheduler::kNavigationIntervalMs);
+    connect(&navigationTimer_, &QTimer::timeout, this, [this] {
+        if (!repaintScheduler_.takeNavigationRefresh()) return;
+        // Mark refresh due, but keep the previous ready paths available.
+        // A newer navigation event may arrive before Qt delivers this paint.
+        // Invalidating here would leave that event's preview blank.
+        refreshQueued_ = true;
+        update();
+    });
+
+    deferredTimer_.setSingleShot(true);
+    deferredTimer_.setInterval(GraphRepaintScheduler::kDeferredIntervalMs);
+    connect(&deferredTimer_, &QTimer::timeout, this, [this] {
+        if (repaintScheduler_.takeDeferredRefresh()) update();
+    });
+}
+
+void GraphCanvas::cancelScheduledWork() {
+    navigationTimer_.stop();
+    deferredTimer_.stop();
+    repaintScheduler_.invalidate();
+    refreshQueued_ = false;
+}
+
+void GraphCanvas::requestNavigationRefresh() {
+    deferredTimer_.stop();
+    // If a timer fired but its paint is still queued, the new input makes
+    // that pending rebuild obsolete. Preserve ready paths for its preview.
+    refreshQueued_ = false;
+    if (repaintScheduler_.navigationChanged()) navigationTimer_.start();
+    // Preserve old geometry while the input interval is coalescing. It is
+    // transformed to match the current viewport during preview paints.
+    update();
 }
 
 void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
@@ -61,6 +98,8 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     for (const auto& curve : curves) {
         keys.push_back(curve.function);
     }
+    deferredTimer_.stop();
+    repaintScheduler_.cancelDeferred();
     geometryCache_.synchronize(keys);
     curves_ = std::move(curves);
     update();
@@ -68,12 +107,14 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
 void GraphCanvas::setAngleMode(AngleMode mode) {
     if (angleMode_ == mode) return;
     angleMode_ = mode;
+    cancelScheduledWork();
     geometryCache_.invalidateAll();
     update();
 }
 void GraphCanvas::setLastAnswer(double answer) {
     if (lastAnswer_ == answer || (std::isnan(lastAnswer_) && std::isnan(answer))) return;
     lastAnswer_ = answer;
+    cancelScheduledWork();
     geometryCache_.invalidateAll();
     update();
 }
@@ -91,6 +132,7 @@ bool GraphCanvas::setSamplingLimits(GraphSamplingLimits limits) {
         return true;
     }
     samplingLimits_ = limits;
+    cancelScheduledWork();
     geometryCache_.invalidateAll();
     update();
     return true;
@@ -105,6 +147,7 @@ void GraphCanvas::setView(double x, double y, double pixelsPerUnit) {
     if (oldX == viewport_.centerX() &&
         oldY == viewport_.centerY() &&
         oldScale == viewport_.pixelsPerUnit()) return;
+    cancelScheduledWork();
     geometryCache_.invalidateAll();
     update();
 }
@@ -186,6 +229,44 @@ void GraphCanvas::drawCurves(QPainter& p) {
     p.save();
     p.setClipRect(rect());
 
+    // During rapid navigation, the existing cached paths still represent
+    // the same world-space curves. An affine screen-space preview makes them
+    // follow the latest viewport without evaluating any mathematical curves.
+    // The 16-ms timer invalidates and rebuilds at most once per interval.
+    if (repaintScheduler_.navigationPending()) {
+        ++previewPaints_;
+        if (const auto temporary = graphScreenPreview(geometryViewport_, viewport_)) {
+                const QTransform preview(temporary->ratio, 0.0, 0.0,
+                                         temporary->ratio, temporary->tx,
+                                         temporary->ty);
+                for (std::size_t i = 0; i < curves_.size(); ++i) {
+                    const auto& curve = curves_[i];
+                    if (!curve.enabled || !curve.function || !curve.function->valid() ||
+                        !geometryCache_.isReady(i)) continue;
+                    p.save();
+                    p.setTransform(preview, true);
+                    // The preview is temporary; final QPainterPath geometry
+                    // will be resampled at the new viewport on timer expiry.
+                    p.setPen(QPen(curve.color, 2.5, Qt::SolidLine,
+                                  Qt::RoundCap, Qt::RoundJoin));
+                    p.drawPath(geometryCache_.readyGeometry(i));
+                    p.restore();
+                }
+        }
+        samplingDiagnostics_.lastPaintEvaluations = 0;
+        samplingDiagnostics_.lastPaintDeferredCurves = 0;
+        p.restore();
+        return;
+    }
+
+    // Commit invalidation only when actually entering a full refresh paint.
+    // This prevents a timer-expiry/input interleaving from briefly drawing
+    // a preview with no ready geometry.
+    if (refreshQueued_) {
+        refreshQueued_ = false;
+        geometryCache_.invalidateAll();
+    }
+
     // Count only drawable, currently dirty curves. Cached/hidden entries
     // consume no geometry budget. Reserve work for several dirty curves
     // rather than letting the first pathological one consume the frame.
@@ -195,6 +276,10 @@ void GraphCanvas::drawCurves(QPainter& p) {
         if (curve.enabled && curve.function && curve.function->valid() &&
             !geometryCache_.isReady(i)) ++dirty;
     }
+
+    // All ready paths in this generation use the same viewport. A change
+    // outside interactive preview invalidates every path before rebuilding.
+    if (dirty != 0) geometryViewport_ = viewport_;
 
     CurveEvaluationBudget paintBudget(samplingLimits_.maxEvaluationsPerPaint);
     std::size_t deferred = 0;
@@ -266,15 +351,13 @@ void GraphCanvas::drawCurves(QPainter& p) {
     samplingDiagnostics_.lastPaintDeferredCurves = deferred;
     p.restore();
 
-    if (deferred != 0 && !deferredRepaintQueued_) {
-        deferredRepaintQueued_ = true;
-        // Defer continuation out of paintEvent. The queued event paints
-        // remaining dirty curves with its own per-paint evaluation limit.
-        // Fine-grained event coalescing/cancellation remains Issue #22.
-        QTimer::singleShot(0, this, [this] {
-            deferredRepaintQueued_ = false;
-            update();
-        });
+    if (deferred != 0) {
+        // Defer a later paint instead of scheduling a zero-delay chain of
+        // paints that could crowd out pointer and window events.
+        if (repaintScheduler_.scheduleDeferred()) deferredTimer_.start();
+    } else {
+        deferredTimer_.stop();
+        repaintScheduler_.cancelDeferred();
     }
 }
 
@@ -345,11 +428,22 @@ void GraphCanvas::mouseMoveEvent(QMouseEvent* e) {
         const double oldY = viewport_.centerY();
         if (viewport_.panPixels(delta.x(), delta.y()) &&
             (oldX != viewport_.centerX() || oldY != viewport_.centerY())) {
-            geometryCache_.invalidateAll();
+            requestNavigationRefresh();
         }
         lastDrag_ = pointer_;
     }
-    updatePointerStatus();
+    // Re-evaluating every curve for a tooltip on each drag event can be more
+    // expensive than the coalesced geometry work. Show world coordinates
+    // while dragging; normal nearest-curve inspection resumes afterward.
+    if (dragging_) {
+        if (onPointerInfo) {
+            const QPointF world = screenToWorld(pointer_);
+            onPointerInfo(QString("x = %1,  y = %2")
+                .arg(numberLabel(world.x()), numberLabel(world.y())));
+        }
+    } else {
+        updatePointerStatus();
+    }
     update();
 }
 void GraphCanvas::mouseReleaseEvent(QMouseEvent* e) {
@@ -374,8 +468,7 @@ void GraphCanvas::wheelEvent(QWheelEvent* e) {
     if (viewport_.zoomAt(factor, at.x(), at.y()) &&
         (oldX != viewport_.centerX() || oldY != viewport_.centerY() ||
          oldScale != viewport_.pixelsPerUnit())) {
-        geometryCache_.invalidateAll();
-        update();
+        requestNavigationRefresh();
     }
     e->accept();
 }
@@ -383,6 +476,7 @@ void GraphCanvas::wheelEvent(QWheelEvent* e) {
 void GraphCanvas::resizeEvent(QResizeEvent* e) {
     QWidget::resizeEvent(e);
     if (viewport_.setDimensions(e->size().width(), e->size().height())) {
+        cancelScheduledWork();
         geometryCache_.invalidateAll();
     }
     update();

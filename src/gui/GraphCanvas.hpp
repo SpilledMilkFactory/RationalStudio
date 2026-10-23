@@ -3,12 +3,14 @@
 #include "Expression.hpp"
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
+#include "GraphRepaintScheduler.hpp"
 
 #include <QColor>
 #include <QPointF>
 #include <QPainterPath>
 #include <cstddef>
 #include <QWidget>
+#include <QTimer>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -36,6 +38,14 @@ struct GraphSamplingDiagnostics {
     std::size_t lastPaintDeferredCurves = 0;
 };
 
+struct GraphSchedulingDiagnostics {
+    std::size_t navigationEvents = 0;
+    std::size_t coalescedNavigationEvents = 0;
+    std::size_t completedNavigationRefreshes = 0;
+    std::size_t deferredRefreshes = 0;
+    std::size_t previewPaints = 0;
+};
+
 struct GraphCurve {
     QColor color;
     std::shared_ptr<const Expression> function;
@@ -57,6 +67,16 @@ public:
     }
     [[nodiscard]] GraphSamplingDiagnostics samplingDiagnostics() const noexcept {
         return samplingDiagnostics_;
+    }
+
+    [[nodiscard]] GraphSchedulingDiagnostics schedulingDiagnostics() const noexcept {
+        return {
+            static_cast<std::size_t>(repaintScheduler_.navigationEvents()),
+            static_cast<std::size_t>(repaintScheduler_.coalescedEvents()),
+            static_cast<std::size_t>(repaintScheduler_.navigationRefreshes()),
+            static_cast<std::size_t>(repaintScheduler_.deferredRefreshes()),
+            previewPaints_
+        };
     }
 
     void resetView();
@@ -90,6 +110,8 @@ private:
     void drawCurves(QPainter& painter);
     void drawTrace(QPainter& painter) const;
     void updatePointerStatus() const;
+    void requestNavigationRefresh();
+    void cancelScheduledWork();
     std::vector<GraphCurve> curves_;
     AngleMode angleMode_ = AngleMode::Radians;
     double lastAnswer_ = 0;
@@ -98,7 +120,14 @@ private:
     std::size_t geometryBuildCount_ = 0;
     GraphSamplingLimits samplingLimits_;
     GraphSamplingDiagnostics samplingDiagnostics_;
-    bool deferredRepaintQueued_ = false;
+    GraphRepaintScheduler repaintScheduler_;
+    QTimer navigationTimer_;
+    QTimer deferredTimer_;
+    // A timer expiry requests regeneration, but must not invalidate ready
+    // preview paths until a non-preview paint actually begins.
+    bool refreshQueued_ = false;
+    GraphViewport geometryViewport_;
+    std::size_t previewPaints_ = 0;
     bool showGrid_ = true;
     bool showAxes_ = true;
     bool dragging_ = false;
