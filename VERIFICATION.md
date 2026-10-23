@@ -3,9 +3,9 @@
 **Project version:** 0.1.0  
 **Verification date:** October 22, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS** — Debug and Release builds, seven automated test suites, core-only ASan/UBSan verification, and successful application launch. Previous manual GUI regression checks passed; Issue #19-specific navigation checks await confirmation.
+**Current status:** **PASS** — Debug and Release builds (9/9 GUI-enabled tests each), core-only ASan/UBSan tests (8/8), two passing cache regression suites, and reported successful manual GUI verification.
 
-This document records results for the implementation through the viewport precision and navigation stability improvements associated with GitHub Issue #19. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
+This document records results for the implementation through the cached curve geometry improvements associated with GitHub Issue #20. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
 
 ## 1. Build environment
 
@@ -28,76 +28,90 @@ Qt 6 is the preferred development target. The exact Qt version selected by the r
 **Commands executed:**
 
 ```bash
-cmake -S . -B build-issue19 -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-issue19 --parallel
+cmake -S . -B build-issue20 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-issue20 --parallel 1
 ```
 
-CMake successfully configured and generated the build. GCC compiled and linked the mathematical core, test executables, CLI, and Qt desktop application.
+The full Debug configuration succeeded with GCC 15.2.0 and linked the Qt desktop application, the CLI, and the registered test executables.
 
-**Final build output:**
+**Final recorded build output:**
 
 ```text
-[27/27] Linking CXX executable RationalStudio
+[34/34] Linking CXX executable RationalGraphCanvasCacheTests
 ```
 
-No configuration errors, compiler errors, linker errors, or compiler warnings appeared in the supplied output. This confirms that the earlier narrowing-conversion and malformed-shell-command warnings were not reproduced in this build; it is not a warning-as-error test.
+An earlier Issue #20 build attempt failed because the offscreen Qt test target lacked the `src/gui` include directory. The target's CMake include path was corrected before the successful build. That earlier attempt also reported two nonfatal `-Wrange-loop-construct` warnings in `tests/CoreTests.cpp`; the supplied successful incremental-build output does not establish whether those warnings were separately corrected.
 
 ### Release build — PASS
 
-The current implementation was also compiled and tested in a separate Release configuration using GCC 15.2.0.
-
-Commands executed:
+**Commands executed:**
 
 ```bash
-cmake -S . -B build-issue19-release -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-issue19-release --parallel
-ctest --test-dir build-issue19-release --output-on-failure
+cmake -S . -B build-issue20-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-issue20-release --parallel
+ctest --test-dir build-issue20-release --output-on-failure
 ```
-**Recorded result:**
+
+**Final recorded build output:**
 
 ```text
-[27/27] Linking CXX executable RationalStudio
-
-100% tests passed, 0 tests failed out of 7
-Total Test time (real) = 0.02 sec
+[34/34] Linking CXX executable RationalStudio
 ```
 
+**Recorded Release CTest summary:**
+
+```text
+100% tests passed, 0 tests failed out of 9
+Total Test time (real) = 0.15 sec
+```
+
+The Release application and test targets compiled successfully. A separate interactive launch of the Release GUI was not included in the supplied verification record.
 
 ## 3. Automated regression tests — PASS
 
 **Command executed:**
 
 ```bash
-ctest --test-dir build-issue19 --output-on-failure
+ctest --test-dir build-issue20 --output-on-failure
 ```
 
-**Recorded result:**
+**Recorded Debug CTest output:**
 
 ```text
 Start 1: RationalCoreTests
-1/7 Test #1: RationalCoreTests ................. Passed  0.00 sec
+1/9 Test #1: RationalCoreTests ................. Passed  0.00 sec
 
 Start 2: RationalViewportTests
-2/7 Test #2: RationalViewportTests ............. Passed  0.00 sec
+2/9 Test #2: RationalViewportTests ............. Passed  0.00 sec
 
 Start 3: RationalCurveSamplerTests
-3/7 Test #3: RationalCurveSamplerTests ......... Passed  0.00 sec
+3/9 Test #3: RationalCurveSamplerTests ......... Passed  0.00 sec
 
 Start 4: RationalCurveDomainTests
-4/7 Test #4: RationalCurveDomainTests .......... Passed  0.01 sec
+4/9 Test #4: RationalCurveDomainTests .......... Passed  0.01 sec
 
 Start 5: RationalCurveDiscontinuityTests
-5/7 Test #5: RationalCurveDiscontinuityTests ... Passed  0.02 sec
+5/9 Test #5: RationalCurveDiscontinuityTests ... Passed  0.02 sec
 
 Start 6: RationalCurveSteepTests
-6/7 Test #6: RationalCurveSteepTests ........... Passed  0.02 sec
+6/9 Test #6: RationalCurveSteepTests ........... Passed  0.02 sec
 
 Start 7: RationalViewportPrecisionTests
-7/7 Test #7: RationalViewportPrecisionTests .... Passed  0.00 sec
+7/9 Test #7: RationalViewportPrecisionTests .... Passed  0.00 sec
 
-100% tests passed, 0 tests failed out of 7
-Total Test time (real) = 0.06 sec
+Start 8: RationalCurveGeometryCacheTests
+8/9 Test #8: RationalCurveGeometryCacheTests ... Passed  0.00 sec
+
+Start 9: RationalGraphCanvasCacheTests
+9/9 Test #9: RationalGraphCanvasCacheTests ..... Passed  0.09 sec
+
+100% tests passed, 0 tests failed out of 9
+Total Test time (real) = 0.15 sec
 ```
+
+**Recorded Release CTest result:** 9/9 passed (0.15 seconds total).
+
+The GUI-enabled suite includes one Qt offscreen widget regression executable. The Qt-independent build excludes that test and registers eight tests instead.
 
 ### Test coverage by executable
 
@@ -110,6 +124,8 @@ Total Test time (real) = 0.06 sec
 | `RationalCurveDiscontinuityTests` | Reciprocal and tangent poles, finite step jumps, `floor(x)` boundaries, offset viewport cases, sampled-position sweeps, and continuous controls. |
 | `RationalCurveSteepTests` | Steep continuous straight lines, hyperbolic tangent and inverse-tangent transitions, bounded terminal refinement, approximation consistency, sampling-position sweeps, and discontinuity controls. |
 | `RationalViewportPrecisionTests` | Coordinate round trips, repeated pan/zoom stability, zoom-limit behavior, restored viewport scales, extreme-coordinate validation, and state preservation after rejected navigation. |
+| `RationalCurveGeometryCacheTests` | Qt-independent cache identity, reuse, invalidation, reordering, and lazy geometry regeneration. |
+| `RationalGraphCanvasCacheTests` | Offscreen Qt widget integration for `QPainterPath` cache reuse and invalidation during paint operations. |
 
 ### Discontinuity regression results
 
@@ -197,69 +213,102 @@ The tests include a regression case for previously incorrect zoom-direction beha
 
 The viewport continues to use IEEE-754 double-precision coordinates. These improvements do not establish arbitrary-precision navigation or guarantee that all extreme coordinate transformations can be represented accurately.
 
+### Curve geometry cache regression results
+
+Issue #20 introduces a Qt-independent geometry-cache policy and caches generated `QPainterPath` geometry in `GraphCanvas`. Valid paths can be reused during ordinary repaints and presentation-only changes, while changes to mathematical inputs or the viewport require regeneration.
+
+The Qt-independent regression executable was run directly:
+
+```bash
+./build-issue20/RationalCurveGeometryCacheTests
+```
+
+Recorded output:
+
+```text
+PASS: 55 CurveGeometryCache assertions
+```
+
+The offscreen Qt widget regression executable was also run directly:
+
+```bash
+QT_QPA_PLATFORM=offscreen ./build-issue20/RationalGraphCanvasCacheTests
+```
+
+Recorded output:
+
+```text
+PASS: 49 GraphCanvasCache assertions
+```
+
+These are focused regression tests for cache management and Qt widget cache integration. They do not constitute complete end-to-end GUI interaction tests, pixel-level rendering comparisons, or controlled performance benchmarks. No frames-per-second improvement is claimed.
+
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
 **Configuration and build:**
 
 ```bash
-cmake -S . -B build-issue19-asan -G Ninja \
+cmake -S . -B build-issue20-asan -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DRATIONALSTUDIO_BUILD_GUI=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
     -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
-cmake --build build-issue19-asan --parallel
+cmake --build build-issue20-asan --parallel
 ```
 
 **Final build output:**
 
 ```text
-[21/21] Linking CXX executable RationalCurveSamplerTests
+[23/23] Linking CXX executable RationalCurveSamplerTests
 ```
 
 **Test command:**
 
 ```bash
-ctest --test-dir build-issue19-asan --output-on-failure
+ctest --test-dir build-issue20-asan --output-on-failure
 ```
 
-**Recorded result:**
+**Recorded output:**
 
 ```text
 Start 1: RationalCoreTests
-1/7 Test #1: RationalCoreTests ................. Passed  0.03 sec
+1/8 Test #1: RationalCoreTests ................. Passed  0.03 sec
 
 Start 2: RationalViewportTests
-2/7 Test #2: RationalViewportTests ............. Passed  0.01 sec
+2/8 Test #2: RationalViewportTests ............. Passed  0.02 sec
 
 Start 3: RationalCurveSamplerTests
-3/7 Test #3: RationalCurveSamplerTests ......... Passed  0.02 sec
+3/8 Test #3: RationalCurveSamplerTests ......... Passed  0.03 sec
 
 Start 4: RationalCurveDomainTests
-4/7 Test #4: RationalCurveDomainTests .......... Passed  0.04 sec
+4/8 Test #4: RationalCurveDomainTests .......... Passed  0.04 sec
 
 Start 5: RationalCurveDiscontinuityTests
-5/7 Test #5: RationalCurveDiscontinuityTests ... Passed  0.09 sec
+5/8 Test #5: RationalCurveDiscontinuityTests ... Passed  0.10 sec
 
 Start 6: RationalCurveSteepTests
-6/7 Test #6: RationalCurveSteepTests ........... Passed  0.07 sec
+6/8 Test #6: RationalCurveSteepTests ........... Passed  0.08 sec
 
 Start 7: RationalViewportPrecisionTests
-7/7 Test #7: RationalViewportPrecisionTests .... Passed  0.02 sec
+7/8 Test #7: RationalViewportPrecisionTests .... Passed  0.02 sec
 
-100% tests passed, 0 tests failed out of 7
-Total Test time (real) = 0.28 sec
+Start 8: RationalCurveGeometryCacheTests
+8/8 Test #8: RationalCurveGeometryCacheTests ... Passed  0.02 sec
+
+100% tests passed, 0 tests failed out of 8
+Total Test time (real) = 0.32 sec
 ```
 
-All registered tests passed in the sanitizer-enabled configuration, and no ASan or UBSan failures were reported in the captured output.
+All eight Qt-independent tests passed in the sanitizer-enabled configuration. No ASan or UBSan failures were reported in the captured output.
 
-**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes `RationalStudio`. These results apply to the Qt-independent code exercised by the seven test executables; they do **not** establish sanitizer coverage for Qt rendering or GUI interaction paths.
+**Scope:** `RATIONALSTUDIO_BUILD_GUI=OFF` excludes the desktop application and `RationalGraphCanvasCacheTests`. Therefore the sanitizer run does **not** establish sanitizer coverage for Qt rendering or GUI interactions.
 
-## 5. Desktop GUI — Previous manual verification PASS; Issue #19 navigation checks pending
+## 5. Desktop GUI — PASS (reported manual verification and offscreen cache tests)
 
-The application was launched using:
+The current Issue #20 application was launched using:
 
 ```bash
-./build-issue19/RationalStudio
+./build-issue20/RationalStudio
 ```
 
 The developer reports successful completion of the prescribed Issue #19 graphical verification and regression checks. The inspected graphs displayed the expected behavior, with no functional failures reported.
@@ -300,7 +349,19 @@ The prescribed navigation checks include:
 
 The developer reports completing all prescribed Issue #19 navigation and graphical regression checks successfully, with no functional failures observed.
 
-**Scope:** Manual functional checks are not automated GUI tests, pixel-comparison tests, accessibility validation, or performance benchmarks. The passing GUI checks do not mean every graph is rendered mathematically perfectly.
+### Issue #20 cached-geometry manual verification
+
+The developer reports completing the prescribed Issue #20 interactive GUI verification successfully after launching:
+
+```bash
+./build-issue20/RationalStudio
+```
+
+The verification focused on correct graph output and invalidation behavior around ordinary repaints, expression changes, visibility controls, panning/zooming, viewport resizing, angle-mode and previous-answer changes, workspace persistence, and PNG export. No functional failures were reported. This is a reported manual result, not an automated performance measurement.
+
+Separately, `RationalGraphCanvasCacheTests` passed as an offscreen Qt widget test (49 assertions); it exercises cache behavior but is not an end-to-end GUI automation suite.
+
+**Scope:** Manual functional checks and offscreen cache tests are not complete end-to-end GUI automation, pixel-comparison testing, accessibility validation, or performance benchmarking. The recorded results do not establish mathematically perfect graph rendering.
 
 ## 6. Terminal application
 
@@ -312,15 +373,15 @@ Operation: +
 Result:    5/2 + 7/4 = 17/4
 ```
 
-No separate interactive CLI execution was included in the latest Issue #19 terminal record. The CLI target compiled successfully in the Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
+No separate interactive CLI execution was included in the latest Issue #20 terminal record. The CLI target compiled successfully in the Debug, Release, and sanitizer-enabled configurations; the historical smoke-test result is not represented as a new run.
 
 ## 7. Platform and configuration coverage
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
-| Linux Debug, Qt GUI enabled | PASS | 7/7 PASS | GUI launched; Issue #19 manual navigation checks pending confirmation |
-| Linux Release, Qt GUI enabled | PASS | 7/7 PASS | GUI runtime not separately documented |
-| Linux Debug, GUI disabled, ASan/UBSan | PASS | 7/7 PASS | Core test execution PASS |
+| Linux Debug, Qt GUI enabled | PASS | 9/9 PASS | GUI manual verification PASS (reported); offscreen widget test PASS |
+| Linux Release, Qt GUI enabled | PASS | 9/9 PASS | Qt offscreen widget test PASS; separate Release GUI launch not recorded |
+| Linux Debug, GUI disabled, ASan/UBSan | PASS | 8/8 PASS | Core test execution PASS; Qt GUI excluded |
 | Native Windows | Not tested | Not tested | Not tested |
 | Qt 5 | Not tested | Not tested | Not tested |
 
@@ -332,8 +393,8 @@ The following areas remain outside the current verification scope or are known a
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
 - Per-curve evaluation limits are not a shared frame-time performance guarantee.
-- Curve geometry is recomputed during painting; there is no persistent drawing cache.
-- Automated Qt GUI interaction and rendered-pixel correctness tests have not been established.
+- Valid per-expression `QPainterPath` geometry is cached across ordinary repaints; invalidated curves are rebuilt on the GUI thread, with no measured frame-time guarantee.
+- An offscreen Qt `GraphCanvas` cache regression test exists; full end-to-end GUI automation and rendered-pixel correctness tests have not been established.
 - The complete Qt application has not undergone recorded sanitizer testing.
 - Native Windows builds, Qt 5 compatibility, and separate runtime verification of the Release GUI remain unverified.
 
@@ -363,7 +424,7 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These commands describe a reproducible procedure. The current verification results were obtained using `build-issue19`, `build-issue19-release`, and `build-issue19-asan`, rather than the generic directory names shown above.
+These commands describe a reproducible procedure. The current verification results were obtained using `build-issue20`, `build-issue20-release`, and `build-issue20-asan`, rather than the generic directory names shown above.
 
 ## 10. Verification summary
 
@@ -372,15 +433,17 @@ These commands describe a reproducible procedure. The current verification resul
 | CMake/Ninja Debug configuration | PASS |
 | CMake/Ninja Release configuration | PASS |
 | GCC 15.2.0 GUI/CLI/core compilation | PASS — Debug and Release |
-| Seven registered CTest suites — Debug | **7/7 PASS** |
-| Seven registered CTest suites — Release | **7/7 PASS** |
-| Viewport precision regression assertions | **3,474 PASS** |
-| Core-only AddressSanitizer / UndefinedBehaviorSanitizer suite | **7/7 PASS** |
-| Previous manual desktop GUI regression testing | PASS — Issue #18 |
-| Issue #19 manual navigation verification | Pending confirmation |
-| Debug Qt application launch | Executed |
+| GUI-enabled Debug CTest suite | **9/9 PASS** |
+| GUI-enabled Release CTest suite | **9/9 PASS** |
+| Core-only ASan/UBSan CTest suite | **8/8 PASS** |
+| Cache policy regression assertions | **55 PASS** |
+| Offscreen Qt `GraphCanvas` cache assertions | **49 PASS** |
+| Issue #19 manual navigation checks | PASS — previously reported |
+| Issue #20 manual GUI cache verification | PASS — reported |
+| Automated Qt widget cache regression test | PASS — offscreen; not full GUI automation |
 | Prior CLI smoke test | PASS — previous baseline |
-| Automated Qt GUI testing | Not performed |
+| Full GUI sanitizer coverage | Not performed |
+| End-to-end GUI / pixel-level testing | Not performed |
 | Native Windows verification | Not performed |
 
-**Assessment:** The Issue #19 implementation is supported by successful Linux Debug and Release builds using GCC 15.2.0, seven passing CTest suites in both configurations, and seven passing core-only ASan/UBSan test suites. The dedicated viewport precision regression suite passed 3,474 assertions, covering repeated navigation, cursor anchoring, scale-limit stability, restored viewport states, and extreme-coordinate handling. The Debug GUI executable launched successfully; the previous Issue #18 manual GUI regression checks passed, while Issue #19-specific manual navigation verification has not yet been separately confirmed in this report. Arbitrary-precision viewport navigation, automated GUI testing, and native Windows verification remain outstanding.
+**Assessment:** Issue #20 is supported by successful GCC 15.2.0 Linux Debug and Release builds, nine passing GUI-enabled regression executables in both builds, eight passing core-only sanitizer tests, 55 cache-policy assertions, 49 offscreen Qt widget cache assertions, and reported successful manual GUI verification. Cached geometry eliminates repeated sampling for unchanged curves during ordinary repaints, as covered by the focused tests. Cache invalidation still performs work on the GUI thread; no measured FPS or frame-time benefit is claimed. Native Windows, full GUI sanitizer, and broader automated GUI testing remain unverified.

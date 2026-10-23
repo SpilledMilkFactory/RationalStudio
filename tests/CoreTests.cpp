@@ -458,7 +458,7 @@ int main() {
         // =====================================================
 
         for (
-            const std::string& invalid : {
+            const std::string invalid : {
                 "",
                 "sin(",
              "bad(x)",
@@ -486,7 +486,7 @@ int main() {
         // =====================================================
 
         for (
-            const std::string& undefined : {
+            const std::string undefined : {
                 "sqrt(-1)",
              "ln(0)",
              "1/0",
