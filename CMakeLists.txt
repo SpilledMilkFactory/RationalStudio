@@ -245,6 +245,25 @@ if(BUILD_TESTING)
     add_test(NAME RationalGraphViewportBoundaryTests
              COMMAND RationalGraphViewportBoundaryTests)
 
+    # -----------------------------------------------------------------
+    # Issue #24 — Cross-Subsystem Graph Sampling / Viewport Regressions
+    # -----------------------------------------------------------------
+
+    add_executable(RationalGraphRegressionMatrixTests
+    tests/GraphRegressionMatrixTests.cpp
+    )
+
+    target_link_libraries(RationalGraphRegressionMatrixTests PRIVATE
+        RationalCore
+    )
+
+    add_test(NAME RationalGraphRegressionMatrixTests
+             COMMAND RationalGraphRegressionMatrixTests)
+
+    set_tests_properties(RationalGraphRegressionMatrixTests PROPERTIES
+        LABELS "graphing;regression;core"
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -261,6 +280,7 @@ if(BUILD_TESTING)
         RationalCurveEvaluationBudgetTests
         RationalGraphRepaintSchedulerTests
         RationalGraphViewportBoundaryTests
+        RationalGraphRegressionMatrixTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -434,6 +454,33 @@ if(RATIONALSTUDIO_BUILD_GUI)
                  COMMAND RationalGraphCanvasBoundaryTests)
         set_tests_properties(RationalGraphCanvasBoundaryTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
+
+    # ---------------------------------------------------------    
+    # Issue #24 — offscreen graph regression matrix
+    # ---------------------------------------------------------
+
+        add_executable(RationalGraphCanvasRegressionMatrixTests
+            tests/GraphCanvasRegressionMatrixTests.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )
+        target_include_directories(RationalGraphCanvasRegressionMatrixTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalGraphCanvasRegressionMatrixTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalGraphCanvasRegressionMatrixTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalGraphCanvasRegressionMatrixTests
+                 COMMAND RationalGraphCanvasRegressionMatrixTests)
+        set_tests_properties(RationalGraphCanvasRegressionMatrixTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "graphing;regression;qt;offscreen"
+            TIMEOUT 30
         )
 
     endif()
