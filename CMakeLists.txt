@@ -7,10 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ---------------------------------------------------------
-# Mathematical Core
+# Mathematical Core (Qt-independent)
 # ---------------------------------------------------------
 
-# The mathematical core is Qt-independent.
 add_library(RationalCore STATIC
     src/core/Rational.cpp
     src/core/Expression.cpp
@@ -25,6 +24,9 @@ target_include_directories(RationalCore PUBLIC
 target_compile_options(RationalCore PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
 )
+
+# CurveGeometryCache.hpp is header-only.
+# No additional .cpp file is required.
 
 # ---------------------------------------------------------
 # Command-Line Application
@@ -49,12 +51,16 @@ if(RATIONALSTUDIO_BUILD_CLI)
 endif()
 
 # ---------------------------------------------------------
-# Automated Testing
+# Automated Testing — Qt-independent tests
 # ---------------------------------------------------------
 
 include(CTest)
 
 if(BUILD_TESTING)
+
+    # -----------------------------------------------------
+    # Mathematical Core
+    # -----------------------------------------------------
 
     add_executable(RationalCoreTests
         tests/CoreTests.cpp
@@ -69,6 +75,10 @@ if(BUILD_TESTING)
         COMMAND RationalCoreTests
     )
 
+    # -----------------------------------------------------
+    # Issue #14 — Viewport Mathematics
+    # -----------------------------------------------------
+
     add_executable(RationalViewportTests
         tests/GraphViewportTests.cpp
     )
@@ -77,16 +87,15 @@ if(BUILD_TESTING)
         RationalCore
     )
 
-    target_compile_options(RationalViewportTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )
-
     add_test(
         NAME RationalViewportTests
         COMMAND RationalViewportTests
     )
 
-    # Adaptive curve sampling tests.
+    # -----------------------------------------------------
+    # Issue #15 — Adaptive Curve Sampling
+    # -----------------------------------------------------
+
     add_executable(RationalCurveSamplerTests
         tests/CurveSamplerTests.cpp
     )
@@ -95,19 +104,14 @@ if(BUILD_TESTING)
         RationalCore
     )
 
-    target_compile_options(RationalCurveSamplerTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )
-
     add_test(
         NAME RationalCurveSamplerTests
         COMMAND RationalCurveSamplerTests
     )
 
-    # ---------------------------------------------------------
-    # Undefined Function Domain Tests
-    # GitHub Issue #16
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
+    # Issue #16 — Undefined Function Domains
+    # -----------------------------------------------------
 
     add_executable(RationalCurveDomainTests
         tests/CurveDomainTests.cpp
@@ -117,80 +121,101 @@ if(BUILD_TESTING)
         RationalCore
     )
 
-    target_compile_options(RationalCurveDomainTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )
-
     add_test(
         NAME RationalCurveDomainTests
         COMMAND RationalCurveDomainTests
     )
 
-    # ---------------------------------------------------------
-    # Finite Discontinuity and Asymptote Regression Tests
-    # GitHub Issue #17
-    # --------------------------------------------------------- 
+    # -----------------------------------------------------
+    # Issue #17 — Discontinuities and Asymptotes
+    # -----------------------------------------------------
 
     add_executable(RationalCurveDiscontinuityTests
         tests/CurveDiscontinuityTests.cpp
-    )   
+    )
 
-    target_link_libraries(RationalCurveDiscontinuityTests PRIVATE
+    target_link_libraries(
+        RationalCurveDiscontinuityTests PRIVATE
         RationalCore
-    )   
-
-    target_compile_options(RationalCurveDiscontinuityTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )   
+    )
 
     add_test(
         NAME RationalCurveDiscontinuityTests
         COMMAND RationalCurveDiscontinuityTests
     )
 
-    # ---------------------------------------------------------
-    # Preserve Continuous Curves With Steep Gradients
-    # GitHub Issue #18
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
+    # Issue #18 — Steep Continuous Curves
+    # -----------------------------------------------------
 
     add_executable(RationalCurveSteepTests
         tests/CurveSteepTests.cpp
-    )   
+    )
 
     target_link_libraries(RationalCurveSteepTests PRIVATE
         RationalCore
-    )   
-
-    target_compile_options(RationalCurveSteepTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )   
+    )
 
     add_test(
         NAME RationalCurveSteepTests
         COMMAND RationalCurveSteepTests
     )
 
-    # ---------------------------------------------------------
-    # Viewport Precision and Navigation Stability
-    # GitHub Issue #19
-    # --------------------------------------------------------- 
+    # -----------------------------------------------------
+    # Issue #19 — Viewport Precision
+    # -----------------------------------------------------
 
     add_executable(RationalViewportPrecisionTests
         tests/GraphViewportPrecisionTests.cpp
-    )   
+    )
 
     target_link_libraries(RationalViewportPrecisionTests PRIVATE
         RationalCore
-    )   
-
-    target_compile_options(RationalViewportPrecisionTests PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-    )   
+    )
 
     add_test(
         NAME RationalViewportPrecisionTests
         COMMAND RationalViewportPrecisionTests
     )
+
+    # -----------------------------------------------------
+    # Issue #20 — Curve Geometry Cache
+    # Qt-independent regression tests
+    # -----------------------------------------------------
+
+    add_executable(RationalCurveGeometryCacheTests
+        tests/CurveGeometryCacheTests.cpp
+    )
+
+    target_link_libraries(RationalCurveGeometryCacheTests PRIVATE
+        RationalCore
+    )
+
+    add_test(
+        NAME RationalCurveGeometryCacheTests
+        COMMAND RationalCurveGeometryCacheTests
+    )
+
+    # -----------------------------------------------------
+    # Shared Test Compiler Warnings
+    # -----------------------------------------------------
+
+    foreach(test_target IN ITEMS
+        RationalCoreTests
+        RationalViewportTests
+        RationalCurveSamplerTests
+        RationalCurveDomainTests
+        RationalCurveDiscontinuityTests
+        RationalCurveSteepTests
+        RationalViewportPrecisionTests
+        RationalCurveGeometryCacheTests
+    )
+
+        target_compile_options(${test_target} PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+
+    endforeach()
 
 endif()
 
@@ -218,6 +243,10 @@ if(RATIONALSTUDIO_BUILD_GUI)
 
     set(CMAKE_AUTOMOC ON)
 
+    # -----------------------------------------------------
+    # Rational Studio Desktop Executable
+    # -----------------------------------------------------
+
     add_executable(RationalStudio
         src/main.cpp
 
@@ -241,5 +270,44 @@ if(RATIONALSTUDIO_BUILD_GUI)
         WIN32_EXECUTABLE ON
         MACOSX_BUNDLE ON
     )
+
+    # ---------------------------------------------------------
+    # Issue #20 — GraphCanvas Geometry Cache
+    # Qt-specific offscreen integration tests
+    # --------------------------------------------------------- 
+
+    if(BUILD_TESTING)   
+
+        add_executable(RationalGraphCanvasCacheTests
+            tests/GraphCanvasCacheTests.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )   
+
+        target_include_directories(RationalGraphCanvasCacheTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )   
+
+        target_link_libraries(RationalGraphCanvasCacheTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )   
+
+        target_compile_options(RationalGraphCanvasCacheTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )   
+
+        add_test(
+            NAME RationalGraphCanvasCacheTests
+            COMMAND RationalGraphCanvasCacheTests
+        )   
+
+        set_tests_properties(
+            RationalGraphCanvasCacheTests
+            PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )   
+
+    endif()
 
 endif()
