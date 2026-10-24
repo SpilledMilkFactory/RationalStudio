@@ -300,15 +300,49 @@ if(BUILD_TESTING)
     )
 
     add_executable(RationalCurveSamplingJobTests tests/CurveSamplingJobTests.cpp)
-    target_link_libraries(RationalCurveSamplingJobTests PRIVATE RationalCore)
+    
+    target_link_libraries(RationalCurveSamplingJobTests PRIVATE
+        RationalCore
+    )
+
     add_test(NAME RationalCurveSamplingJobTests COMMAND RationalCurveSamplingJobTests)
+
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MILESTONE 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    # ---------------------------------------------------------
+    # Issue #27 — Named Variable Parsing
+    # ---------------------------------------------------------
+
+    add_executable(RationalNamedVariableTests
+        tests/NamedVariableTests.cpp
+    )   
+
+    target_link_libraries(RationalNamedVariableTests PRIVATE
+        RationalCore
+    )   
+
+    add_test(
+        NAME RationalNamedVariableTests
+        COMMAND RationalNamedVariableTests
+    )   
+
+    set_tests_properties(RationalNamedVariableTests PROPERTIES
+        LABELS "core;regression;variables"
+    )
+
+
+
 
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
     foreach(test_target IN ITEMS
-        RationalCoreTests
+        # Milestone 1:
+        RationalCoreTests 
         RationalViewportTests
         RationalCurveSamplerTests
         RationalCurveDomainTests
@@ -323,6 +357,8 @@ if(BUILD_TESTING)
         RationalGraphBenchmarkStatisticsTests
         RationalCurveCoverageRegressionTests
         RationalCurveSamplingJobTests
+        # Milestone 2:
+        RationalNamedVariableTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -332,6 +368,8 @@ if(BUILD_TESTING)
     endforeach()
 
 endif()
+
+#################################################### BENCHMARK #####################################################
 
 # ---------------------------------------------------------
 # Qt-independent benchmark 
@@ -358,6 +396,8 @@ if(RATIONALSTUDIO_BUILD_BENCHMARKS)
     )
 
 endif()
+
+####################################################################################################################
 
 # ---------------------------------------------------------
 # Qt Desktop Application
@@ -411,12 +451,14 @@ if(RATIONALSTUDIO_BUILD_GUI)
         MACOSX_BUNDLE ON
     )
 
+    
+
+    if(BUILD_TESTING)
+
     # ---------------------------------------------------------
     # Issue #20 — GraphCanvas Geometry Cache
     # Qt-specific offscreen integration tests
-    # --------------------------------------------------------- 
-
-    if(BUILD_TESTING)   
+    # ---------------------------------------------------------
 
         add_executable(RationalGraphCanvasCoverageTests
             tests/GraphCanvasCoverageTests.cpp src/gui/GraphCanvas.cpp)
@@ -464,7 +506,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         )   
     # ---------------------------------------------------------
     # Issue #21 — bounded GraphCanvas sampling work per repaint
-    # --------------------------------------------------------- 
+    # ---------------------------------------------------------
 
         add_executable(RationalGraphCanvasBudgetTests
             tests/GraphCanvasBudgetTests.cpp
@@ -515,7 +557,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalGraphCanvasSchedulingTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
-    # ---------------------------------------------------------    
+    # ---------------------------------------------------------
     # Issue #23 — offscreen resizing / boundary integration
     # ---------------------------------------------------------
         add_executable(RationalGraphCanvasBoundaryTests
@@ -539,7 +581,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
 
-    # ---------------------------------------------------------    
+    # ---------------------------------------------------------
     # Issue #24 — offscreen graph regression matrix
     # ---------------------------------------------------------
 
@@ -566,7 +608,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             TIMEOUT 30
         )
 
-    # ---------------------------------------------------------    
+    # ---------------------------------------------------------
     # Issue #25 — Qt offscreen benchmark
     # ---------------------------------------------------------
 

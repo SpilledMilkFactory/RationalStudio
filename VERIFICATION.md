@@ -1,11 +1,13 @@
 # Rational Studio — Verification Report
 
+<!-- ISSUE27_VERIFICATION_CURRENT_BEGIN -->
+
 **Project version:** 0.1.0  
 **Verification date:** October 23, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS (Issue #26 automated regression verification); final manual retest not recorded** — GCC 15.2.0 Linux Debug GUI-enabled CTest **22/22**, incremental sampling **896,291 assertions** including a direct core-only ASan/UBSan run, and manual-recorder Python tests **12/12** passed. Debug and Release desktop applications rebuilt successfully. The retained manual report records the original tangent defect (**24 passed / 1 failed**, `GRA-03`); it has not been replaced with a post-fix manual PASS. Issue #25 benchmark measurements remain historical baselines, not current performance thresholds.
+**Current status:** **PASS — Issue #27 (M2-01) named-variable parsing, automated verification.** GCC 15.2.0 Linux Debug GUI-enabled CTest **23/23 PASS**, Release GUI-enabled CTest **23/23 PASS**, and core-only ASan/UBSan CTest **16/16 PASS**. `RationalNamedVariableTests` passed **3,149 assertions**. No GUI variable assignment, sliders, or dependency tracking is claimed; those are later Milestone 2 issues. The Issue #26 original failed manual session remains historical evidence and is not silently overwritten. Issue #25 performance measurements remain a historical, non-comparable baseline.
 
-This document records results through the Issue #26 wide-view rendering fix and its automated coverage checks. Issue #17–#25 results and Issue #25 performance measurements are retained as historical evidence. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
+This document records the current Issue #27 named-variable parser verification, following the Issue #26 wide-view rendering fix and its automated coverage checks. Issue #17–#25 results and Issue #25 performance measurements are retained as historical evidence. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
 
 ## 1. Build environment
 
@@ -15,7 +17,8 @@ This document records results through the Issue #26 wide-view rendering fix and 
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #26 application builds | Debug GUI-enabled full build and tests; Release desktop application target rebuilt |
+| Current Issue #27 application builds | GCC 15.2.0 Debug and Release full builds and 23/23 CTests each; core-only ASan/UBSan full build and 16/16 CTests |
+| Historical Issue #26 application builds | Debug GUI-enabled full build and tests; Release desktop application target rebuilt |
 | Historical Issue #25 application builds | Debug and Release, GUI enabled; optional benchmark targets ON |
 | GUI framework | Qt Widgets |
 | Exact arithmetic | Boost.Multiprecision |
@@ -26,7 +29,41 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #26 current build results
+### Issue #27 current Debug and Release build results
+
+**Debug (GCC 15.2.0, C++20, Ninja, Qt Widgets):**
+
+```bash
+cmake -S . -B build-issue27 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-issue27 --parallel
+ctest --test-dir build-issue27 --output-on-failure
+```
+
+```text
+[75/75] Linking CXX executable RationalStudio
+100% tests passed, 0 tests failed out of 23
+Total Test time (real) = 10.35 sec
+```
+
+**Release (GCC 15.2.0, C++20, Ninja, Qt Widgets):**
+
+```bash
+cmake -S . -B build-issue27-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-issue27-release --parallel
+ctest --test-dir build-issue27-release --output-on-failure
+```
+
+```text
+[75/75] Linking CXX executable RationalStudio
+100% tests passed, 0 tests failed out of 23
+Total Test time (real) = 5.10 sec
+```
+
+Both full GUI-enabled builds succeeded and all registered tests passed. The
+previously available graphics/cache/budget/scheduling regressions remain part
+of these suites. No new native Windows or Qt 5 verification was performed.
+
+### Issue #26 historical build results
 
 **Commands executed during implementation:**
 
@@ -86,7 +123,37 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #26 current automated results
+### Issue #27 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| GCC 15.2.0 GUI-enabled Debug CTest | **23/23 PASS**, 10.35 s total |
+| GCC 15.2.0 GUI-enabled Release CTest | **23/23 PASS**, 5.10 s total |
+| GCC 15.2.0 core-only ASan/UBSan CTest | **16/16 PASS**, 6.25 s total |
+| `RationalNamedVariableTests` (direct Debug run) | **PASS — 3,149 assertions** |
+
+Direct test invocation and recorded output:
+
+```bash
+./build-issue27/RationalNamedVariableTests
+```
+
+```text
+PASS: 3149 NamedVariable assertions
+```
+
+**New regression coverage:** ASCII identifier validation (1–64 characters),
+case-insensitive declarations and bindings, builtin-name reservation, duplicate
+and undeclared identifiers, scope isolation, missing/non-finite values, unique
+sorted referenced-variable discovery, arithmetic with builtins and `x`/`ans`,
+move semantics, and changes to per-evaluation bindings without reparsing.
+
+The new regression adds one Qt-independent executable. The complete GUI-enabled
+suite contains **23 CTest registrations from 22 executables** (16 core tests
+and 7 offscreen Qt invocations of 6 widget executables, including the 2× DPI
+invocation). The sanitizer build runs **16 core-only tests** and excludes Qt.
+
+### Issue #26 historical automated results
 
 **Recorded Debug suite result:**
 
@@ -184,6 +251,7 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalGraphBenchmarkStatisticsTests` | Qt-independent checks of percentile summaries, report escaping, benchmark output files, and argument validation; no host-speed thresholds. |
 | `RationalCurveCoverageRegressionTests` | Reproduce left-side budget starvation, check distributed strip coverage, shared ceilings, and smooth/restricted-domain controls for the single-call sampler. |
 | `RationalCurveSamplingJobTests` | Complete tangent branches across widths and zoom levels, exact callback accounting, budget-independent geometry, pole/step separation, and steep continuous controls. |
+| `RationalNamedVariableTests` | Qt-independent identifier validation, scoped named-variable resolution, case-folded bindings, reserved names, missing/non-finite values, reference introspection, and backward-compatible evaluation. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
@@ -521,6 +589,32 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
+### Issue #27 current complete core-only sanitizer suite — PASS
+
+```bash
+cmake -S . -B build-issue27-asan -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DRATIONALSTUDIO_BUILD_GUI=OFF \
+    -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF \
+    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+    -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+cmake --build build-issue27-asan --parallel
+ctest --test-dir build-issue27-asan --output-on-failure
+```
+
+```text
+[39/39] Linking CXX executable RationalCurveSamplerTests
+100% tests passed, 0 tests failed out of 16
+Total Test time (real) = 6.25 sec
+```
+
+All 16 registered Qt-independent tests passed with AddressSanitizer and
+UndefinedBehaviorSanitizer instrumentation. No sanitizer diagnostics were
+reported in the supplied terminal output. This does **not** establish
+sanitizer coverage of Qt widgets or the GUI render pipeline.
+
+### Historical sanitizer evidence (Issues #25–#26)
+
 **Configuration and build:**
 
 ```bash
@@ -586,6 +680,19 @@ PASS: 896291 sampling job assertions
 The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-frame-pointer`. No ASan or UBSan failure was reported for this direct executable run. Leak detection was disabled for this invocation. This is a focused current result, separate from the historical **13/13** Issue #25 sanitizer suite above; the full current **15-test** core-only suite and Qt renderer sanitizer tests were not recorded. The original Issue #26 sanitizer build directory is no longer present locally at documentation-update time; the command/result above are retained from the implementation session.
 
 ## 5. Desktop GUI — historical passes and Issue #26 retest status
+
+### Issue #27 interactive GUI status
+
+Issue #27 interactive GUI smoke test: PASS — developer-attested after verifying existing graphing/navigation and calculator behavior; not an automated GUI acceptance test.
+
+The named-variable interface remains a **Qt-independent core API** in this
+issue. The passing offscreen `GraphCanvas` tests validate existing widget
+regressions, but do not demonstrate GUI assignment syntax or slider support.
+The historical Issue #26 failed GRA-03 JSON/Markdown record is retained. The
+developer separately reported a successful visual retest of that fix during
+Issue #26 closeout; an updated machine-readable post-fix session is not in this
+attached verification document. Neither observation is attributed to new
+Issue #27 interactive testing.
 
 The historical Issue #25 Debug application was launched using:
 
@@ -714,6 +821,9 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
+| Linux Debug, Qt GUI enabled (Issue #27) | PASS | **23/23 PASS** | Qt offscreen regression tests passed; Issue #27 manual smoke-test status recorded in Section 5 |
+| Linux Release, Qt GUI enabled (Issue #27) | PASS | **23/23 PASS** | Qt offscreen regression tests passed; interactive Release launch not separately recorded |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #27) | PASS | **16/16 PASS** | Entire Qt-independent suite passed; Qt GUI excluded |
 | Linux Debug, Qt GUI enabled (Issue #25) | PASS | 18/18 PASS | Manual GUI regression verification PASS (developer-reported); Qt widget tests PASS |
 | Linux Release, Qt GUI enabled (Issue #25) | PASS | 18/18 PASS | Offscreen Qt widget tests PASS; 150 core sampling and 750 Qt benchmark observations recorded; interactive Release GUI launch not recorded |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #25) | PASS | 13/13 PASS | Core regression and statistics test execution PASS; Qt GUI excluded |
@@ -728,6 +838,7 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 The following areas remain outside the current verification scope or are known approximation limits:
 
+- Issue #27 named variables use explicitly declared scopes and per-call runtime bindings. GUI assignment statements, dependency tracking, reusable functions, sliders, automatic dependency-driven graph refreshes, and persistence of definitions are not yet implemented. These features belong to subsequent Milestone 2 issues.
 - Finite probing cannot detect all discontinuities, arbitrarily narrow domain gaps, or unsampled singularities.
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
@@ -765,12 +876,19 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
+| GCC 15.2.0 Debug GUI/CLI/core build — Issue #27 | **PASS** |
+| GCC 15.2.0 Release GUI/CLI/core build — Issue #27 | **PASS** |
+| GUI-enabled Debug CTest suite — Issue #27 | **23/23 PASS** |
+| GUI-enabled Release CTest suite — Issue #27 | **23/23 PASS** |
+| Core-only ASan/UBSan CTest suite — Issue #27 | **16/16 PASS** |
+| Named-variable regression assertions — Issue #27 | **3,149 PASS** |
+| Issue #27 interactive GUI smoke test | PASS — developer-attested; not independently automated |
 | GCC 15.2.0 Debug GUI/CLI/core build — Issue #25 | PASS |
 | GCC 15.2.0 Release GUI/CLI/core build — Issue #25 | PASS |
 | GUI-enabled Debug CTest suite — Issue #26 | **22/22 PASS** |
@@ -797,4 +915,6 @@ These generic commands describe a reproducible procedure. Current Issue #26 impl
 | Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Assessment:** The Issue #26 fix is supported by a successful Linux Debug full build, **22/22 passing GUI-enabled CTests**, **896,291 passing incremental sampling assertions** including a direct ASan/UBSan run, **12 passing recorder unit tests**, and a successful Release desktop rebuild. Targeted core and rendered-pixel checks cover tangent tails across tested zooms and widths, callback accounting, deterministic completion, retained previews, same-run image stability, resizing, and 2× display scaling. The original manual report still records the tangent failure; no post-fix manual PASS is inferred. Historical Issue #25 test results and 150 sampling / 750 offscreen benchmark measurements remain intact and are not current-renderer speedup evidence. Full current Release and sanitizer suites, full Qt sanitizer coverage, native Windows/Qt 5 behavior, and physical display latency are outside the recorded current verification.
+**Current assessment — Issue #27:** GCC 15.2.0 Debug and Release GUI-enabled builds and all 23 CTests passed in each configuration; all 16 core-only ASan/UBSan CTests passed; the named-variable suite passed 3,149 assertions. Explicit named-variable declaration, scope validation, binding resolution, and legacy expression compatibility are supported by this verification. No GUI assignment, slider, dependency tracking, or function-definition implementation is claimed. The original Issue #26 failed manual session and Issue #25 benchmark measurements remain historical evidence.
+
+**Historical assessment — Issue #26:** The Issue #26 fix is supported by a successful Linux Debug full build, **22/22 passing GUI-enabled CTests**, **896,291 passing incremental sampling assertions** including a direct ASan/UBSan run, **12 passing recorder unit tests**, and a successful Release desktop rebuild. Targeted core and rendered-pixel checks cover tangent tails across tested zooms and widths, callback accounting, deterministic completion, retained previews, same-run image stability, resizing, and 2× display scaling. The original manual report still records the tangent failure; no post-fix manual PASS is inferred. Historical Issue #25 test results and 150 sampling / 750 offscreen benchmark measurements remain intact and are not current-renderer speedup evidence. Full current Release and sanitizer suites, full Qt sanitizer coverage, native Windows/Qt 5 behavior, and physical display latency are outside the recorded current verification.

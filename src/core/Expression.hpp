@@ -1,56 +1,96 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace rationalstudio {
 
-    enum class AngleMode {
-        Radians,
-        Degrees
-    };
+enum class AngleMode { Radians, Degrees };
 
-    // A compiled mathematical expression.
-    //
-    // Expressions are parsed once and can then be
-    // evaluated repeatedly.
-    //
-    // This is particularly useful when graphing,
-    // because a graph requires many evaluations
-    // of the same mathematical expression.
+// Names are ASCII identifiers [A-Za-z_][A-Za-z0-9_]*, max 64 bytes,
+// normalized to lowercase. Builtin names, x, ans and constants are reserved.
+// This scope only declares which names may appear in an expression; it does
+// not assign values. Assignment and dependency tracking are separate M2 tasks.
+class VariableScope {
+public:
+    bool declare(std::string_view name, std::string* error = nullptr);
 
-    class Expression {
-    public:
+    bool contains(std::string_view name) const;
 
-        explicit Expression(const std::string& source);
+    const std::set<std::string>& names() const noexcept {
+        return names_;
+    }
 
-        ~Expression();
+private:
+    std::set<std::string> names_;
+};
 
-        Expression(Expression&&) noexcept;
+// Call-scoped values: no reference to this object is retained by Expression.
+// Missing or non-finite values produce an undefined (NaN) expression result.
+class VariableBindings {
+public:
+    bool set(std::string_view name, double value);
 
-        Expression& operator=(Expression&&) noexcept;
+    bool erase(std::string_view name);
 
-        Expression(const Expression&) = delete;
+    bool lookup(std::string_view name, double& value) const;
 
-        Expression& operator=(const Expression&) = delete;
+private:
+    std::map<std::string, double, std::less<>> values_;
+};
 
-        bool valid() const noexcept;
+// Compiled expressions are immutable. Legacy construction rejects unknown
+// identifiers; opt-in construction accepts only names declared in the scope.
+// Resolution happens on each evaluation without modifying the syntax tree.
+class Expression {
+public:
+    explicit Expression(const std::string& source);
 
-        const std::string& error() const noexcept;
+    Expression(const std::string& source, const VariableScope& scope);
 
-        bool dependsOnX() const noexcept;
+    ~Expression();
 
-        double evaluate(
-            double x = 0,
-            double ans = 0,
-            AngleMode angle = AngleMode::Radians
-        ) const noexcept;
+    Expression(Expression&&) noexcept;
+    Expression& operator=(Expression&&) noexcept;
 
-    private:
+    Expression(const Expression&) = delete;
+    Expression& operator=(const Expression&) = delete;
 
-        struct Impl;
+    bool valid() const noexcept;
 
-        std::unique_ptr<Impl> impl_;
-    };
+    const std::string& error() const noexcept;
+
+    bool dependsOnX() const noexcept;
+
+    const std::vector<std::string>& referencedVariables() const noexcept;
+
+    double evaluate(
+        double x = 0,
+        double ans = 0,
+        AngleMode angle = AngleMode::Radians
+    ) const noexcept;
+
+    double evaluate(
+        double x,
+        double ans,
+        AngleMode angle,
+        const VariableBindings& bindings
+    ) const noexcept;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+
+    double evaluateImpl(
+        double x,
+        double ans,
+        AngleMode angle,
+        const VariableBindings* bindings
+    ) const noexcept;
+};
 
 } // namespace rationalstudio
