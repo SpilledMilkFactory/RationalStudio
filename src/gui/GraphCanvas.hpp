@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Expression.hpp"
+#include "CurveSampler.hpp"
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
 #include "GraphRepaintScheduler.hpp"
 
 #include <QColor>
+#include <QImage>
 #include <QPointF>
 #include <QPainterPath>
 #include <cstddef>
@@ -25,7 +27,8 @@ class QPainter;
 namespace rationalstudio {
 
 // Deterministic CPU evaluation limits. They bound callback counts per
-// individual geometry build and per paint, not callback wall-clock time.
+// curve per paint and per paint, not callback wall-clock time.
+// Unfinished builds resume on later paints until their geometry is complete.
 struct GraphSamplingLimits {
     std::size_t maxEvaluationsPerCurve = 8192;
     std::size_t maxEvaluationsPerPaint = 32768;
@@ -34,6 +37,7 @@ struct GraphSamplingLimits {
 struct GraphSamplingDiagnostics {
     std::size_t lastPaintEvaluations = 0;
     std::size_t totalEvaluations = 0;
+    // Historical name: now counts budget pauses; geometry resumes to completion.
     std::size_t truncatedCurveBuilds = 0;
     std::size_t lastPaintDeferredCurves = 0;
 };
@@ -60,7 +64,7 @@ public:
     void setAngleMode(AngleMode mode);
     void setLastAnswer(double ans);
     // Updating limits invalidates existing paths, including previously
-    // truncated paths. Reject invalid settings without mutating state.
+    // unfinished builds. Reject invalid settings without mutating state.
     [[nodiscard]] bool setSamplingLimits(GraphSamplingLimits limits);
     [[nodiscard]] GraphSamplingLimits samplingLimits() const noexcept {
         return samplingLimits_;
@@ -112,6 +116,16 @@ private:
     void updatePointerStatus() const;
     void requestNavigationRefresh();
     void cancelScheduledWork();
+    void invalidateGeometry(bool retainPreview = false);
+    struct PendingGeometry {
+        std::unique_ptr<CurveSamplingJob> job;
+        QPointF samplingOffset;
+        QPainterPath preview;
+        QImage raster;
+        GraphViewport previewViewport;
+        bool hasPreview = false;
+    };
+    std::vector<PendingGeometry> pendingGeometry_;
     std::vector<GraphCurve> curves_;
     AngleMode angleMode_ = AngleMode::Radians;
     double lastAnswer_ = 0;

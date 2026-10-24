@@ -37,23 +37,23 @@ int main(int argc,char** argv) {
               !canvas.setSamplingLimits({100,0}), "reject invalid limits");
         check(canvas.samplingLimits().maxEvaluationsPerPaint ==
               defaultLimits.maxEvaluationsPerPaint, "reject settings transactionally");
-        canvas.setCurves({curve("sin(x*75)", QColor("red")),
-                          curve("cos(x*99)", QColor("blue")),
+        canvas.setCurves({curve("sin(x)", QColor("red")),
+                          curve("cos(x)", QColor("blue")),
                           curve("tanh(1000*x)", QColor("green"))});
         check(canvas.setSamplingLimits({8,8}), "accept small deterministic budget");
         paint(canvas);
         check(canvas.samplingDiagnostics().lastPaintEvaluations <= 8,
               "one paint never exceeds shared callback budget");
         check(canvas.samplingDiagnostics().truncatedCurveBuilds >= 1,
-              "per-curve truncation is visible in diagnostics");
-        for (int i=0;i<12 && canvas.geometryBuildCount()<3;++i) {
+              "unfinished builds are visible in diagnostics");
+        for (int i=0;i<4096 && canvas.geometryBuildCount()<3;++i) {
             application.processEvents();
             paint(canvas);
             check(canvas.samplingDiagnostics().lastPaintEvaluations <= 8,
                   "every paint respects cap");
         }
         check(canvas.geometryBuildCount() == 3,
-              "deferred dirty curves eventually receive budget");
+              "deferred builds resume until all curves are complete");
         const auto count = canvas.geometryBuildCount();
         const auto total = canvas.samplingDiagnostics().totalEvaluations;
         paint(canvas);

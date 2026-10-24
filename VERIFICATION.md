@@ -3,9 +3,9 @@
 **Project version:** 0.1.0  
 **Verification date:** October 23, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS (developer-reported GUI verification)** — Issue #25 GCC 15.2.0 Debug and Release builds (18/18 GUI-enabled CTest each), core-only ASan/UBSan (13/13), 16 benchmark-statistics assertions, 150 sampling measurements and 750 offscreen Qt rendering/navigation measurements recorded; manual GUI regression verification reported successful. Performance timings are baseline measurements, not pass/fail thresholds.
+**Current status:** **PASS (Issue #26 automated regression verification); final manual retest not recorded** — GCC 15.2.0 Linux Debug GUI-enabled CTest **22/22**, incremental sampling **896,291 assertions** including a direct core-only ASan/UBSan run, and manual-recorder Python tests **12/12** passed. Debug and Release desktop applications rebuilt successfully. The retained manual report records the original tangent defect (**24 passed / 1 failed**, `GRA-03`); it has not been replaced with a post-fix manual PASS. Issue #25 benchmark measurements remain historical baselines, not current performance thresholds.
 
-This document records results through the graph rendering and navigation performance benchmark infrastructure associated with GitHub Issue #25. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
+This document records results through the Issue #26 wide-view rendering fix and its automated coverage checks. Issue #17–#25 results and Issue #25 performance measurements are retained as historical evidence. It is a **verification record**, not a development roadmap. Results are scoped to the commands and platforms actually exercised; they do not establish exhaustive mathematical correctness.
 
 ## 1. Build environment
 
@@ -15,15 +15,30 @@ This document records results through the graph rendering and navigation perform
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #25 application builds | Debug and Release, GUI enabled; optional benchmark targets ON |
+| Current Issue #26 application builds | Debug GUI-enabled full build and tests; Release desktop application target rebuilt |
+| Historical Issue #25 application builds | Debug and Release, GUI enabled; optional benchmark targets ON |
 | GUI framework | Qt Widgets |
 | Exact arithmetic | Boost.Multiprecision |
 | Test runner | CTest |
 | Sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer; core-only build |
 
-Qt 6 is the preferred development target. The exact Qt version selected by the recorded CMake configuration was not displayed in the submitted console output. Native Windows compatibility and Qt 5 compatibility have not been independently verified.
+The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target. The exact Qt version selected by the recorded CMake configuration was not displayed in the submitted console output. Native Windows compatibility and Qt 5 compatibility have not been independently verified.
 
 ## 2. Debug build — PASS
+
+### Issue #26 current build results
+
+**Commands executed during implementation:**
+
+```bash
+cmake --build build-issue26 -j 4
+ctest --test-dir build-issue26 --output-on-failure -j 4
+cmake --build build-issue26-release --target RationalStudio -j 4
+```
+
+The existing GCC 15.2.0 Debug configuration rebuilt RationalStudio, RationalCLI, and the regression executables. The full GUI-enabled Debug suite passed **22/22** tests. The existing Release configuration rebuilt the RationalStudio desktop target successfully; a complete current Release CTest run was not recorded. Both configurations use C++20 and Qt 6 Widgets. Configuration details are retained locally in their `CMakeCache.txt` files.
+
+### Issue #25 historical Debug build
 
 **Commands executed:**
 
@@ -43,7 +58,7 @@ GCC 15.2.0 successfully configured and built RationalStudio, RationalCLI, the te
 
 No compiler warnings or errors appeared in the submitted final Issue #25 Debug build output; this does not constitute a `-Werror` verification.
 
-### Release build — PASS
+### Issue #25 historical Release build — PASS
 
 **Commands executed:**
 
@@ -70,6 +85,44 @@ Total Test time (real) = 0.68 sec
 No compiler warnings or errors appeared in the submitted final Issue #25 Release build output. The interactive GUI was manually checked in Debug, not separately in Release.
 
 ## 3. Automated regression tests — PASS
+
+### Issue #26 current automated results
+
+**Recorded Debug suite result:**
+
+```text
+100% tests passed, 0 tests failed out of 22
+Total Test time (real) = 7.93 sec
+```
+
+This implementation run used `ctest --test-dir build-issue26 --output-on-failure -j 4`. The subsequently inspected local `build-issue26/Testing/Temporary/LastTest.log` also records all 22 passing tests; the dedicated canvas coverage test took 7.99 seconds in that log. Timings are host observations, not performance acceptance thresholds.
+
+| Executable / CTest | Recorded result |
+|---|---|
+| `RationalCurveCoverageRegressionTests` | PASS — 4,626 assertions |
+| `RationalCurveSamplingJobTests` | PASS — 896,291 assertions |
+| `RationalGraphCanvasCoverageTests` | PASS — 33,628 assertions |
+| `RationalGraphCanvasCoverageHiDpiTests` | PASS — 493 assertions; `QT_SCALE_FACTOR=2` |
+| `RationalGraphCanvasBudgetTests` | PASS — 332 assertions with resumable completion under small budgets |
+| `RationalGraphCanvasSchedulingTests` | PASS — 64 assertions |
+
+The configured suite contains **15 Qt-independent tests** and **7 offscreen Qt invocations from 6 widget executables**, totaling **22 CTests from 21 executables**. The high-DPI test invokes the coverage executable a second time. Optional benchmarks and Python recorder tests are not CTests.
+
+**Manual evidence recorder unit tests:**
+
+```bash
+python3 -m unittest discover -s tests -p 'test_issue26_gui_verification.py' -v
+```
+
+```text
+Ran 12 tests in 0.234s
+
+OK
+```
+
+These test recorder verdicts, required/optional cases, schema rejection, save/resume behavior, report escaping, and check exit status. They do not operate the desktop GUI or attest that the final rendering fix passed manual testing.
+
+### Issue #25 historical automated results
 
 **Command executed:**
 
@@ -129,6 +182,10 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalGraphRegressionMatrixTests` | Qt-independent cross-subsystem checks for viewport transformations, cursor-anchored zoom, sampled segment accuracy, restricted/invalid domains, discontinuities, and evaluation ceilings. |
 | `RationalGraphCanvasRegressionMatrixTests` | Offscreen Qt integration checks for cache reuse, navigation, resizing, invalid views, evaluation budgets, and discontinuity/domain rendering. |
 | `RationalGraphBenchmarkStatisticsTests` | Qt-independent checks of percentile summaries, report escaping, benchmark output files, and argument validation; no host-speed thresholds. |
+| `RationalCurveCoverageRegressionTests` | Reproduce left-side budget starvation, check distributed strip coverage, shared ceilings, and smooth/restricted-domain controls for the single-call sampler. |
+| `RationalCurveSamplingJobTests` | Complete tangent branches across widths and zoom levels, exact callback accounting, budget-independent geometry, pole/step separation, and steep continuous controls. |
+| `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
+| `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
 ### Discontinuity regression results
 
@@ -445,6 +502,23 @@ The Issue #25 Release runner completed **150 mathematical-sampling measurements*
 
 **Interpretation boundaries:** Sampling totals count mathematical callbacks, not instructions or CPU cycles. Cold Qt rendering includes sampling and rasterization; warm rendering is cached path rasterization. Offscreen `QWidget::render()` does not measure desktop compositor presentation, actual mouse-to-monitor latency, or FPS. The navigation settlement metric includes timer and event-loop waiting. Measurements are machine-, load-, and build-dependent; no before/after speedup can be established without a comparably instrumented earlier run.
 
+### Issue #26 wide-view sampling and rendering regression results
+
+The original GUI failure was caused by evaluation-budget exhaustion during left-to-right adaptive sampling of repeated tangent poles. An intermediate strip-based workaround spread geometry across the viewport but could still exhaust a strip partway through a branch and cache missing tails. The final renderer uses resumable `CurveSamplingJob` builds, retaining completed geometry until a complete replacement is ready.
+
+The current implementation provides:
+
+- Bounded callbacks per curve per paint and across each paint, with unfinished sampling resumed on paced later paints; cached probes prevent duplicate callback work in a retried interval.
+- World-space coarse interval limits, monotonicity-aware offscreen pruning, geometric error checks for steep chords, additional refinement around invalid probes, and clipped drawing coordinates.
+- Surrounding sampled geometry covering twice the widget width and height for nearby navigation previews, retained through wheel input, toolbar zoom, resize, and repeated interruption of an unfinished refresh.
+- Separate branch stroking and device-scale-aware raster caches for unchanged completed curves and pending previews; later curves retain their previews even when earlier curves consume the shared paint allowance.
+
+**Coverage:** Core tests use widths 350, 900, and 1600, height 617, a translated view, and scales 58, 15, 1.38, 0.5, and 0.1 pixels per unit. They check analytically expected tangent intersections with both viewport edges, finite ordered geometry, no sampled chords across tangent poles, exact callback accounting, and identical completed vertices under tiny versus large work allowances. Separate controls check shifted reciprocal poles, finite jumps, and connected steep `tanh` transitions.
+
+Offscreen widget tests render `tan(x)`, `1/(x-0.133)`, and `floor(x)` together at widths 350, 900, and 1600 and scales 58, 9, 1.38, 0.5, and 0.1. They check expected tail pixels near the top and bottom, identical repeated cached images, zero redundant geometry builds, interrupted refresh previews, toolbar zoom, resizing, and a four-callback shared budget. A separate 2× display-scale invocation checks widths/scales selected by `--dpi-smoke`.
+
+The rendered checks are targeted pixel-presence and same-run image comparisons, not a reference-image oracle for every curve or evidence of physical-display latency. The initial dense-view test exceeded its 60-second timeout before raster caching; the final implementation passed the same test in approximately eight seconds. This development observation is not a controlled benchmark or an FPS claim. Issue #25 benchmark data above have not been regenerated for the new renderer.
+
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
 **Configuration and build:**
@@ -496,9 +570,24 @@ All thirteen Qt-independent CTests passed in the sanitizer-enabled configuration
 
 **Scope:** The Qt desktop application, all five Qt widget regression executables, and the two optional non-CTest benchmark tools are excluded from this sanitizer build. The results do not establish Qt renderer or interactive GUI sanitizer coverage.
 
-## 5. Desktop GUI — PASS (developer-reported Issue #25 manual verification)
+### Issue #26 incremental sampling sanitizer result
 
-The current Issue #25 Debug application was launched using:
+**Commands executed during implementation:**
+
+```bash
+cmake --build build-issue26-asan --target RationalCurveSamplingJobTests -j 4
+ASAN_OPTIONS=detect_leaks=0 ./build-issue26-asan/RationalCurveSamplingJobTests
+```
+
+```text
+PASS: 896291 sampling job assertions
+```
+
+The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-frame-pointer`. No ASan or UBSan failure was reported for this direct executable run. Leak detection was disabled for this invocation. This is a focused current result, separate from the historical **13/13** Issue #25 sanitizer suite above; the full current **15-test** core-only suite and Qt renderer sanitizer tests were not recorded. The original Issue #26 sanitizer build directory is no longer present locally at documentation-update time; the command/result above are retained from the implementation session.
+
+## 5. Desktop GUI — historical passes and Issue #26 retest status
+
+The historical Issue #25 Debug application was launched using:
 
 ```bash
 ./build-issue25/RationalStudio
@@ -592,9 +681,26 @@ The Release benchmark runner completed successfully with 150 sampling measuremen
 
 **Scope:** Manual functional checks and offscreen widget tests are not complete end-to-end GUI automation, pixel-comparison testing, accessibility validation, or controlled display/compositor performance benchmarking. The recorded results do not establish mathematically perfect graph rendering.
 
+### Issue #26 manual GUI evidence and final-fix retest status
+
+The local recorder report was updated at **2026-10-24T01:17:42+00:00** (October 23 in the development timezone), for commit `a4e6150063c0ce2cf3dbdebeb2b0f93448c5ecb5` with the recorder files untracked. It identifies Linux, KDE/Wayland, and `build-issue26/RationalStudio`.
+
+**Recorded manual assessment: FAIL — 24 passed, 1 failed, 0 skipped, 0 not run.** Of 22 required checks, 21 passed and `GRA-03` failed; all three optional checks passed. The failed observation describes tangent branches clustered on the left when zoomed out, with screenshot references `GRA-03-Zoom-Out-Fail.png` and `GRA-03-Zoom-Out-Fail-Zoomed_In.png` in `build-issue26/`.
+
+The other recorded passes cover launch, ordinary/restricted-domain/steep curves, tracing, panning and prior flicker, zoom, navigation, resizing, editing, eight demanding curves, persistence, PNG export, other calculator workspaces, and settled-view checks. Optional passes include malformed workspace handling, an interactive Release build, and an additional display scale/monitor. These observations predate the final rendering fix and are not evidence of a post-fix manual PASS.
+
+The final fix has the passing automated and focused rendered-pixel coverage in Section 3. **A fresh operator-attested manual retest of the final implementation has not been recorded.** Keep the original failed session as historical evidence and use a new recorder output file for a retest, as described in `docs/Issue26GraphingManualQA.md`.
+
+**Local evidence fingerprints:**
+
+- `verification-results/issue26/manual_gui.json` — SHA-256 `29b50cb4edd60105fbbf87ee0e1fd7824813efa43a19af3b2e09aa784d3170bd`.
+- `verification-results/issue26/manual_gui.md` — SHA-256 `802603754c20a5426c2004b19eb0ad337911ab5c659ae0923471e9450023ca52`.
+
+Benchmark sources/results and verification reports remain local and excluded from Git by the current `.gitignore`. The Issue #25 source fingerprints above match the inspected local files. Their historical aggregates are retained here; neither those measurements nor the original manual evidence have been overwritten for this update.
+
 ## 6. Terminal application
 
-The `RationalCLI` target built successfully in the current Issue #25 Debug, Release, and core-only sanitizer configurations. A historical manual CLI smoke test produced:
+The `RationalCLI` target built successfully in the historical Issue #25 Debug, Release, and core-only sanitizer configurations and the current Issue #26 full Debug build. The current Release rebuild targeted the desktop application only. A historical manual CLI smoke test produced:
 
 ```text
 Input:     5/2 7/4
@@ -611,6 +717,10 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 | Linux Debug, Qt GUI enabled (Issue #25) | PASS | 18/18 PASS | Manual GUI regression verification PASS (developer-reported); Qt widget tests PASS |
 | Linux Release, Qt GUI enabled (Issue #25) | PASS | 18/18 PASS | Offscreen Qt widget tests PASS; 150 core sampling and 750 Qt benchmark observations recorded; interactive Release GUI launch not recorded |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #25) | PASS | 13/13 PASS | Core regression and statistics test execution PASS; Qt GUI excluded |
+| Linux Debug, Qt GUI enabled (Issue #26) | PASS | 22/22 PASS | Offscreen pixel/preview/repaint regressions and 2× display-scale test PASS; final manual retest not recorded |
+| Linux Release desktop target (Issue #26) | PASS | Full current suite not run | Final interactive Release retest not recorded |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #26) | Target PASS | Direct sampling job: 896,291 assertions PASS | Leak detection disabled; full current core suite and Qt GUI excluded from this result |
+| Python manual evidence recorder (Issue #26) | Not applicable | 12/12 unit tests PASS | Historical manual report: 24 PASS / 1 FAIL; final manual retest not recorded |
 | Native Windows | Not tested | Not tested | Not tested |
 | Qt 5 | Not tested | Not tested | Not tested |
 
@@ -621,12 +731,13 @@ The following areas remain outside the current verification scope or are known a
 - Finite probing cannot detect all discontinuities, arbitrarily narrow domain gaps, or unsampled singularities.
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
-- Per-curve and shared per-paint callback-count limits bound evaluation counts, not the time spent in any callback or the total frame time. Budget-limited geometry can be truncated or deferred.
+- Per-curve and shared per-paint callback-count limits bound evaluation counts, not the time spent in any callback or the total frame time. The single-call sampler can return truncated geometry. Current GUI sampling jobs resume unfinished work; complete replacement paths may take multiple paints.
 - Valid `QPainterPath` geometry is cached; rapid navigation uses timer-coalesced refreshes and transformed cached-path previews. Resizes invalidate stale geometry and outdated refresh requests, while bounded pixel-space grid positions avoid unrepresentable label coordinates. At extreme finite centers, grid markers may be suppressed when floating-point precision is insufficient. Sampling remains on the GUI thread under callback budgets; no frame-time, input-latency, or FPS guarantee is claimed.
-- Five offscreen Qt `GraphCanvas` suites cover cache, budget, scheduling, viewport-boundary, and cross-feature regression behavior. Issue #25 additionally records Release offscreen repaint and synthetic navigation benchmarks; the timing tools are not CTests, and full end-to-end GUI automation and rendered-pixel correctness testing have not been established.
+- Six offscreen Qt `GraphCanvas` executables cover cache, budget, scheduling, viewport boundaries, cross-feature behavior, and selected rendered-pixel/repaint comparisons, with a second coverage invocation at 2× display scale. Full desktop interaction automation and exhaustive rendered-pixel correctness are not established. Issue #25 timing measurements remain historical; benchmark tools are not CTests.
 - A panning-flicker regression was reported during initial Issue #22 manual verification; the developer subsequently attested that it was corrected and retested.
+- Retained preview geometry has finite surrounding coverage; sufficiently large navigation jumps can expose regions requiring fresh sampling. No arbitrary-zoom or universal flicker-free rendering guarantee is established. The original Issue #26 failed manual check still requires a recorded post-fix retest.
 - The complete Qt application has not undergone recorded sanitizer testing.
-- Native Windows builds, Qt 5 compatibility, and separate runtime verification of the Release GUI remain unverified.
+- Native Windows builds, Qt 5 compatibility, and a post-fix interactive Release GUI retest remain unverified. The original Issue #26 optional Release check passed before the final fix.
 
 ## 9. Reproduction
 
@@ -654,7 +765,7 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
@@ -662,9 +773,14 @@ These generic commands describe a reproducible procedure. Current Issue #25 vali
 |---|---|
 | GCC 15.2.0 Debug GUI/CLI/core build — Issue #25 | PASS |
 | GCC 15.2.0 Release GUI/CLI/core build — Issue #25 | PASS |
-| GUI-enabled Debug CTest suite | **18/18 PASS** |
-| GUI-enabled Release CTest suite | **18/18 PASS** |
-| Core-only ASan/UBSan CTest suite | **13/13 PASS** |
+| GUI-enabled Debug CTest suite — Issue #26 | **22/22 PASS** |
+| GUI-enabled Release CTest suite — Issue #25 historical | **18/18 PASS**; full Issue #26 suite not recorded |
+| Core-only ASan/UBSan CTest suite — Issue #25 historical | **13/13 PASS** |
+| Issue #26 Debug full build / Release desktop rebuild | PASS / PASS |
+| Issue #26 incremental sampling assertions | **896,291 PASS**, including direct ASan/UBSan run with leak detection disabled |
+| Issue #26 canvas / 2× display-scale assertions | **33,628 PASS / 493 PASS** |
+| Manual evidence recorder unit tests | **12/12 PASS** |
+| Issue #26 original manual GUI session | **24 PASS / 1 FAIL** (`GRA-03`); final-fix manual retest not recorded |
 | Benchmark statistics regression assertions | **16 PASS** |
 | Qt-independent sampling measurements | **150 recorded** (Release benchmark; six groups) |
 | Offscreen Qt rendering and navigation measurements | **750 recorded** (Release benchmark; thirty groups) |
@@ -674,11 +790,11 @@ These generic commands describe a reproducible procedure. Current Issue #25 vali
 | Issue #25 Debug GUI launch | Executed |
 | Issue #25 manual GUI regression verification | PASS — developer-reported |
 | Issue #25 compiler warnings | None displayed in supplied final build output; not a `-Werror` verification |
-| Separate interactive Release GUI verification | Not recorded |
+| Interactive Release GUI verification | Original Issue #26 optional check PASS; final-fix retest not recorded |
 | Previous Issue #23 KDE KIO diagnostics | Historical observation; not reported in Issue #25 supplied output |
 | Prior CLI smoke test | PASS — previous baseline |
 | Full GUI sanitizer coverage | Not performed |
-| End-to-end GUI/pixel-level testing | Not performed |
+| Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Assessment:** Issue #25 is supported by successful GCC 15.2.0 Linux Debug and Release builds, eighteen passing GUI-enabled CTests in both configurations, thirteen passing Qt-independent ASan/UBSan tests, and sixteen passing benchmark-statistics assertions. The developer reports successful manual GUI checks. The Release performance runner recorded 150 sampling and 750 offscreen canvas/navigation measurements; median/p95 values, aggregate callbacks/builds, scenarios, metadata, and source hashes are captured above from local measurement files. This is an initial, environment-dependent benchmark baseline, **not** a claim of higher FPS, guaranteed input latency, or measured speedup over an uninstrumented prior revision. Interactive Release GUI and Qt sanitizer coverage are not recorded, and physical display latency was not measured.
+**Assessment:** The Issue #26 fix is supported by a successful Linux Debug full build, **22/22 passing GUI-enabled CTests**, **896,291 passing incremental sampling assertions** including a direct ASan/UBSan run, **12 passing recorder unit tests**, and a successful Release desktop rebuild. Targeted core and rendered-pixel checks cover tangent tails across tested zooms and widths, callback accounting, deterministic completion, retained previews, same-run image stability, resizing, and 2× display scaling. The original manual report still records the tangent failure; no post-fix manual PASS is inferred. Historical Issue #25 test results and 150 sampling / 750 offscreen benchmark measurements remain intact and are not current-renderer speedup evidence. Full current Release and sanitizer suites, full Qt sanitizer coverage, native Windows/Qt 5 behavior, and physical display latency are outside the recorded current verification.
