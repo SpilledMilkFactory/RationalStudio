@@ -80,6 +80,8 @@ y = floor(x)
 
 **Important limitation:** Finite sampling cannot establish continuity for every mathematical function. Narrow singularities, unobserved domain gaps, high-frequency oscillations, and extreme nonlinear features may still be missed or approximated imperfectly. Additional terminal refinement improves selected steep continuous curves but does not guarantee their reconstruction. Cached geometry is rebuilt when required inputs change; persistent caching does not eliminate the cost of sampling during navigation.
 
+**Named-variable parsing (Issue #27).** The Qt-independent expression compiler can accept explicitly declared named variables using `VariableScope` and evaluate them with per-call `VariableBindings`, without reparsing when values change. Identifiers are ASCII `[A-Za-z_][A-Za-z0-9_]*` (maximum 64 characters), case-insensitive, and cannot shadow `x`, `ans`, constants, or builtin functions. Unknown/unbound variables remain invalid/undefined. **This core API does not yet implement GUI variable assignments, dependency tracking, function definitions, sliders, or workspace persistence; those belong to later Milestone 2 issues.**
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -118,7 +120,8 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | Component | Responsibility |
 |---|---|
 | `Rational` | Exact fractions, normalization, parsing, arithmetic, comparisons, and decimal conversion. |
-| `Expression` | Parsing, operator precedence, mathematical functions, constants, and repeated expression evaluation. |
+| `Expression` | Parsing, operator precedence, mathematical functions, constants, named-variable nodes, explicit scope validation, and repeated evaluation with per-call bindings. |
+| `VariableScope` / `VariableBindings` | Qt-independent declared identifier sets and normalized finite runtime values; no assignment language or dependency graph yet. |
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveSamplingJob` | Incremental visible-geometry builds, bounded work per advance, retained probes, and completion reporting. |
@@ -190,6 +193,7 @@ RationalStudio/
     ├── GraphBenchmarkStatisticsTests.cpp
     ├── CurveCoverageRegressionTests.cpp
     ├── CurveSamplingJobTests.cpp
+    ├── NamedVariableTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -271,7 +275,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **22 tests from 21 executables**: fifteen Qt-independent tests and seven offscreen Qt invocations from six widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register fifteen tests:
+With GUI and testing enabled, CTest registers **23 tests from 22 executables**: sixteen Qt-independent tests and seven offscreen Qt invocations from six widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register sixteen tests:
 
 | Executable | Focus |
 |---|---|
@@ -295,6 +299,7 @@ With GUI and testing enabled, CTest registers **22 tests from 21 executables**: 
 | `RationalGraphBenchmarkStatisticsTests` | Qt-independent benchmark statistics, CSV/JSON output, and argument validation helpers; no performance thresholds. |
 | `RationalCurveCoverageRegressionTests` | Reproduce left-side budget starvation, check distributed strip coverage, shared ceilings, and smooth/restricted-domain controls for the single-call sampler. |
 | `RationalCurveSamplingJobTests` | Complete tangent branches across widths and zoom levels, exact callback accounting, budget-independent geometry, pole/step separation, and steep continuous controls. |
+| `RationalNamedVariableTests` | Scope declarations, identifier validation, reserved names, case-folded binding lookup, referenced-variable introspection, re-evaluation without reparsing, and legacy API regressions. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
