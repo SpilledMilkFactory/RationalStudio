@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace rationalstudio {
@@ -31,6 +32,12 @@ struct CurveSamplingOptions {
 
     // Hard maximum number of callback invocations for this curve.
     std::size_t maxEvaluations = 65536;
+
+    // Optional fair coverage mode for interactive rendering. Divide the
+    // screen into strips and share the curve budget across them. Expensive
+    // poles near the left edge must not starve the right side of the graph.
+    // The default preserves legacy sampling for existing API consumers.
+    bool distributeEvaluationsAcrossViewport = false;
 };
 
 // Explicit, deterministic shared callback budget. A GraphCanvas paint can
@@ -61,7 +68,8 @@ private:
 enum class CurveTruncationReason {
     None,
     PerCurveLimit,
-    SharedBudget
+    SharedBudget,
+    SpatialQuota
 };
 
 struct CurveSamples {
@@ -69,6 +77,23 @@ struct CurveSamples {
     std::size_t evaluations = 0;
     bool truncated = false;
     CurveTruncationReason truncationReason = CurveTruncationReason::None;
+};
+
+// Incremental visible-geometry build. Each advance has a fresh hard callback
+// allowance; unfinished work is retained rather than cached as a final path.
+// Completed tiles are never sampled again. The callback and viewport are owned
+// by the build, so changing inputs requires creating a new build.
+class CurveSamplingJob {
+public:
+    CurveSamplingJob(GraphViewport viewport, std::function<double(double)> function);
+    ~CurveSamplingJob();
+    CurveSamplingJob(const CurveSamplingJob&) = delete;
+    CurveSamplingJob& operator=(const CurveSamplingJob&) = delete;
+    bool advance(std::size_t maxEvaluations, CurveEvaluationBudget& sharedBudget);
+    [[nodiscard]] const CurveSamples& samples() const;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 // Adaptively approximate y=f(x) over the current screen-width interval.

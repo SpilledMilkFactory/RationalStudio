@@ -16,3 +16,5 @@ Thumbs.db
 # benchmark results
 /benchmarks/*
 /benchmark-results/*
+
+/verification-results/*

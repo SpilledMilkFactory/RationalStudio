@@ -282,6 +282,27 @@ if(BUILD_TESTING)
         LABELS "graphing;benchmark;core;regression"
     )
 
+    # ---------------------------------------------------------
+    # Issue #26 — Wide-Viewport Curve Coverage Regression
+    # ---------------------------------------------------------
+
+    add_executable(RationalCurveCoverageRegressionTests
+        tests/CurveCoverageRegressionTests.cpp
+    )
+
+    target_link_libraries(RationalCurveCoverageRegressionTests PRIVATE
+        RationalCore
+    )
+
+    add_test(
+        NAME RationalCurveCoverageRegressionTests
+        COMMAND RationalCurveCoverageRegressionTests
+    )
+
+    add_executable(RationalCurveSamplingJobTests tests/CurveSamplingJobTests.cpp)
+    target_link_libraries(RationalCurveSamplingJobTests PRIVATE RationalCore)
+    add_test(NAME RationalCurveSamplingJobTests COMMAND RationalCurveSamplingJobTests)
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -300,6 +321,8 @@ if(BUILD_TESTING)
         RationalGraphViewportBoundaryTests
         RationalGraphRegressionMatrixTests
         RationalGraphBenchmarkStatisticsTests
+        RationalCurveCoverageRegressionTests
+        RationalCurveSamplingJobTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -394,6 +417,21 @@ if(RATIONALSTUDIO_BUILD_GUI)
     # --------------------------------------------------------- 
 
     if(BUILD_TESTING)   
+
+        add_executable(RationalGraphCanvasCoverageTests
+            tests/GraphCanvasCoverageTests.cpp src/gui/GraphCanvas.cpp)
+        target_include_directories(RationalGraphCanvasCoverageTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalGraphCanvasCoverageTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        add_test(NAME RationalGraphCanvasCoverageTests COMMAND RationalGraphCanvasCoverageTests)
+        set_tests_properties(RationalGraphCanvasCoverageTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 60)
+
+        add_test(NAME RationalGraphCanvasCoverageHiDpiTests
+            COMMAND RationalGraphCanvasCoverageTests --dpi-smoke)
+        set_tests_properties(RationalGraphCanvasCoverageHiDpiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=2" TIMEOUT 60)
 
         add_executable(RationalGraphCanvasCacheTests
             tests/GraphCanvasCacheTests.cpp

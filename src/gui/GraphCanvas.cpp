@@ -34,6 +34,35 @@ QPointF wheelPoint(QWheelEvent* e) {
     return e->posF();
 #endif
 }
+void drawCurvePath(QPainter& painter, const QPainterPath& path) {
+    // Stroke each disconnected branch separately. Sending thousands of
+    // overlapping asymptote branches through one Qt path stroker builds a
+    // large overlapping outline and makes dense zoomed-out views expensive.
+    for (const auto& branch : path.toSubpathPolygons()) {
+        painter.drawPolyline(branch);
+    }
+}
+bool rasterMatches(const QImage& image, const QSize& size, double deviceRatio) {
+    return !image.isNull() && image.devicePixelRatioF() == deviceRatio &&
+        image.width() == qCeil(size.width() * deviceRatio) &&
+        image.height() == qCeil(size.height() * deviceRatio);
+}
+QImage rasterizeCurve(const QPainterPath& path, const QColor& color,
+                      const QSize& size, double deviceRatio,
+                      const QTransform& transform = {}) {
+    QImage image(QSize(qCeil(size.width() * deviceRatio), qCeil(size.height() * deviceRatio)),
+                 QImage::Format_ARGB32_Premultiplied);
+    image.setDevicePixelRatio(deviceRatio);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setTransform(transform);
+    QPen pen(color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    pen.setCosmetic(true);
+    painter.setPen(pen);
+    drawCurvePath(painter, path);
+    return image;
+}
 QString numberLabel(double value) {
     if (std::abs(value) < 1e-12) value = 0;
     return QString::number(value, 'g', 6);
@@ -66,6 +95,24 @@ GraphCanvas::GraphCanvas(QWidget* parent) : QWidget(parent) {
     });
 }
 
+void GraphCanvas::invalidateGeometry(bool retainPreview) {
+    pendingGeometry_.resize(curves_.size());
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        auto& pending = pendingGeometry_[i];
+        pending.job.reset();
+        pending.raster = {};
+        if (retainPreview && geometryCache_.isReady(i)) {
+            pending.preview = geometryCache_.readyGeometry(i);
+            pending.previewViewport = geometryViewport_;
+            pending.hasPreview = true;
+        } else if (!retainPreview) {
+            pending.preview = {};
+            pending.hasPreview = false;
+        }
+    }
+    geometryCache_.invalidateAll();
+}
+
 void GraphCanvas::cancelScheduledWork() {
     navigationTimer_.stop();
     deferredTimer_.stop();
@@ -78,6 +125,7 @@ void GraphCanvas::requestNavigationRefresh() {
     // If a timer fired but its paint is still queued, the new input makes
     // that pending rebuild obsolete. Preserve ready paths for its preview.
     refreshQueued_ = false;
+    for (auto& pending : pendingGeometry_) pending.raster = {};
     if (repaintScheduler_.navigationChanged()) navigationTimer_.start();
     // Preserve old geometry while the input interval is coalescing. It is
     // transformed to match the current viewport during preview paints.
@@ -96,20 +144,22 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     repaintScheduler_.cancelDeferred();
     geometryCache_.synchronize(keys);
     curves_ = std::move(curves);
+    pendingGeometry_.clear();
+    pendingGeometry_.resize(curves_.size());
     update();
 }
 void GraphCanvas::setAngleMode(AngleMode mode) {
     if (angleMode_ == mode) return;
     angleMode_ = mode;
     cancelScheduledWork();
-    geometryCache_.invalidateAll();
+    invalidateGeometry();
     update();
 }
 void GraphCanvas::setLastAnswer(double answer) {
     if (lastAnswer_ == answer || (std::isnan(lastAnswer_) && std::isnan(answer))) return;
     lastAnswer_ = answer;
     cancelScheduledWork();
-    geometryCache_.invalidateAll();
+    invalidateGeometry();
     update();
 }
 bool GraphCanvas::setSamplingLimits(GraphSamplingLimits limits) {
@@ -127,7 +177,7 @@ bool GraphCanvas::setSamplingLimits(GraphSamplingLimits limits) {
     }
     samplingLimits_ = limits;
     cancelScheduledWork();
-    geometryCache_.invalidateAll();
+    invalidateGeometry(true);
     update();
     return true;
 }
@@ -142,7 +192,7 @@ void GraphCanvas::setView(double x, double y, double pixelsPerUnit) {
         oldY == viewport_.centerY() &&
         oldScale == viewport_.pixelsPerUnit()) return;
     cancelScheduledWork();
-    geometryCache_.invalidateAll();
+    invalidateGeometry(true);
     update();
 }
 QPointF GraphCanvas::worldToScreen(const QPointF& p) const {
@@ -273,15 +323,26 @@ void GraphCanvas::drawCurves(QPainter& p) {
                                          temporary->ty);
                 for (std::size_t i = 0; i < curves_.size(); ++i) {
                     const auto& curve = curves_[i];
-                    if (!curve.enabled || !curve.function || !curve.function->valid() ||
-                        !geometryCache_.isReady(i)) continue;
+                    if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
+                    const QPainterPath* path = nullptr;
+                    auto transform = preview;
+                    if (geometryCache_.isReady(i)) {
+                        path = &geometryCache_.readyGeometry(i);
+                    } else if (pendingGeometry_[i].hasPreview) {
+                        const auto saved = graphScreenPreview(pendingGeometry_[i].previewViewport, viewport_);
+                        if (!saved) continue;
+                        transform = QTransform(saved->ratio, 0, 0, saved->ratio, saved->tx, saved->ty);
+                        path = &pendingGeometry_[i].preview;
+                    }
+                    if (!path) continue;
                     p.save();
-                    p.setTransform(preview, true);
+                    p.setTransform(transform, true);
                     // The preview is temporary; final QPainterPath geometry
                     // will be resampled at the new viewport on timer expiry.
-                    p.setPen(QPen(curve.color, 2.5, Qt::SolidLine,
-                                  Qt::RoundCap, Qt::RoundJoin));
-                    p.drawPath(geometryCache_.readyGeometry(i));
+                    QPen pen(curve.color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+                    pen.setCosmetic(true);
+                    p.setPen(pen);
+                    drawCurvePath(p, *path);
                     p.restore();
                 }
         }
@@ -296,7 +357,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
     // a preview with no ready geometry.
     if (refreshQueued_) {
         refreshQueued_ = false;
-        geometryCache_.invalidateAll();
+        invalidateGeometry(true);
     }
 
     // Count only drawable, currently dirty curves. Cached/hidden entries
@@ -316,6 +377,19 @@ void GraphCanvas::drawCurves(QPainter& p) {
     CurveEvaluationBudget paintBudget(samplingLimits_.maxEvaluationsPerPaint);
     std::size_t deferred = 0;
 
+    const double deviceRatio = p.device()->devicePixelRatioF();
+    const auto drawPendingPreview = [&](std::size_t index) {
+        auto& pending = pendingGeometry_[index];
+        if (!pending.hasPreview) return;
+        if (!rasterMatches(pending.raster, size(), deviceRatio)) {
+            const auto transform = graphScreenPreview(pending.previewViewport, viewport_);
+            if (!transform) return;
+            pending.raster = rasterizeCurve(pending.preview, curves_[index].color, size(), deviceRatio,
+                QTransform(transform->ratio, 0, 0, transform->ratio, transform->tx, transform->ty));
+        }
+        p.drawImage(QPointF(0, 0), pending.raster);
+    };
+
     for (std::size_t index = 0; index < curves_.size(); ++index) {
         const auto& curve = curves_[index];
         if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
@@ -326,6 +400,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
             // receives a fresh budget and will attempt it again.
             if (paintBudget.remaining() < 4) {
                 ++deferred;
+                drawPendingPreview(index);
                 continue;
             }
 
@@ -343,39 +418,53 @@ void GraphCanvas::drawCurves(QPainter& p) {
                 std::max(allocationFloor, fairShare)
             });
 
-            CurveSamplingOptions options;
-            options.maxEvaluations = quota;
+            auto& pending = pendingGeometry_[index];
+            if (!pending.job) {
+                const auto function = curve.function;
+                const auto answer = lastAnswer_;
+                const auto mode = angleMode_;
+                // Keep a surrounding viewport of geometry for panning and
+                // zoom previews, including tails outside the current window.
+                GraphViewport samplingView = viewport_;
+                (void)samplingView.setDimensions(width() * 2, height() * 2);
+                pending.samplingOffset = QPointF(
+                    (samplingView.width() - width()) * 0.5,
+                    (samplingView.height() - height()) * 0.5);
+                pending.job = std::make_unique<CurveSamplingJob>(samplingView,
+                    [function, answer, mode](double x) {
+                        return function->evaluate(x, answer, mode);
+                    });
+            }
+            if (!pending.job->advance(quota, paintBudget)) {
+                ++samplingDiagnostics_.truncatedCurveBuilds;
+                ++deferred;
+                --dirty;
+                drawPendingPreview(index);
+                continue;
+            }
             (void)geometryCache_.getOrBuild(index, [&] {
-                const CurveSamples samples = sampleExplicitCurve(
-                    viewport_,
-                    [&](double x) {
-                        return curve.function->evaluate(x, lastAnswer_, angleMode_);
-                    },
-                    options,
-                    &paintBudget
-                );
-
-                if (samples.truncated) {
-                    ++samplingDiagnostics_.truncatedCurveBuilds;
-                }
-
-                // A budget-truncated path can contain incomplete geometry.
-                // It is cached deliberately to avoid indefinite re-sampling
-                // on every mouse move. Changing limits or mathematical
-                // inputs invalidates and rebuilds the path.
                 QPainterPath result;
-                for (const CurveVertex& point : samples.vertices) {
-                    if (point.moveTo) result.moveTo(point.screenX, point.screenY);
-                    else result.lineTo(point.screenX, point.screenY);
+                for (const CurveVertex& point : pending.job->samples().vertices) {
+                    const QPointF position(point.screenX - pending.samplingOffset.x(),
+                                           point.screenY - pending.samplingOffset.y());
+                    if (point.moveTo) result.moveTo(position);
+                    else result.lineTo(position);
                 }
                 ++geometryBuildCount_;
                 return result;
             });
+            pending.job.reset();
+            pending.preview = {};
+            pending.raster = {};
+            pending.hasPreview = false;
             --dirty;
         }
 
-        p.setPen(QPen(curve.color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        p.drawPath(geometryCache_.readyGeometry(index));
+        auto& raster = pendingGeometry_[index].raster;
+        if (!rasterMatches(raster, size(), deviceRatio)) {
+            raster = rasterizeCurve(geometryCache_.readyGeometry(index), curve.color, size(), deviceRatio);
+        }
+        p.drawImage(QPointF(0, 0), raster);
     }
 
     samplingDiagnostics_.lastPaintEvaluations = paintBudget.consumed();
@@ -520,7 +609,7 @@ void GraphCanvas::resizeEvent(QResizeEvent* e) {
     // from the previous dimensions and retain the last valid view; the
     // paint guard suppresses stale geometry until positive dimensions return.
     cancelScheduledWork();
-    geometryCache_.invalidateAll();
+    invalidateGeometry(true);
     (void)viewport_.setDimensions(nextWidth, nextHeight);
     update();
 }
