@@ -61,6 +61,11 @@ class GraphCanvas final : public QWidget {
 public:
     explicit GraphCanvas(QWidget* parent = nullptr);
     void setCurves(std::vector<GraphCurve> curves);
+    // Set a complete binding snapshot. `changed` names are the only
+    // definitions whose numeric/undefined values changed; their dependent
+    // curves alone lose completed geometry and in-flight sampling jobs.
+    void setVariableBindings(VariableBindings bindings,
+                             const std::vector<std::string>& changed);
     void setAngleMode(AngleMode mode);
     void setLastAnswer(double ans);
     // Updating limits invalidates existing paths, including previously
@@ -129,6 +134,7 @@ private:
     std::vector<GraphCurve> curves_;
     AngleMode angleMode_ = AngleMode::Radians;
     double lastAnswer_ = 0;
+    VariableBindings bindings_;
     GraphViewport viewport_;
     CurveGeometryCache<QPainterPath> geometryCache_;
     std::size_t geometryBuildCount_ = 0;

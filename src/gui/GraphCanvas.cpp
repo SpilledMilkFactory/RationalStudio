@@ -1,6 +1,7 @@
 #include "GraphCanvas.hpp"
 #include "CurveSampler.hpp"
 #include "GraphGridLayout.hpp"
+#include "GraphVariableDependencies.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -148,6 +149,31 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     pendingGeometry_.resize(curves_.size());
     update();
 }
+void GraphCanvas::setVariableBindings(VariableBindings bindings,
+                                      const std::vector<std::string>& changed) {
+    // A completed CurveSamplingJob captured an immutable bindings snapshot.
+    // Discard its work only when one of its dependencies changed.
+    bindings_ = std::move(bindings);
+    if (changed.empty()) return;
+    bool any = false;
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        const auto& expression = curves_[i].function;
+        if (!expression || !graphCurveDependsOnAny(*expression, changed)) continue;
+        geometryCache_.invalidate(i);
+        auto& pending = pendingGeometry_[i];
+        pending.job.reset();
+        pending.preview = {}; // old mathematical values must never be previewed
+        pending.raster = {};
+        pending.hasPreview = false;
+        any = true;
+    }
+    if (any) {
+        // Retain unrelated ready paths/jobs. Existing deferred-paint pacing
+        // and navigation coalescing remain authoritative.
+        update();
+    }
+}
+
 void GraphCanvas::setAngleMode(AngleMode mode) {
     if (angleMode_ == mode) return;
     angleMode_ = mode;
@@ -423,6 +449,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
                 const auto function = curve.function;
                 const auto answer = lastAnswer_;
                 const auto mode = angleMode_;
+                const auto bindings = bindings_; // immutable per-job snapshot
                 // Keep a surrounding viewport of geometry for panning and
                 // zoom previews, including tails outside the current window.
                 GraphViewport samplingView = viewport_;
@@ -431,8 +458,8 @@ void GraphCanvas::drawCurves(QPainter& p) {
                     (samplingView.width() - width()) * 0.5,
                     (samplingView.height() - height()) * 0.5);
                 pending.job = std::make_unique<CurveSamplingJob>(samplingView,
-                    [function, answer, mode](double x) {
-                        return function->evaluate(x, answer, mode);
+                    [function, answer, mode, bindings](double x) {
+                        return function->evaluate(x, answer, mode, bindings);
                     });
             }
             if (!pending.job->advance(quota, paintBudget)) {
@@ -490,7 +517,7 @@ void GraphCanvas::drawTrace(QPainter& p) const {
     double distance = 24;
     for (const auto& curve : curves_) {
         if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
-        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_);
+        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
         if (!std::isfinite(y)) continue;
         const double screenY = worldToScreen({world.x(), y}).y();
         const double dy = std::abs(screenY - pointer_.y());

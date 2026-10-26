@@ -314,21 +314,20 @@ QWidget* MainWindow::makeGraphPage() {
     connect(add, &QPushButton::clicked, this, [this] { addGraphRow(); });
     sv->addLayout(inputHead);
     // Issue #30: Session-local interactive variable sliders.
-    // Graph dependency updates are handled in Issue #31.
+    // Issue #31 supplies scalar bindings and selective graph invalidation.
     // Workspace persistence is handled in Issue #35.   
 
     variableSliders_ = new VariableSliderPanel(side);   
 
+    variableSliders_->onDefinitionsChanged =
+        [this](const std::vector<std::string>& changed, bool scopeChanged) {
+            onVariableDefinitionsChanged(changed, scopeChanged);
+        };
     variableSliders_->onValueChanged =
         [this](const std::string& name, double value) {
             if (graphStatus_) {
-                graphStatus_->setText(
-                    "Variable " +
-                    QString::fromStdString(name) +
-                    " = " +
-                    QString::number(value, 'g', 12) +
-                    " (graph binding arrives in Issue #31)"
-                );
+                graphStatus_->setText("Variable " + QString::fromStdString(name) +
+                                      " = " + QString::number(value, 'g', 12));
             }
         };  
 
@@ -423,14 +422,27 @@ void MainWindow::removeGraphRow(GraphRow* row) {
     rebuildGraph();
 }
 
-void MainWindow::rebuildGraph() {
+void MainWindow::onVariableDefinitionsChanged(
+    const std::vector<std::string>& changed, bool scopeChanged) {
+    if (!variableSliders_ || !graph_) return;
+    graph_->setVariableBindings(variableSliders_->definitions().bindings(), changed);
+    if (scopeChanged) rebuildGraph(changed);
+}
+
+void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
     if (!graph_) return;
+    const VariableScope scope = variableSliders_
+        ? variableSliders_->definitions().scope() : VariableScope{};
     std::vector<GraphCurve> curves;
     curves.reserve(graphRows_.size());
     for (auto* row : graphRows_) {
         const QString raw = row->input->text().trimmed();
         const QString source = normalizedGraphInput(raw);
         if (source.isEmpty()) {
+            // Emptying a row drops the old compiled scope. Restoring identical
+            // text after a declaration was removed must not revive a stale AST.
+            row->parsedExpression.reset();
+            row->parsedSource.clear();
             row->info->setText("Enter an expression to plot.");
             row->info->setStyleSheet("color:#93a4b9; font-size:11px;");
             continue;
@@ -438,8 +450,25 @@ void MainWindow::rebuildGraph() {
         // Preserve the compiled expression object when only visibility,
         // display syntax or other presentation metadata changes. Geometry
         // caching uses this identity, so reparsing every row would defeat it.
-        if (!row->parsedExpression || row->parsedSource != source) {
-            row->parsedExpression = std::make_shared<Expression>(source.toStdString());
+        // On a declaration/removal, only retry invalid rows or recompile
+        // rows that actually named the removed variable. Unrelated compiled
+        // AST identities survive scope edits, visibility and style changes.
+        bool scopeAffectsRow = false;
+        if (!changedScope.empty() && row->parsedExpression) {
+            if (!row->parsedExpression->valid()) {
+                scopeAffectsRow = true;
+            } else {
+                const auto& referenced = row->parsedExpression->referencedVariables();
+                for (const auto& name : changedScope) {
+                    if (std::find(referenced.begin(), referenced.end(), name) != referenced.end()) {
+                        scopeAffectsRow = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!row->parsedExpression || row->parsedSource != source || scopeAffectsRow) {
+            row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope);
             row->parsedSource = source;
         }
         const auto& function = row->parsedExpression;
@@ -457,6 +486,13 @@ void MainWindow::rebuildGraph() {
 
 void MainWindow::setAngleMode(AngleMode mode) {
     angleMode_ = mode;
+    // Keep the scalar definition owner in the same angle mode as the graph.
+    // A scalar defined from trigonometry may itself change on a mode switch.
+    if (variableSliders_) {
+        const auto update = variableSliders_->definitions().setAngleMode(mode);
+        if (graph_ && update.accepted)
+            graph_->setVariableBindings(variableSliders_->definitions().bindings(), update.changed);
+    }
     if (graph_) graph_->setAngleMode(mode);
     if (radiansButton_) radiansButton_->setChecked(mode == AngleMode::Radians);
     if (degreesButton_) degreesButton_->setChecked(mode == AngleMode::Degrees);

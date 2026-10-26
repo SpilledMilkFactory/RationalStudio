@@ -1,13 +1,13 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE30_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE31_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
-**Verification date:** October 26, 2026  
+**Verification date:** October 26, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #30 (M2-04) interactive variable sliders.** Linux GUI-enabled Debug CTest **27/27 PASS** (10.66 s total individual test durations (not CTest wall-clock)), GUI-enabled Release CTest **27/27 PASS** (5.00 s total individual test durations (not CTest wall-clock)), and core-only ASan/UBSan CTest **19/19 PASS** (7.05 s total individual test durations (not CTest wall-clock)). `RationalVariableSliderScaleTests` passed **14,785 assertions** and `RationalVariableSliderPanelTests` passed **47 assertions** in the Debug CTest evidence. Desktop manual verification: Not separately attested in this documentation update; offscreen Qt tests passed. Slider controls are session-local: they do not yet drive graph geometry (Issue #31) or persist in saved workspaces (Issue #35). Issue #25 benchmark measurements are preserved as historical results.
+**Current status:** **PASS — Issue #31 (M2-05) automatic graph updates for variable changes.** Linux GCC 15.2.0 GUI-enabled Debug CTest **29/29 PASS** (10.91 s), GUI-enabled Release CTest **29/29 PASS** (5.62 s), and core-only ASan/UBSan CTest **20/20 PASS** (6.93 s). `RationalGraphVariableDependencyTests` passed **1,223 assertions** and `RationalGraphVariableRefreshTests` passed **40 assertions**. Before/after recorded source provenance is identical. Manual GUI: PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. Slider configurations are not yet saved in workspaces (Issue #35); full Qt sanitizer and native Windows validation remain unverified. Issue #25 benchmark results remain historical; no new speedup is claimed.
 
-This document records the current Issue #30 interactive slider implementation and its evidence, following Issues #27–#29. Their results, Milestone 1 regression history, and the Issue #25 measured performance baseline remain historical records. This is a **verification record**, not a roadmap. Core-only sanitizer checks do not exercise Qt Widgets; offscreen widget testing does not replace interactive desktop acceptance.
+This document records Issue #31 variable-driven graph updates and selective curve invalidation, following the named-variable, assignment, function, and slider foundations of Issues #27–#30. Earlier results and Issue #25 measurements remain historical evidence. Automated CTests, build logs, and before/after provenance are distinguished from developer-reported desktop acceptance. Core-only sanitizers do not cover Qt Widgets; no controlled graph-rendering performance comparison was recorded.
 
 ## 1. Build environment
 
@@ -17,7 +17,8 @@ This document records the current Issue #30 interactive slider implementation an
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #30 application builds | GCC 15.2.0 Linux GUI-enabled Debug and Release configurations: 27/27 CTests each; core-only ASan/UBSan: 19/19 CTests (validated against local CTest logs) |
+| Current Issue #31 application builds | Linux GCC 15.2.0; GUI-enabled Debug and Release full builds, **29/29** CTests each; core-only ASan/UBSan build, **20/20** CTests; identical before/after verification provenance |
+| Historical Issue #30 application builds | GCC 15.2.0 Linux GUI-enabled Debug and Release configurations: 27/27 CTests each; core-only ASan/UBSan: 19/19 CTests (validated against local CTest logs) |
 | Historical Issue #29 application builds | GCC 15.2.0 GUI-enabled Debug full build 25/25 CTests; GUI-enabled Release full build 25/25 CTests; core-only ASan/UBSan build 18/18 CTests |
 | Historical Issue #28 application builds | GCC 15.2.0 GUI-enabled Debug 24/24 CTests (incremental build); GUI-enabled Release full build 24/24 CTests; core-only ASan/UBSan build 17/17 CTests |
 | Historical Issue #27 application builds | GCC 15.2.0 Debug and Release GUI-enabled builds and 23/23 CTests each; core-only ASan/UBSan 16/16 CTests |
@@ -32,7 +33,15 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #30 current Debug and Release CTest results
+### Issue #31 current Debug and Release build and CTest results
+
+**Debug:** `build-issue31` — CMake configured successfully; **101/101 build steps completed**; **29/29 CTests PASS**, total CTest wall-clock **10.91 s**.
+
+**Release:** `build-issue31-release` — CMake configured successfully; **101/101 build steps completed**; **29/29 CTests PASS**, total CTest wall-clock **5.62 s**.
+
+The consolidated `verify_issue31.sh` runner recorded all configure/build/CTest outputs under `issue31-evidence/`. Environment: `c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0`, `cmake version 4.2.3`, Ninja `1.13.2`; evidence timestamp `2026-10-26T16:38:58-04:00`. Source state at the time was based on Git HEAD `36a16b3ad4c802e42ebf2207c6f6567452337fd6` plus recorded working-tree changes. Both application builds completed through linking `RationalStudio`.
+
+### Issue #30 historical Debug and Release CTest results
 
 **GUI-enabled Debug:** `build-issue30`, **27/27 PASS**; 10.66 s total individual test durations (not CTest wall-clock).
 
@@ -204,7 +213,23 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #30 current automated regression results
+### Issue #31 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| Linux GCC 15.2.0 GUI-enabled Debug CTest | **29/29 PASS**, 10.91 s CTest wall-clock |
+| Linux GCC 15.2.0 GUI-enabled Release CTest | **29/29 PASS**, 5.62 s CTest wall-clock |
+| Linux GCC 15.2.0 core-only ASan/UBSan CTest | **20/20 PASS**, 6.93 s CTest wall-clock |
+| `RationalGraphVariableDependencyTests` direct Debug run | **PASS — 1,223 assertions** |
+| `RationalGraphVariableRefreshTests` direct offscreen Qt Debug run | **PASS — 40 assertions** |
+
+Issue #31 adds one Qt-independent CTest and one Qt-offscreen CTest: **29 CTest invocations** in GUI-enabled configurations and **20 CTests** in the GUI-disabled sanitizer configuration. The tests cover variable declaration repair, selected direct and transitive dependency invalidation, per-evaluation binding snapshots, and actual `MainWindow`/`GraphCanvas` integration. They are targeted regressions, not an exhaustive mathematical or rendering proof.
+
+**Saved evidence hashes:** Debug CTest SHA-256 `2c08db18def7c334c2090054b1dd5e98c48005b229e258d236221d8b3471027d`; Release CTest SHA-256 `4471721f2b5d819e887838c109dc55d747d67ead4e9c8cd30b3c12dcb607b314`; ASan/UBSan CTest SHA-256 `9267e534f94225e8959b7793a3b5b32e0ee2f8125b8cbc166dca11ad98211f77`. Direct dependency-test SHA-256 `a99b0ae32dc6cc766d9e8961eb49aea1319a63cb06902a9485df360a2e4f8dde`; direct Qt-refresh-test SHA-256 `5d2dbcf3d8a6da697a32e0498eb4fe9ad5ebcc95e4592a7a796a101dcebc14b6`.
+
+**Provenance:** `57` recorded paths; before and after manifests are identical; manifest SHA-256 `82dd6d4473b9d5dda31d73d4129195714c016469ad1c7da384a2843c3d27067c`. These comparisons establish file stability **during this test run**; README/verification edits made afterward change documentation and are not covered by that before/after equality.
+
+### Issue #30 historical automated regression results
 
 **Evidence references:** `debug` CTest log SHA-256 `5bce716f784f70a1789c2473cc0204d44965f7d6a50e177701d9516cb0edeb2c`; `release` CTest log SHA-256 `795b9edf77ecd3f0f060a8d879043d8888b80d90e8f67bd2b138a0128b319d22`; `asan` CTest log SHA-256 `7f6f6074b8056580a2d484f454c14b775e89fa3d47bb57f64d247c62c609550a`. These are hashes of test logs, not source-revision provenance.
 
@@ -407,6 +432,8 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalFunctionDefinitionsTests` | Qt-independent reusable functions, positional parameters and arity, lexical scoping, captured scalar bindings, nested calls, recursion rejection, transactional redefinition, published snapshots, and repeated evaluation. |
 | `RationalVariableSliderScaleTests` | Qt-independent validated slider ranges, bounded tick mapping, snapped values, numeric stability, and terminal endpoint. |
 | `RationalVariableSliderPanelTests` | Offscreen Qt widget integration for creating sliders, editing values/ranges/steps, and updating scalar variables and dependents. |
+| `RationalGraphVariableDependencyTests` | Qt-independent graph-to-variable dependency selection, transitive scalar dependencies, and function-captured variable references. |
+| `RationalGraphVariableRefreshTests` | Qt offscreen MainWindow and GraphCanvas integration, recognizing slider variables in expressions, selective refresh, and invalid/repaired row transitions. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
@@ -744,7 +771,11 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #30 current complete core-only sanitizer suite — PASS
+### Issue #31 current complete core-only sanitizer suite — PASS
+
+`build-issue31-asan` completed **50/50 build steps completed** and **20/20 CTests PASS** (CTest wall-clock **6.93 s**). The consolidated script configured Debug, `RATIONALSTUDIO_BUILD_GUI=OFF`, benchmarks OFF, and compiler/linker flags `-fsanitize=address,undefined -fno-omit-frame-pointer`. The new Qt-independent dependency test is included; the Qt refresh test is excluded. The complete Qt application has **not** been sanitizer-qualified.
+
+### Issue #30 historical complete core-only sanitizer suite — PASS
 
 `build-issue30-asan` was configured with GUI disabled and both `-fsanitize=address,undefined` flags; its CTest log records **19/19 PASS**. Total timing evidence: 7.05 s total individual test durations (not CTest wall-clock). The Qt slider panel is excluded, so the complete graphical application does not have ASan/UBSan coverage.
 
@@ -882,9 +913,13 @@ PASS: 896291 sampling job assertions
 
 The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-frame-pointer`. No ASan or UBSan failure was reported for this direct executable run. Leak detection was disabled for this invocation. This is a focused current result, separate from the historical **13/13** Issue #25 sanitizer suite above; the full current **15-test** core-only suite and Qt renderer sanitizer tests were not recorded. The original Issue #26 sanitizer build directory is no longer present locally at documentation-update time; the command/result above are retained from the implementation session.
 
-## 5. Desktop GUI — historical passes and Issue #26 retest status
+## 5. Desktop GUI — current acceptance and historical results
 
-### Issue #30 interactive GUI regression status
+### Issue #31 manual desktop GUI acceptance
+
+PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. The developer confirmed that session sliders are visible, that named scalar variables are accepted in graph expressions, and that changing the sliders updates their graphs. This is a developer attestation, not an independently recorded step-by-step GUI script; interactive Release desktop verification was not separately reported. The offscreen integration test additionally passed 40 direct assertions.
+
+### Issue #30 historical interactive GUI regression status
 
 Not separately attested in this documentation update; offscreen Qt tests passed. Graph-curve response to variable changes is not yet implemented; slider settings are not yet serialized with graph workspaces.
 
@@ -1042,6 +1077,9 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
+| Linux Debug, Qt GUI enabled (Issue #31) | PASS — full build (101/101 build steps completed) | **29/29 PASS** | Qt offscreen refresh test PASS; PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. |
+| Linux Release, Qt GUI enabled (Issue #31) | PASS — full build (101/101 build steps completed) | **29/29 PASS** | Qt offscreen tests PASS; separate interactive Release desktop run not recorded |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #31) | PASS — full core-only build (50/50 build steps completed) | **20/20 PASS** | Qt-independent dependencies tested; Qt Widgets excluded |
 | Linux Debug, Qt GUI enabled (Issue #30) | CMake/CTest PASS | **27/27 PASS** | Offscreen slider panel and earlier Qt suites PASS; interactive GUI not separately attested |
 | Linux Release, Qt GUI enabled (Issue #30) | CMake/CTest PASS | **27/27 PASS** | Offscreen Qt suites PASS; interactive Release run not separately recorded |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #30) | CMake/CTest PASS | **19/19 PASS** | Qt-independent suite PASS; Qt Widgets excluded |
@@ -1068,7 +1106,7 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 The following areas remain outside the current verification scope or are known approximation limits:
 
-- Issues #27–#29 provide named identifiers, scalar assignment/dependency tracking, and reusable compiled functions. Issue #30 adds **session-local GUI variable sliders** with editable ranges and steps. The slider values are stored in `VariableDefinitions` but are **not yet connected to plotted graph geometry** (Issue #31), and their configurations are **not persisted** with saved workspaces (Issue #35). GUI function-definition/assignment editing rows are not yet implemented. Scalar assignments cannot depend on `x` or `ans`.
+- Issues #27–#30 provide named identifiers, scalar assignments and dependencies, reusable compiled functions, and session-local GUI sliders. **Issue #31 connects declared variables and current bindings to plotted curves and coordinate tracing**, invalidating only curves referencing changed scalar values. Slider configurations are **not persisted** with saved workspaces (Issue #35), and GUI function-definition/assignment editing rows are not yet implemented. Scalar assignments cannot depend on `x` or `ans`.
 - Finite probing cannot detect all discontinuities, arbitrarily narrow domain gaps, or unsampled singularities.
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
@@ -1106,12 +1144,22 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
+| Issue #31 Debug GUI/CLI/core full build | **101/101 build steps PASS** |
+| Issue #31 Release GUI/CLI/core full build | **101/101 build steps PASS** |
+| Issue #31 core-only ASan/UBSan build | **50/50 build steps PASS** |
+| Issue #31 GUI-enabled Debug CTest suite | **29/29 PASS** |
+| Issue #31 GUI-enabled Release CTest suite | **29/29 PASS** |
+| Issue #31 core-only ASan/UBSan CTest suite | **20/20 PASS** |
+| Issue #31 variable-dependency regression assertions | **1,223 PASS** |
+| Issue #31 Qt graph-refresh regression assertions | **40 PASS** |
+| Issue #31 before/after SHA-256 provenance manifest | **IDENTICAL** during run |
+| Issue #31 manual desktop GUI acceptance | PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. |
 | Issue #30 GUI-enabled Debug CTest suite | **27/27 PASS** |
 | Issue #30 GUI-enabled Release CTest suite | **27/27 PASS** |
 | Issue #30 core-only ASan/UBSan CTest suite | **19/19 PASS** |
@@ -1165,7 +1213,9 @@ These generic commands describe a reproducible procedure. Current Issue #30 vali
 | Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Current assessment — Issue #30:** The user-supplied local CTest records establish **27/27 Debug, 27/27 Release, and 19/19 core-only ASan/UBSan PASS**. `RationalVariableSliderScaleTests` passed **14,785 assertions** and `RationalVariableSliderPanelTests` passed **47 assertions** in the Debug CTest evidence. The result supports tested slider scale mathematics and offscreen Qt widget behavior. Not separately attested in this documentation update; offscreen Qt tests passed. Automatic graph binding/refresh and slider persistence remain planned for Issues #31 and #35. The Issue #25 benchmark baseline is historical; no new performance improvement is inferred.
+**Current assessment — Issue #31:** Linux GCC 15.2.0 GUI-enabled Debug and Release **29/29 CTests PASS** each, core-only ASan/UBSan **20/20 CTests PASS**. New direct suites report **1,223** dependency assertions and **40** Qt refresh assertions. Before/after manifests covering 57 paths are identical during testing. Manual GUI: PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. Selective mathematical invalidation is covered by tests, but no new benchmark comparison or speedup is claimed. Slider persistence and GUI function authoring remain pending. Full Qt sanitizers, Windows, and Qt 5 remain unverified.
+
+**Historical assessment — Issue #30:** The user-supplied local CTest records establish **27/27 Debug, 27/27 Release, and 19/19 core-only ASan/UBSan PASS**. `RationalVariableSliderScaleTests` passed **14,785 assertions** and `RationalVariableSliderPanelTests` passed **47 assertions** in the Debug CTest evidence. The result supports tested slider scale mathematics and offscreen Qt widget behavior. Not separately attested in this documentation update; offscreen Qt tests passed. Automatic graph binding/refresh and slider persistence remain planned for Issues #31 and #35. The Issue #25 benchmark baseline is historical; no new performance improvement is inferred.
 
 **Historical assessment — Issue #29:** GCC 15.2.0 GUI-enabled Debug **25/25** and Release **25/25** CTests passed; the full core-only ASan/UBSan suite passed **18/18**. `RationalFunctionDefinitionsTests` passed **1,143 assertions**. These results support Qt-independent reusable functions, validated arity and parameter scoping, calls to previously defined functions, scalar binding captures, recursion/cycle rejection, and safe published scope snapshots. The developer reports an informal manual regression check of the existing GUI with no problems observed. Function-definition editing, automatic graph invalidation, sliders, and persistence remain future GUI integration work. No new performance measurements were supplied; the Issue #25 baseline remains historical.
 

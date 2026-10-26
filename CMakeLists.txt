@@ -337,7 +337,7 @@ if(BUILD_TESTING)
     )
 
     # ---------------------------------------------------------
-    # Issue #28 — Named Variable Parsing
+    # Issue #28 — Variable assignments and dependency tracking
     # ---------------------------------------------------------
 
     add_executable(RationalVariableDefinitionsTests
@@ -378,7 +378,7 @@ if(BUILD_TESTING)
     )
 
     # ---------------------------------------------------------
-    # Issue #30 — Reusable mathematical functions
+    # Issue #30 — Interactive variable sliders
     # ---------------------------------------------------------
 
     add_executable(RationalVariableSliderScaleTests
@@ -394,6 +394,25 @@ if(BUILD_TESTING)
 
     set_tests_properties(RationalVariableSliderScaleTests PROPERTIES
         LABELS "core;regression;sliders"
+    )
+
+    # ---------------------------------------------------------
+    # Issue #31 — variable/graph dependency introspection
+    # ---------------------------------------------------------
+    add_executable(RationalGraphVariableDependencyTests
+        tests/GraphVariableDependencyTests.cpp
+    )
+
+    target_link_libraries(RationalGraphVariableDependencyTests PRIVATE
+        RationalCore
+    )
+
+    add_test(NAME RationalGraphVariableDependencyTests
+        COMMAND RationalGraphVariableDependencyTests
+    )
+
+    set_tests_properties(RationalGraphVariableDependencyTests PROPERTIES
+        LABELS "core;regression;graphing;variables"
     )
 
     # -----------------------------------------------------
@@ -422,6 +441,7 @@ if(BUILD_TESTING)
         RationalVariableDefinitionsTests
         RationalFunctionDefinitionsTests
         RationalVariableSliderScaleTests
+        RationalGraphVariableDependencyTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -735,6 +755,42 @@ if(RATIONALSTUDIO_BUILD_GUI)
         )
 
 
+
+        # ---------------------------------------------------------
+        # Issue #31 — variable-dependent graph refresh integration
+        # ---------------------------------------------------------
+        add_executable(RationalGraphVariableRefreshTests
+            tests/GraphVariableRefreshTests.cpp
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp
+        )
+
+        target_include_directories(RationalGraphVariableRefreshTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+
+        target_link_libraries(RationalGraphVariableRefreshTests PRIVATE
+            RationalCore
+            Qt${QT_VERSION_MAJOR}::Widgets
+        )
+
+        target_compile_options(RationalGraphVariableRefreshTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+
+        add_test(NAME RationalGraphVariableRefreshTests
+            COMMAND RationalGraphVariableRefreshTests
+        )
+
+        set_tests_properties(RationalGraphVariableRefreshTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;graphing;variables;qt;offscreen"
+            TIMEOUT 60
+        )
 
     endif()
 
