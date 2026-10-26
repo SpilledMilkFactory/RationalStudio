@@ -14,6 +14,7 @@ add_library(RationalCore STATIC
     src/core/Rational.cpp
     src/core/Expression.cpp
     src/core/VariableDefinitions.cpp
+    src/core/FunctionDefinitions.cpp
     src/core/GraphViewport.cpp
     src/core/CurveSampler.cpp
 )
@@ -357,6 +358,24 @@ if(BUILD_TESTING)
             LABELS "core;regression;variables"
     )
 
+    # ---------------------------------------------------------
+    # Issue #29 — Reusable mathematical functions
+    # ---------------------------------------------------------
+
+    add_executable(RationalFunctionDefinitionsTests
+        tests/FunctionDefinitionsTests.cpp
+    )
+
+    target_link_libraries(RationalFunctionDefinitionsTests PRIVATE
+        RationalCore
+    )
+
+    add_test(NAME RationalFunctionDefinitionsTests COMMAND RationalFunctionDefinitionsTests)
+    
+    set_tests_properties(RationalFunctionDefinitionsTests PROPERTIES
+        LABELS "core;regression;functions"
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -381,6 +400,7 @@ if(BUILD_TESTING)
         # Milestone 2:
         RationalNamedVariableTests
         RationalVariableDefinitionsTests
+        RationalFunctionDefinitionsTests
     )
 
         target_compile_options(${test_target} PRIVATE

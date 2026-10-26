@@ -314,7 +314,8 @@ namespace rationalstudio {
                 Unary,
                 Binary,
                 Fact,
-                Function
+                Function,
+                UserCall
             } kind;
 
             double number = 0;
@@ -322,6 +323,7 @@ namespace rationalstudio {
             Type op = Type::End;
 
             std::string function;
+            std::shared_ptr<const UserFunction> callable;
 
             std::vector<
             std::unique_ptr<Node>
@@ -417,8 +419,9 @@ namespace rationalstudio {
         class Parser {
         public:
 
-            Parser(const std::string& s, const VariableScope* scope)
-            : tokens_(tokenize(s)), scope_(scope) {
+            Parser(const std::string& s, const VariableScope* scope,
+                   const FunctionScope* functions)
+            : tokens_(tokenize(s)), scope_(scope), functions_(functions) {
             }
 
             std::unique_ptr<Node> parse() {
@@ -437,6 +440,12 @@ namespace rationalstudio {
             const std::set<std::string>& namedVariables() const noexcept {
                 return namedVariables_;
             }
+            const std::set<std::string>& namedFunctions() const noexcept {
+                return namedFunctions_;
+            }
+            const std::set<std::string>& functionVariables() const noexcept {
+                return functionVariables_;
+            }
 
         private:
 
@@ -448,7 +457,10 @@ namespace rationalstudio {
             bool usesX_ = false;
             bool usesAns_ = false;
             const VariableScope* scope_ = nullptr;
+            const FunctionScope* functions_ = nullptr;
             std::set<std::string> namedVariables_;
+            std::set<std::string> namedFunctions_;
+            std::set<std::string> functionVariables_;
 
             const Token& peek() const {
                 return tokens_.at(index_);
@@ -725,6 +737,39 @@ namespace rationalstudio {
                         return n;
                     }
 
+                    // User calls require parentheses, an explicit function
+                    // scope, and a known arity. This check happens after
+                    // declared scalar variables to retain legacy implicit
+                    // multiplication such as a(x + 1).
+                    if (functions_) {
+                        const auto callable = functions_->lookup(name);
+                        if (callable) {
+                            if (!take(Type::Open)) {
+                                fail("Function '" + name + "' requires parentheses");
+                            }
+                            auto n = node(Node::Kind::UserCall);
+                            n->function = name;
+                            n->callable = callable;
+                            if (!take(Type::Close)) {
+                                do {
+                                    n->args.push_back(expression(depth + 1));
+                                } while (take(Type::Comma));
+                                if (!take(Type::Close)) fail("Expected ')'");
+                            }
+                            if (n->args.size() != callable->parameters.size()) {
+                                fail("Function '" + name + "' expects " +
+                                     std::to_string(callable->parameters.size()) +
+                                     " argument(s)");
+                            }
+                            namedFunctions_.insert(name);
+                            for (const auto& dep : callable->variableDependencies) {
+                                namedVariables_.insert(dep);
+                                functionVariables_.insert(dep);
+                            }
+                            return n;
+                        }
+                    }
+
                     const auto it =
                     functions().find(name);
 
@@ -804,7 +849,8 @@ namespace rationalstudio {
             double x,
             double ans,
             AngleMode mode,
-            const VariableBindings* bindings
+            const VariableBindings* bindings,
+            const VariableBindings* local
         ) {
 
             const auto arg = [&](unsigned i) {
@@ -814,7 +860,8 @@ namespace rationalstudio {
                     x,
                     ans,
                     mode,
-                    bindings
+                    bindings,
+                    local
                 );
             };
 
@@ -845,8 +892,35 @@ namespace rationalstudio {
 
                 case Node::Kind::Named: {
                     double value = nan;
-                    return bindings && bindings->lookup(n.function, value)
+                    return (local && local->lookup(n.function, value)) ||
+                           (bindings && bindings->lookup(n.function, value))
                         ? value : nan;
+                }
+
+                case Node::Kind::UserCall: {
+                    if (!n.callable || !n.callable->body ||
+                        n.callable->parameters.size() != n.args.size()) return nan;
+                    // All argument expressions are evaluated in the caller's
+                    // scope before the callee's parameter names shadow them.
+                    std::vector<double> passed;
+                    passed.reserve(n.args.size());
+                    for (std::size_t i = 0; i < n.args.size(); ++i) {
+                        const double value = arg(static_cast<unsigned>(i));
+                        if (!std::isfinite(value)) return nan;
+                        passed.push_back(value);
+                    }
+                    VariableBindings arguments;
+                    double calleeX = 0;
+                    for (std::size_t i = 0; i < passed.size(); ++i) {
+                        if (n.callable->parameters[i] == "x") {
+                            calleeX = passed[i];
+                        } else if (!arguments.set(n.callable->parameters[i], passed[i])) {
+                            return nan;
+                        }
+                    }
+                    const VariableBindings none;
+                    return n.callable->body->evaluateWithParameters(
+                        calleeX, mode, bindings ? *bindings : none, arguments);
                 }
 
                 case Node::Kind::Unary:
@@ -1125,6 +1199,27 @@ namespace rationalstudio {
         return true;
     }
 
+    bool FunctionScope::contains(std::string_view name) const {
+        return entries_.find(name) != entries_.end() || lookup(name) != nullptr;
+    }
+
+    std::shared_ptr<const UserFunction> FunctionScope::lookup(
+        std::string_view name) const {
+        std::string canonical;
+        if (!normalizeUserIdentifier(name, canonical)) return {};
+        const auto it = entries_.find(canonical);
+        return it == entries_.end() ? nullptr : it->second;
+    }
+
+    std::vector<std::string> FunctionScope::names() const {
+        std::vector<std::string> result;
+        for (const auto& [name, definition] : entries_) {
+            (void)definition;
+            result.push_back(name);
+        }
+        return result;
+    }
+
     struct Expression::Impl {
 
         std::unique_ptr<Node> root;
@@ -1134,20 +1229,30 @@ namespace rationalstudio {
         bool hasX = false;
         bool hasAns = false;
         std::vector<std::string> referenced;
+        std::vector<std::string> referencedFunctions;
+        std::vector<std::string> functionVariables;
     };
 
     Expression::Expression(const std::string& source)
         : Expression(source, VariableScope{}) {}
 
     Expression::Expression(const std::string& source, const VariableScope& scope)
+        : Expression(source, scope, FunctionScope{}) {}
+
+    Expression::Expression(const std::string& source, const VariableScope& scope,
+                           const FunctionScope& functions)
         : impl_(std::make_unique<Impl>()) {
         try {
-            Parser parser(source, &scope);
+            Parser parser(source, &scope, &functions);
             impl_->root = parser.parse();
             impl_->hasX = parser.dependsOnX();
             impl_->hasAns = parser.dependsOnAns();
             impl_->referenced.assign(parser.namedVariables().begin(),
                                      parser.namedVariables().end());
+            impl_->referencedFunctions.assign(parser.namedFunctions().begin(),
+                                              parser.namedFunctions().end());
+            impl_->functionVariables.assign(parser.functionVariables().begin(),
+                                            parser.functionVariables().end());
         } catch (const std::exception& exception) {
             impl_->error = exception.what();
         }
@@ -1190,6 +1295,16 @@ namespace rationalstudio {
         return impl_ ? impl_->referenced : empty;
     }
 
+    const std::vector<std::string>& Expression::referencedFunctions() const noexcept {
+        static const std::vector<std::string> empty;
+        return impl_ ? impl_->referencedFunctions : empty;
+    }
+
+    const std::vector<std::string>& Expression::functionVariableDependencies() const noexcept {
+        static const std::vector<std::string> empty;
+        return impl_ ? impl_->functionVariables : empty;
+    }
+
     double Expression::evaluate(double x, double ans, AngleMode angle) const noexcept {
         return evaluateImpl(x, ans, angle, nullptr);
     }
@@ -1199,11 +1314,18 @@ namespace rationalstudio {
         return evaluateImpl(x, ans, angle, &bindings);
     }
 
+    double Expression::evaluateWithParameters(double x, AngleMode angle,
+                                             const VariableBindings& ambient,
+                                             const VariableBindings& parameters) const noexcept {
+        return evaluateImpl(x, 0, angle, &ambient, &parameters);
+    }
+
     double Expression::evaluateImpl(double x, double ans, AngleMode angle,
-                                    const VariableBindings* bindings) const noexcept {
+                                    const VariableBindings* bindings,
+                                    const VariableBindings* local) const noexcept {
         if (!valid()) return nan;
         try {
-            const double value = eval(*impl_->root, x, ans, angle, bindings);
+            const double value = eval(*impl_->root, x, ans, angle, bindings, local);
             return std::isfinite(value) ? value : nan;
         } catch (...) {
             return nan;

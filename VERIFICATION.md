@@ -1,13 +1,13 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE28_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE29_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 26, 2026  
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #28 (M2-02) scalar variable assignments and dependency tracking.** GCC 15.2.0 Linux GUI-enabled Debug CTest **24/24 PASS** (10.94 s), GUI-enabled Release CTest **24/24 PASS** (5.03 s), and core-only ASan/UBSan CTest **17/17 PASS** (6.66 s). `RationalVariableDefinitionsTests` passed **951 assertions**. Existing GUI behavior was checked manually and reported unchanged; this was an informal developer regression check, not a scripted acceptance session. Issue #28 is core-only: GUI assignment rows, reusable functions, sliders, automatic graph updates, and persistence are not yet implemented. Historical Issue #25 benchmark measurements remain unchanged.
+**Current status:** **PASS — Issue #29 (M2-03) reusable mathematical function definitions.** GCC 15.2.0 Linux GUI-enabled Debug CTest **25/25 PASS** (10.68 s), GUI-enabled Release CTest **25/25 PASS** (5.09 s), and core-only ASan/UBSan CTest **18/18 PASS** (7.22 s). `RationalFunctionDefinitionsTests` passed **1,143 assertions**. The developer reports a successful informal manual GUI regression check. The new functionality remains Qt-independent: reusable-function editing rows, sliders, dynamic graph invalidation, and persistence are not yet available through the GUI. Historical Issue #25 benchmark measurements remain unchanged.
 
-This document records the current Issue #28 variable-assignment and dependency-tracking verification, following Issue #27 named-variable parsing. The prior Issue #27 results, earlier graphing regression history, and Issue #25 measured performance baseline remain as historical evidence. It is a **verification record**, not a development roadmap. Results apply to the configurations actually tested; they do not establish exhaustive mathematical correctness or independently verify future GUI variable-editing features.
+This document records the current Issue #29 reusable-function-definition verification, following Issues #27–#28 named-variable parsing and assignment/dependency tracking. The earlier Issue #28 and Issue #27 results, graphing regression history, and Issue #25 measured performance baseline remain historical evidence. It is a **verification record**, not a development roadmap. Results apply only to configurations actually tested; core function-definition support does not demonstrate GUI function-editing controls.
 
 ## 1. Build environment
 
@@ -17,7 +17,8 @@ This document records the current Issue #28 variable-assignment and dependency-t
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #28 application builds | GCC 15.2.0 GUI-enabled Debug 24/24 CTests (incremental build); GUI-enabled Release full build 24/24 CTests; core-only ASan/UBSan build 17/17 CTests |
+| Current Issue #29 application builds | GCC 15.2.0 GUI-enabled Debug full build 25/25 CTests; GUI-enabled Release full build 25/25 CTests; core-only ASan/UBSan build 18/18 CTests |
+| Historical Issue #28 application builds | GCC 15.2.0 GUI-enabled Debug 24/24 CTests (incremental build); GUI-enabled Release full build 24/24 CTests; core-only ASan/UBSan build 17/17 CTests |
 | Historical Issue #27 application builds | GCC 15.2.0 Debug and Release GUI-enabled builds and 23/23 CTests each; core-only ASan/UBSan 16/16 CTests |
 | Historical Issue #26 application builds | Debug GUI-enabled full build and tests; Release desktop application target rebuilt |
 | Historical Issue #25 application builds | Debug and Release, GUI enabled; optional benchmark targets ON |
@@ -30,7 +31,39 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #28 current Debug and Release build results
+### Issue #29 current Debug and Release build results
+
+**Debug (GCC 15.2.0, C++20, Ninja, Qt Widgets):**
+
+```bash
+cmake -S . -B build-issue29 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-issue29 --parallel
+ctest --test-dir build-issue29 --output-on-failure
+```
+
+```text
+[81/81] Linking CXX executable RationalStudio
+100% tests passed, 0 tests failed out of 25
+Total Test time (real) = 10.68 sec
+```
+
+**Release (GCC 15.2.0, C++20, Ninja, Qt Widgets):**
+
+```bash
+cmake -S . -B build-issue29-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-issue29-release --parallel
+ctest --test-dir build-issue29-release --output-on-failure
+```
+
+```text
+[81/81] Linking CXX executable RationalStudio
+100% tests passed, 0 tests failed out of 25
+Total Test time (real) = 5.09 sec
+```
+
+Both GUI-enabled configurations were freshly configured and built, and all registered tests passed. Existing scientific, CLI-linked core, viewport, and graph-rendering tests remained green. The GUI source was not extended with function-definition editing in this issue.
+
+### Issue #28 historical Debug and Release build results
 
 **Debug (GCC 15.2.0, C++20, Ninja, Qt Widgets):**
 
@@ -162,7 +195,30 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #28 current automated regression results
+### Issue #29 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| GCC 15.2.0 GUI-enabled Debug CTest | **25/25 PASS**, 10.68 s total |
+| GCC 15.2.0 GUI-enabled Release CTest | **25/25 PASS**, 5.09 s total |
+| GCC 15.2.0 core-only ASan/UBSan CTest | **18/18 PASS**, 7.22 s total |
+| `RationalFunctionDefinitionsTests` (direct Debug run) | **PASS — 1,143 assertions** |
+
+Direct test invocation and output:
+
+```bash
+./build-issue29/RationalFunctionDefinitionsTests
+```
+
+```text
+PASS: 1143 FunctionDefinitions assertions
+```
+
+The new Qt-independent test covers function definition parsing; positional parameters and checked arity; references to previously defined functions; lexical parameter scope and scalar variable captures; nested calls; invalid definition and recursion/cycle rejection; preservation of prior published definitions after rejected edits; accepted redefinition and immutable compiled-scope snapshots; and repeated evaluation with changing scalar bindings. The submitted Debug build archive independently contains the 1,143-assertion result in `Testing/Temporary/LastTest.log`.
+
+Issue #29 adds one Qt-independent test executable: **25 CTest registrations from 24 executables** (18 Qt-independent tests and seven offscreen Qt invocations from six widget test executables). The GUI-disabled sanitizer configuration runs **18 Qt-independent CTests**, excluding Qt widgets.
+
+### Issue #28 historical automated regression results
 
 | Verification | Recorded result |
 |---|---|
@@ -325,6 +381,7 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalCurveSamplingJobTests` | Complete tangent branches across widths and zoom levels, exact callback accounting, budget-independent geometry, pole/step separation, and steep continuous controls. |
 | `RationalNamedVariableTests` | Qt-independent identifier validation, scoped named-variable resolution, case-folded bindings, reserved names, missing/non-finite values, reference introspection, and backward-compatible evaluation. |
 | `RationalVariableDefinitionsTests` | Qt-independent scalar assignments, dependency ordering and change propagation, circular/malformed redefinition rollback, undefined-value recovery, selective recomputation, revision tracking, and binding snapshots. |
+| `RationalFunctionDefinitionsTests` | Qt-independent reusable functions, positional parameters and arity, lexical scoping, captured scalar bindings, nested calls, recursion rejection, transactional redefinition, published snapshots, and repeated evaluation. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
@@ -662,7 +719,28 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #28 current complete core-only sanitizer suite — PASS
+### Issue #29 current complete core-only sanitizer suite — PASS
+
+```bash
+cmake -S . -B build-issue29-asan -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DRATIONALSTUDIO_BUILD_GUI=OFF \
+    -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF \
+    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+    -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+cmake --build build-issue29-asan --parallel
+ctest --test-dir build-issue29-asan --output-on-failure
+```
+
+```text
+[45/45] Linking CXX executable RationalFunctionDefinitionsTests
+100% tests passed, 0 tests failed out of 18
+Total Test time (real) = 7.22 sec
+```
+
+The first pasted sanitizer commands contained accidental shell control characters and an extra trailing `~`, producing command-entry errors before configuration. The corrected configuration, build, and complete **18/18 PASS** run supersede those failed invocations. No sanitizer diagnostics were reported in the successful run. GUI/Qt rendering was excluded.
+
+### Issue #28 historical complete core-only sanitizer suite — PASS
 
 ```bash
 cmake -S . -B build-issue28-asan -G Ninja \
@@ -777,7 +855,11 @@ The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-f
 
 ## 5. Desktop GUI — historical passes and Issue #26 retest status
 
-### Issue #28 interactive GUI regression status
+### Issue #29 interactive GUI regression status
+
+**PASS — developer-reported informal manual check.** The developer launched the existing GUI after integrating the Issue #29 Qt-independent function-definition system and reported that the usual calculator, graphing, navigation, and presentation behaviors remained normal. This was not a scripted GUI acceptance session, and an interactive Release GUI launch was not separately documented. The offscreen Qt tests passed in both 25-test GUI-enabled configurations. No function-definition editing rows or UI controls were added in Issue #29.
+
+### Issue #28 historical interactive GUI regression status
 
 **PASS — developer-reported informal manual check.** The developer launched
 and inspected the existing GUI after the Issue #28 core changes, revisiting
@@ -927,6 +1009,9 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
+| Linux Debug, Qt GUI enabled (Issue #29) | PASS (full build) | **25/25 PASS** | Qt offscreen regressions PASS; informal manual GUI check PASS (developer-reported) |
+| Linux Release, Qt GUI enabled (Issue #29) | PASS (full build) | **25/25 PASS** | Qt offscreen regressions PASS; interactive Release GUI launch not separately recorded |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #29) | PASS | **18/18 PASS** | Qt-independent suite PASS; Qt GUI renderer excluded |
 | Linux Debug, Qt GUI enabled (Issue #28) | PASS (incremental build) | **24/24 PASS** | Qt offscreen regressions PASS; informal manual GUI check PASS (developer-reported) |
 | Linux Release, Qt GUI enabled (Issue #28) | PASS | **24/24 PASS** | Qt offscreen regressions PASS; interactive Release launch not separately recorded |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #28) | PASS | **17/17 PASS** | Entire Qt-independent suite passed; GUI renderer excluded |
@@ -947,7 +1032,7 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 The following areas remain outside the current verification scope or are known approximation limits:
 
-- Issue #27 provides explicitly scoped named-variable expression parsing. Issue #28 adds core-only scalar assignment/dependency tracking and transactional cycle rejection using `VariableDefinitions`. GUI assignment rows, reusable function definitions, sliders, automatic dependency-driven graph refresh, and persistence of definitions are not yet implemented and remain future Milestone 2 issues. Forward references require prior definitions; scalar assignments cannot depend on `x` or `ans`.
+- Issue #27 provides explicitly scoped named-variable expression parsing, Issue #28 adds core-only scalar assignments/dependency tracking, and Issue #29 adds Qt-independent reusable functions with lexical parameters, checked calls, and transactional redefinition through `FunctionDefinitions`. Function references require previously defined functions; external compiled expressions retain their old function-scope snapshots until recompiled. GUI function-definition/assignment editing rows, sliders, automatic dependency-driven graph refresh, and persistence are not yet implemented. Scalar definitions cannot depend on `x` or `ans`.
 - Finite probing cannot detect all discontinuities, arbitrarily narrow domain gaps, or unsampled singularities.
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
@@ -985,12 +1070,19 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
+| GCC 15.2.0 Debug GUI/CLI/core full build — Issue #29 | **PASS** |
+| GCC 15.2.0 Release GUI/CLI/core full build — Issue #29 | **PASS** |
+| GUI-enabled Debug CTest suite — Issue #29 | **25/25 PASS** |
+| GUI-enabled Release CTest suite — Issue #29 | **25/25 PASS** |
+| Core-only ASan/UBSan CTest suite — Issue #29 | **18/18 PASS** |
+| Function-definitions regression assertions — Issue #29 | **1,143 PASS** |
+| Issue #29 interactive GUI regression check | PASS — informal developer-attested smoke check, not scripted end-to-end QA |
 | GCC 15.2.0 Debug GUI/CLI/core incremental build — Issue #28 | **PASS** |
 | GCC 15.2.0 Release GUI/CLI/core full build — Issue #28 | **PASS** |
 | GUI-enabled Debug CTest suite — Issue #28 | **24/24 PASS** |
@@ -1031,7 +1123,9 @@ These generic commands describe a reproducible procedure. Current Issue #28 vali
 | Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Current assessment — Issue #28:** GCC 15.2.0 GUI-enabled Debug **24/24** and Release **24/24** CTests passed; the full core-only ASan/UBSan suite passed **17/17**. The new `VariableDefinitions` regression executable passed **951 assertions**. These results support Qt-independent scalar assignments, explicit dependencies, selective updates, undefined propagation, and transactional rejection of malformed or circular redefinitions. Existing GUI behavior was checked informally by the developer with no reported regressions. The GUI does not yet offer interactive assignment rows or sliders; dependency-driven graph updates, function definitions, and variable persistence remain future work. No new performance claims are made; Issue #25 benchmark measurements are preserved as historical data.
+**Current assessment — Issue #29:** GCC 15.2.0 GUI-enabled Debug **25/25** and Release **25/25** CTests passed; the full core-only ASan/UBSan suite passed **18/18**. `RationalFunctionDefinitionsTests` passed **1,143 assertions**. These results support Qt-independent reusable functions, validated arity and parameter scoping, calls to previously defined functions, scalar binding captures, recursion/cycle rejection, and safe published scope snapshots. The developer reports an informal manual regression check of the existing GUI with no problems observed. Function-definition editing, automatic graph invalidation, sliders, and persistence remain future GUI integration work. No new performance measurements were supplied; the Issue #25 baseline remains historical.
+
+**Historical assessment — Issue #28:** GCC 15.2.0 GUI-enabled Debug **24/24** and Release **24/24** CTests passed; the full core-only ASan/UBSan suite passed **17/17**. The new `VariableDefinitions` regression executable passed **951 assertions**. These results support Qt-independent scalar assignments, explicit dependencies, selective updates, undefined propagation, and transactional rejection of malformed or circular redefinitions. Existing GUI behavior was checked informally by the developer with no reported regressions. The GUI does not yet offer interactive assignment rows or sliders; dependency-driven graph updates, function definitions, and variable persistence remain future work. No new performance claims are made; Issue #25 benchmark measurements are preserved as historical data.
 
 **Historical assessment — Issue #27:** GCC 15.2.0 Debug and Release GUI-enabled builds and all 23 CTests passed in each configuration; all 16 core-only ASan/UBSan CTests passed; the named-variable suite passed 3,149 assertions. Explicit named-variable declaration, scope validation, binding resolution, and legacy expression compatibility are supported by this verification. No GUI assignment, slider, dependency tracking, or function-definition implementation is claimed. The original Issue #26 failed manual session and Issue #25 benchmark measurements remain historical evidence.
 
