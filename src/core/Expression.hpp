@@ -1,5 +1,4 @@
 #pragma once
-
 #include <map>
 #include <memory>
 #include <set>
@@ -18,13 +17,8 @@ enum class AngleMode { Radians, Degrees };
 class VariableScope {
 public:
     bool declare(std::string_view name, std::string* error = nullptr);
-
     bool contains(std::string_view name) const;
-
-    const std::set<std::string>& names() const noexcept {
-        return names_;
-    }
-
+    const std::set<std::string>& names() const noexcept { return names_; }
 private:
     std::set<std::string> names_;
 };
@@ -34,11 +28,8 @@ private:
 class VariableBindings {
 public:
     bool set(std::string_view name, double value);
-
     bool erase(std::string_view name);
-
     bool lookup(std::string_view name, double& value) const;
-
 private:
     std::map<std::string, double, std::less<>> values_;
 };
@@ -49,48 +40,27 @@ private:
 class Expression {
 public:
     explicit Expression(const std::string& source);
-
     Expression(const std::string& source, const VariableScope& scope);
-
     ~Expression();
-
     Expression(Expression&&) noexcept;
     Expression& operator=(Expression&&) noexcept;
-
     Expression(const Expression&) = delete;
     Expression& operator=(const Expression&) = delete;
 
     bool valid() const noexcept;
-
     const std::string& error() const noexcept;
-
     bool dependsOnX() const noexcept;
-
+    bool dependsOnAns() const noexcept;
     const std::vector<std::string>& referencedVariables() const noexcept;
-
-    double evaluate(
-        double x = 0,
-        double ans = 0,
-        AngleMode angle = AngleMode::Radians
-    ) const noexcept;
-
-    double evaluate(
-        double x,
-        double ans,
-        AngleMode angle,
-        const VariableBindings& bindings
-    ) const noexcept;
-
+    double evaluate(double x = 0, double ans = 0,
+                    AngleMode angle = AngleMode::Radians) const noexcept;
+    double evaluate(double x, double ans, AngleMode angle,
+                    const VariableBindings& bindings) const noexcept;
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
-
-    double evaluateImpl(
-        double x,
-        double ans,
-        AngleMode angle,
-        const VariableBindings* bindings
-    ) const noexcept;
+    double evaluateImpl(double x, double ans, AngleMode angle,
+                        const VariableBindings* bindings) const noexcept;
 };
 
 } // namespace rationalstudio
