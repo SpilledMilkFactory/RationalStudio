@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(RationalCore STATIC
     src/core/Rational.cpp
     src/core/Expression.cpp
+    src/core/VariableDefinitions.cpp
     src/core/GraphViewport.cpp
     src/core/CurveSampler.cpp
 )
@@ -333,8 +334,28 @@ if(BUILD_TESTING)
         LABELS "core;regression;variables"
     )
 
+    # ---------------------------------------------------------
+    # Issue #28 — Named Variable Parsing
+    # ---------------------------------------------------------
 
+    add_executable(RationalVariableDefinitionsTests
+        tests/VariableDefinitionsTests.cpp
+    )   
 
+    target_link_libraries(RationalVariableDefinitionsTests PRIVATE
+        RationalCore
+    )   
+
+    add_test(
+        NAME RationalVariableDefinitionsTests
+        COMMAND RationalVariableDefinitionsTests
+    )   
+
+    set_tests_properties(
+        RationalVariableDefinitionsTests
+        PROPERTIES
+            LABELS "core;regression;variables"
+    )
 
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
@@ -359,6 +380,7 @@ if(BUILD_TESTING)
         RationalCurveSamplingJobTests
         # Milestone 2:
         RationalNamedVariableTests
+        RationalVariableDefinitionsTests
     )
 
         target_compile_options(${test_target} PRIVATE
