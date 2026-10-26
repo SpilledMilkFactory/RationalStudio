@@ -84,6 +84,8 @@ y = floor(x)
 
 **Scalar assignments and dependencies (Issue #28).** The Qt-independent `VariableDefinitions` component stores assignments such as `a = 2`, `b = a + 3`, and `c = b^2`, compiles edited definitions against explicit identifier scopes, tracks direct and transitive dependencies, and recomputes only the affected subgraph after a successful edit. Malformed or circular redefinitions are rejected without replacing prior values or edges. Evaluation-domain errors propagate as undefined results; subsequent edits can restore valid values. Recomputed names and names with changed numeric/undefined values are reported separately to support future selective graph invalidation. Variables must be defined before they can be referenced; scalar assignments do not depend on `x` or `ans`. **Graphing assignment rows, function definitions, sliders, automatic GUI updates, and persistence are not implemented by this core-only issue.**
 
+**Reusable function definitions (Issue #29).** The Qt-independent `FunctionDefinitions` owner compiles reusable functions such as `f(x) = x^2 + 3`, supports calls through an explicit `FunctionScope`, and resolves previously defined functions with checked arity. Function parameters have lexical scope, and user functions may capture named scalar values from `VariableBindings` without textual substitution. Rejected malformed, recursive, or cyclic definitions preserve the previous published function scope. Accepted redefinitions recompile dependent definitions and publish immutable snapshots. Previously compiled external expressions retain their old snapshots until recompiled against the latest function scope; changing scalar values only requires fresh bindings. **GUI function-definition rows, automatic graph invalidation, sliders, and persistence are planned for later Milestone 2 issues.**
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -125,6 +127,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `Expression` | Parsing, operator precedence, mathematical functions, constants, named-variable nodes, explicit scope validation, and repeated evaluation with per-call bindings. |
 | `VariableScope` / `VariableBindings` | Qt-independent declared identifier sets and normalized finite runtime values used by the assignment owner. |
 | `VariableDefinitions` | Qt-independent assignment parsing, compiled scalar definitions, dependency graph, circular-reference rejection, selective re-evaluation, undefined propagation, and bindings snapshots. |
+| `FunctionScope` / `FunctionDefinitions` | Explicit compiled-function lookup, lexical positional parameters, checked calls, transitive scalar dependencies, transactional redefinition, recursion rejection, and immutable scope publication. |
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveSamplingJob` | Incremental visible-geometry builds, bounded work per advance, retained probes, and completion reporting. |
@@ -157,6 +160,8 @@ RationalStudio/
 │   │   ├── Expression.cpp
 │   │   ├── VariableDefinitions.hpp
 │   │   ├── VariableDefinitions.cpp
+│   │   ├── FunctionDefinitions.hpp
+│   │   ├── FunctionDefinitions.cpp
 │   │   ├── GraphViewport.hpp
 │   │   ├── GraphViewport.cpp
 │   │   ├── CurveSampler.hpp
@@ -200,6 +205,7 @@ RationalStudio/
     ├── CurveSamplingJobTests.cpp
     ├── NamedVariableTests.cpp
     ├── VariableDefinitionsTests.cpp
+    ├── FunctionDefinitionsTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -281,7 +287,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **24 tests from 23 executables**: seventeen Qt-independent tests and seven offscreen Qt invocations from six widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register seventeen tests:
+With GUI and testing enabled, CTest registers **25 tests from 24 executables**: eighteen Qt-independent tests and seven offscreen Qt invocations from six widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register eighteen tests:
 
 | Executable | Focus |
 |---|---|
@@ -307,6 +313,7 @@ With GUI and testing enabled, CTest registers **24 tests from 23 executables**: 
 | `RationalCurveSamplingJobTests` | Complete tangent branches across widths and zoom levels, exact callback accounting, budget-independent geometry, pole/step separation, and steep continuous controls. |
 | `RationalNamedVariableTests` | Scope declarations, identifier validation, reserved names, case-folded binding lookup, referenced-variable introspection, re-evaluation without reparsing, and legacy API regressions. |
 | `RationalVariableDefinitionsTests` | Scalar assignment grammar, cycle detection and transactional rollback, dependency ordering, selective recomputation, undefined propagation/recovery, revisions, binding snapshots, and existing compiled-graph evaluation. |
+| `RationalFunctionDefinitionsTests` | Function definitions and nested calls, argument validation, lexical parameters, scalar captures, transitive dependencies, safe redefinition/recursion rejection, and compiled-expression compatibility. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 

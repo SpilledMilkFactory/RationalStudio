@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <cstddef>
 
 namespace rationalstudio {
 
@@ -34,6 +35,27 @@ private:
     std::map<std::string, double, std::less<>> values_;
 };
 
+class Expression;
+
+// Immutable compiled user-function definition. Calls retain a shared snapshot;
+// redefinitions publish a new scope rather than modifying an existing AST.
+struct UserFunction {
+    std::string name;
+    std::vector<std::string> parameters;
+    std::shared_ptr<const Expression> body;
+    std::vector<std::string> variableDependencies;
+};
+
+class FunctionScope {
+public:
+    [[nodiscard]] bool contains(std::string_view name) const;
+    [[nodiscard]] std::shared_ptr<const UserFunction> lookup(std::string_view name) const;
+    [[nodiscard]] std::vector<std::string> names() const;
+private:
+    std::map<std::string, std::shared_ptr<const UserFunction>, std::less<>> entries_;
+    friend class FunctionDefinitions;
+};
+
 // Compiled expressions are immutable. Legacy construction rejects unknown
 // identifiers; opt-in construction accepts only names declared in the scope.
 // Resolution happens on each evaluation without modifying the syntax tree.
@@ -41,6 +63,8 @@ class Expression {
 public:
     explicit Expression(const std::string& source);
     Expression(const std::string& source, const VariableScope& scope);
+    Expression(const std::string& source, const VariableScope& scope,
+               const FunctionScope& functions);
     ~Expression();
     Expression(Expression&&) noexcept;
     Expression& operator=(Expression&&) noexcept;
@@ -52,15 +76,25 @@ public:
     bool dependsOnX() const noexcept;
     bool dependsOnAns() const noexcept;
     const std::vector<std::string>& referencedVariables() const noexcept;
+    const std::vector<std::string>& referencedFunctions() const noexcept;
+    // Ambient scalar dependencies propagated through called functions.
+    const std::vector<std::string>& functionVariableDependencies() const noexcept;
     double evaluate(double x = 0, double ans = 0,
                     AngleMode angle = AngleMode::Radians) const noexcept;
     double evaluate(double x, double ans, AngleMode angle,
                     const VariableBindings& bindings) const noexcept;
+    // Internal function-call API: lexical parameters are distinct from
+    // ambient variables, preventing the caller's parameters from leaking into
+    // the called function's captured scalar names.
+    double evaluateWithParameters(double x, AngleMode angle,
+                                  const VariableBindings& ambient,
+                                  const VariableBindings& parameters) const noexcept;
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
     double evaluateImpl(double x, double ans, AngleMode angle,
-                        const VariableBindings* bindings) const noexcept;
+                        const VariableBindings* bindings,
+                        const VariableBindings* local = nullptr) const noexcept;
 };
 
 } // namespace rationalstudio
