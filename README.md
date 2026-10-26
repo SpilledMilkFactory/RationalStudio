@@ -80,11 +80,13 @@ y = floor(x)
 
 **Important limitation:** Finite sampling cannot establish continuity for every mathematical function. Narrow singularities, unobserved domain gaps, high-frequency oscillations, and extreme nonlinear features may still be missed or approximated imperfectly. Additional terminal refinement improves selected steep continuous curves but does not guarantee their reconstruction. Cached geometry is rebuilt when required inputs change; persistent caching does not eliminate the cost of sampling during navigation.
 
-**Named-variable parsing (Issue #27).** The Qt-independent expression compiler can accept explicitly declared named variables using `VariableScope` and evaluate them with per-call `VariableBindings`, without reparsing when values change. Identifiers are ASCII `[A-Za-z_][A-Za-z0-9_]*` (maximum 64 characters), case-insensitive, and cannot shadow `x`, `ans`, constants, or builtin functions. Unknown/unbound variables remain invalid/undefined. **The parser itself does not own assigned values; Issue #28 adds a separate Qt-independent definition and dependency owner. GUI variable editing, reusable function definitions, sliders, automatic graph updates, and workspace persistence remain later Milestone 2 issues.**
+**Named-variable parsing (Issue #27).** The Qt-independent expression compiler can accept explicitly declared named variables using `VariableScope` and evaluate them with per-call `VariableBindings`, without reparsing when values change. Identifiers are ASCII `[A-Za-z_][A-Za-z0-9_]*` (maximum 64 characters), case-insensitive, and cannot shadow `x`, `ans`, constants, or builtin functions. Unknown/unbound variables remain invalid/undefined. **The parser itself does not own assigned values; subsequent Issues #28–#30 add a separate assignment/dependency owner, reusable function definitions, and session-local sliders. Automatic graph binding and workspace persistence remain future work.**
 
-**Scalar assignments and dependencies (Issue #28).** The Qt-independent `VariableDefinitions` component stores assignments such as `a = 2`, `b = a + 3`, and `c = b^2`, compiles edited definitions against explicit identifier scopes, tracks direct and transitive dependencies, and recomputes only the affected subgraph after a successful edit. Malformed or circular redefinitions are rejected without replacing prior values or edges. Evaluation-domain errors propagate as undefined results; subsequent edits can restore valid values. Recomputed names and names with changed numeric/undefined values are reported separately to support future selective graph invalidation. Variables must be defined before they can be referenced; scalar assignments do not depend on `x` or `ans`. **Graphing assignment rows, function definitions, sliders, automatic GUI updates, and persistence are not implemented by this core-only issue.**
+**Scalar assignments and dependencies (Issue #28).** The Qt-independent `VariableDefinitions` component stores assignments such as `a = 2`, `b = a + 3`, and `c = b^2`, compiles edited definitions against explicit identifier scopes, tracks direct and transitive dependencies, and recomputes only the affected subgraph after a successful edit. Malformed or circular redefinitions are rejected without replacing prior values or edges. Evaluation-domain errors propagate as undefined results; subsequent edits can restore valid values. Recomputed names and names with changed numeric/undefined values are reported separately to support future selective graph invalidation. Variables must be defined before they can be referenced; scalar assignments do not depend on `x` or `ans`. **Graphing assignment rows, function editing, automatic graph updates, and persistence are outside this core-only feature; the GUI gains session-local sliders in Issue #30.**
 
-**Reusable function definitions (Issue #29).** The Qt-independent `FunctionDefinitions` owner compiles reusable functions such as `f(x) = x^2 + 3`, supports calls through an explicit `FunctionScope`, and resolves previously defined functions with checked arity. Function parameters have lexical scope, and user functions may capture named scalar values from `VariableBindings` without textual substitution. Rejected malformed, recursive, or cyclic definitions preserve the previous published function scope. Accepted redefinitions recompile dependent definitions and publish immutable snapshots. Previously compiled external expressions retain their old snapshots until recompiled against the latest function scope; changing scalar values only requires fresh bindings. **GUI function-definition rows, automatic graph invalidation, sliders, and persistence are planned for later Milestone 2 issues.**
+**Reusable function definitions (Issue #29).** The Qt-independent `FunctionDefinitions` owner compiles reusable functions such as `f(x) = x^2 + 3`, supports calls through an explicit `FunctionScope`, and resolves previously defined functions with checked arity. Function parameters have lexical scope, and user functions may capture named scalar values from `VariableBindings` without textual substitution. Rejected malformed, recursive, or cyclic definitions preserve the previous published function scope. Accepted redefinitions recompile dependent definitions and publish immutable snapshots. Previously compiled external expressions retain their old snapshots until recompiled against the latest function scope; changing scalar values only requires fresh bindings. **GUI function-definition rows, automatic graph invalidation, and persistence are planned for later Milestone 2 issues; basic session-local sliders are introduced in Issue #30.**
+
+**Interactive variable sliders (Issue #30).** The graph sidebar includes session-local Qt Widgets controls for adding named scalar variables and changing their numeric values. Each slider exposes editable minimum, maximum, and step settings and updates the existing `VariableDefinitions` owner and any scalar dependents. A Qt-independent `VariableSliderScale` bounds the tick count to 100,000, rejects non-finite/invalid ranges, and preserves an exactly reachable maximum even when the final interval is shorter than the requested step. The Qt editor supports values within ±1e9 and steps of at least 1e-9. **The slider values do not yet refresh graph curves automatically (Issue #31), and slider configurations are not yet included in saved graph workspaces (Issue #35).**
 
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
@@ -128,6 +130,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `VariableScope` / `VariableBindings` | Qt-independent declared identifier sets and normalized finite runtime values used by the assignment owner. |
 | `VariableDefinitions` | Qt-independent assignment parsing, compiled scalar definitions, dependency graph, circular-reference rejection, selective re-evaluation, undefined propagation, and bindings snapshots. |
 | `FunctionScope` / `FunctionDefinitions` | Explicit compiled-function lookup, lexical positional parameters, checked calls, transitive scalar dependencies, transactional redefinition, recursion rejection, and immutable scope publication. |
+| `VariableSliderScale` | Qt-free validation and mapping of finite slider ranges and steps onto bounded integer ticks, including a reachable terminal endpoint. |
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveSamplingJob` | Incremental visible-geometry builds, bounded work per advance, retained probes, and completion reporting. |
@@ -136,7 +139,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `GraphGridLayout` | Qt-independent validation of grid steps and pixel-space grid positions at viewport boundaries and extreme finite centers. |
 | `CurveGeometryCache` | Qt-independent, expression-identity-based cache management, lazy geometry construction, reuse, and invalidation. |
 
-The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
+The Qt-specific `VariableSliderPanel` provides interactive session-local scalar controls backed by `VariableDefinitions`; it does not yet connect them to graph invalidation or workspace persistence. The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
 
 `RationalCLI` links against `RationalCore` without using Qt.
 
@@ -162,6 +165,8 @@ RationalStudio/
 │   │   ├── VariableDefinitions.cpp
 │   │   ├── FunctionDefinitions.hpp
 │   │   ├── FunctionDefinitions.cpp
+│   │   ├── VariableSliderScale.hpp
+│   │   ├── VariableSliderScale.cpp
 │   │   ├── GraphViewport.hpp
 │   │   ├── GraphViewport.cpp
 │   │   ├── CurveSampler.hpp
@@ -172,6 +177,8 @@ RationalStudio/
 │   └── gui/
 │       ├── MainWindow.hpp
 │       ├── MainWindow.cpp
+│       ├── VariableSliderPanel.hpp
+│       ├── VariableSliderPanel.cpp
 │       ├── GraphCanvas.hpp
 │       └── GraphCanvas.cpp
 ├── benchmarks/                   # Local optional benchmark sources; excluded by .gitignore
@@ -206,6 +213,8 @@ RationalStudio/
     ├── NamedVariableTests.cpp
     ├── VariableDefinitionsTests.cpp
     ├── FunctionDefinitionsTests.cpp
+    ├── VariableSliderScaleTests.cpp
+    ├── VariableSliderPanelTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -287,7 +296,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **25 tests from 24 executables**: eighteen Qt-independent tests and seven offscreen Qt invocations from six widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register eighteen tests:
+With GUI and testing enabled, CTest registers **27 tests from 26 executables**: nineteen Qt-independent tests and eight offscreen Qt invocations from seven widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register nineteen tests:
 
 | Executable | Focus |
 |---|---|
@@ -314,6 +323,8 @@ With GUI and testing enabled, CTest registers **25 tests from 24 executables**: 
 | `RationalNamedVariableTests` | Scope declarations, identifier validation, reserved names, case-folded binding lookup, referenced-variable introspection, re-evaluation without reparsing, and legacy API regressions. |
 | `RationalVariableDefinitionsTests` | Scalar assignment grammar, cycle detection and transactional rollback, dependency ordering, selective recomputation, undefined propagation/recovery, revisions, binding snapshots, and existing compiled-graph evaluation. |
 | `RationalFunctionDefinitionsTests` | Function definitions and nested calls, argument validation, lexical parameters, scalar captures, transitive dependencies, safe redefinition/recursion rejection, and compiled-expression compatibility. |
+| `RationalVariableSliderScaleTests` | Qt-free finite-range/step validation, bounded tick counts, endpoint mapping, rounding, and deterministic numerical sweeps. |
+| `RationalVariableSliderPanelTests` | Offscreen Qt slider creation, duplicate-name rejection, range editing, input synchronization, scalar dependency propagation, and safe deletion. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
@@ -421,7 +432,7 @@ Expressions are parsed into an abstract syntax tree before evaluation. Exponenti
 - **Graphing:** Explicit Cartesian `y = f(x)` only. Adaptive sampling includes bounded secondary refinement to preserve steep continuous curves. Domain and discontinuity detection rely on finite numerical samples and cannot guarantee correct rendering of every mathematical function.
 - **Viewport precision:** Viewport navigation uses double-precision coordinates and precision-aware pan/zoom calculations. Operations that cannot be represented within the configured screen-space error tolerance are rejected without modifying viewport state. Arbitrary-precision navigation is not supported.
 - **Rendering:** Valid paths are cached, and rapid navigation coalesces geometry refreshes with temporary affine previews. Resize changes invalidate stale paths and obsolete timers. Grid lines/labels use bounded pixel-space positions; extremely large finite viewport centers may suppress unreliable grid markers. Invalidated paths rebuild incrementally under per-curve-per-paint and shared callback budgets; complete replacements may take multiple paints. Retained previews include finite surrounding coverage and can omit newly exposed regions after sufficiently large navigation changes. The single-call sampler can still return explicitly truncated geometry. Sampling and other mathematical callbacks remain on the GUI thread. Coalescing and callback ceilings do not guarantee frame time, input latency, or increased FPS.
-- **Not yet supported:** Implicit, parametric, or polar graphs; complex arithmetic; matrices; interactive named-variable sliders; symbolic algebra; numerical integration and differentiation; and inequality shading.
+- **Not yet supported:** Implicit, parametric, or polar graphs; complex arithmetic; matrices; GUI-defined reusable functions, automatic variable-driven graph refresh, and workspace persistence for sliders; symbolic algebra; numerical integration and differentiation; and inequality shading.
 - **Platform verification:** Linux verified; native Windows and Qt 5 builds not yet verified.
 
 ## Development and contributions

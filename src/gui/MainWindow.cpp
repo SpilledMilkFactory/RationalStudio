@@ -1,5 +1,6 @@
 #include "MainWindow.hpp"
 #include "Rational.hpp"
+#include "VariableSliderPanel.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -312,6 +313,36 @@ QWidget* MainWindow::makeGraphPage() {
     inputHead->addWidget(add);
     connect(add, &QPushButton::clicked, this, [this] { addGraphRow(); });
     sv->addLayout(inputHead);
+    // Issue #30: Session-local interactive variable sliders.
+    // Graph dependency updates are handled in Issue #31.
+    // Workspace persistence is handled in Issue #35.   
+
+    variableSliders_ = new VariableSliderPanel(side);   
+
+    variableSliders_->onValueChanged =
+        [this](const std::string& name, double value) {
+            if (graphStatus_) {
+                graphStatus_->setText(
+                    "Variable " +
+                    QString::fromStdString(name) +
+                    " = " +
+                    QString::number(value, 'g', 12) +
+                    " (graph binding arrives in Issue #31)"
+                );
+            }
+        };  
+
+    // Place the slider panel inside its own scrollable container.
+    auto* sliderScroll = new QScrollArea(side); 
+
+    sliderScroll->setWidgetResizable(true);
+    sliderScroll->setWidget(variableSliders_);  
+
+    sliderScroll->setMinimumHeight(125);
+    sliderScroll->setMaximumHeight(265);    
+
+    // Insert the slider controls above the expression list.
+    sv->addWidget(sliderScroll);
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     auto* scrollContent = new QWidget;

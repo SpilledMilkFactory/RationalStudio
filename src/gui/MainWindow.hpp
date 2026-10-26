@@ -23,6 +23,8 @@ class QToolButton;
 
 namespace rationalstudio {
 
+class VariableSliderPanel;
+
 class MainWindow final : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
@@ -67,6 +69,7 @@ private:
     QLabel* fractionResult_ = nullptr;
     QLabel* fractionDecimal_ = nullptr;
     GraphCanvas* graph_ = nullptr;
+    VariableSliderPanel* variableSliders_ = nullptr;
     QVBoxLayout* graphList_ = nullptr;
     QLabel* graphStatus_ = nullptr;
     QTimer* graphDebounce_ = nullptr;

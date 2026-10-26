@@ -17,6 +17,7 @@ add_library(RationalCore STATIC
     src/core/FunctionDefinitions.cpp
     src/core/GraphViewport.cpp
     src/core/CurveSampler.cpp
+    src/core/VariableSliderScale.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -371,9 +372,28 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME RationalFunctionDefinitionsTests COMMAND RationalFunctionDefinitionsTests)
-    
+
     set_tests_properties(RationalFunctionDefinitionsTests PROPERTIES
         LABELS "core;regression;functions"
+    )
+
+    # ---------------------------------------------------------
+    # Issue #30 — Reusable mathematical functions
+    # ---------------------------------------------------------
+
+    add_executable(RationalVariableSliderScaleTests
+        tests/VariableSliderScaleTests.cpp
+    )
+
+    target_link_libraries(RationalVariableSliderScaleTests PRIVATE
+        RationalCore
+    )
+
+    add_test(NAME RationalVariableSliderScaleTests
+             COMMAND RationalVariableSliderScaleTests)
+
+    set_tests_properties(RationalVariableSliderScaleTests PROPERTIES
+        LABELS "core;regression;sliders"
     )
 
     # -----------------------------------------------------
@@ -401,6 +421,7 @@ if(BUILD_TESTING)
         RationalNamedVariableTests
         RationalVariableDefinitionsTests
         RationalFunctionDefinitionsTests
+        RationalVariableSliderScaleTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -477,6 +498,15 @@ if(RATIONALSTUDIO_BUILD_GUI)
 
         src/gui/GraphCanvas.hpp
         src/gui/GraphCanvas.cpp
+    )
+
+    target_sources(RationalStudio PRIVATE
+        src/gui/VariableSliderPanel.hpp
+        src/gui/VariableSliderPanel.cpp
+    )   
+
+    target_include_directories(RationalStudio PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
     )
 
     target_link_libraries(RationalStudio PRIVATE
@@ -671,6 +701,40 @@ if(RATIONALSTUDIO_BUILD_GUI)
                 $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
             )
         endif()
+
+    # ---------------------------------------------------------
+    # Issue #30 — interactive variable sliders
+    # ---------------------------------------------------------
+        add_executable(RationalVariableSliderPanelTests
+            tests/VariableSliderPanelTests.cpp      
+
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp     
+
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp      
+
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+        )
+        target_include_directories(RationalVariableSliderPanelTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalVariableSliderPanelTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalVariableSliderPanelTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalVariableSliderPanelTests
+                 COMMAND RationalVariableSliderPanelTests)
+        set_tests_properties(RationalVariableSliderPanelTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;sliders;qt;offscreen"
+            TIMEOUT 30
+        )
+
+
 
     endif()
 
