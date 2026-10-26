@@ -55,6 +55,10 @@ public:
         }
     }
 
+    // Issue #31: invalidate only the curve depending on a changed variable.
+    // Preserve every other compiled expression's completed geometry.
+    void invalidate(std::size_t index) { entries_.at(index).ready = false; }
+
     template <typename Factory>
     const Geometry& getOrBuild(std::size_t index, Factory&& factory) {
         Entry& entry = entries_.at(index);

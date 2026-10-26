@@ -20,8 +20,8 @@ class QVBoxLayout;
 
 namespace rationalstudio {
 
-// Session-local controls; graph bindings, automatic selective repaint and
-// persistence are explicitly deferred to Issues #31 and #35.
+// Session-local controls; Issue #31 connects them to graph bindings and
+// selective repaint. Workspace persistence is deferred to Issue #35.
 class VariableSliderPanel final : public QWidget {
 public:
     explicit VariableSliderPanel(QWidget* parent = nullptr);
@@ -45,6 +45,12 @@ public:
 
     // Called only after a successful value change, including dependent updates.
     std::function<void(const std::string&, double)> onValueChanged;
+    // Called on successful mutations. For a value-only edit, changed contains
+    // exactly the scalar definitions whose evaluated result changed. For
+    // addition/removal, scopeChanged is true and changed includes the name.
+    // Notify after committing the authoritative store, never after rejection.
+    std::function<void(const std::vector<std::string>& changed,
+                       bool scopeChanged)> onDefinitionsChanged;
 
 private:
     struct Row {

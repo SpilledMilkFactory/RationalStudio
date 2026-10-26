@@ -49,7 +49,9 @@ private:
     void calculateFraction();
     void addGraphRow(const QString& text = QString(), bool visible = true, QColor color = QColor());
     void removeGraphRow(GraphRow* row);
-    void rebuildGraph();
+    void rebuildGraph(const std::vector<std::string>& changedScope = {});
+    void onVariableDefinitionsChanged(const std::vector<std::string>& changed,
+                                      bool scopeChanged);
     void saveGraph();
     void loadGraph();
     void exportImage();

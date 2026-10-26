@@ -86,7 +86,7 @@ VariableSliderPanel::VariableSliderPanel(QWidget* parent)
     list_->setSpacing(8);
     outer->addWidget(group);
     message_ = new QLabel(
-        "Values update the scalar definition store now. Graph dependencies: Issue #31. "
+        "Slider changes refresh affected graph curves. "
         "Workspace saving: Issue #35.", this);
     message_->setObjectName("sliderMessage");
     message_->setWordWrap(true);
@@ -221,6 +221,7 @@ bool VariableSliderPanel::addVariable(
     });
     setError(error, {});
     showMessage("Added slider for " + displayName(canonical), false);
+    if (onDefinitionsChanged) onDefinitionsChanged({canonical}, true);
     return true;
 }
 
@@ -259,7 +260,10 @@ bool VariableSliderPanel::setVariableValue(
     }
     syncRow(*row);
     setError(error, {});
-    if (!update.changed.empty() && onValueChanged) onValueChanged(row->name, snapped);
+    if (!update.changed.empty()) {
+        if (onDefinitionsChanged) onDefinitionsChanged(update.changed, false);
+        if (onValueChanged) onValueChanged(row->name, snapped);
+    }
     return true;
 }
 
@@ -282,7 +286,10 @@ bool VariableSliderPanel::configureVariable(
     row->scale = *proposed;
     syncRow(*row);
     setError(error, {});
-    if (!update.changed.empty() && onValueChanged) onValueChanged(row->name, snapped);
+    if (!update.changed.empty()) {
+        if (onDefinitionsChanged) onDefinitionsChanged(update.changed, false);
+        if (onValueChanged) onValueChanged(row->name, snapped);
+    }
     return true;
 }
 
@@ -304,6 +311,7 @@ bool VariableSliderPanel::removeVariable(const std::string& name, std::string* e
     }
     showMessage("Removed slider for " + displayName(name), false);
     setError(error, {});
+    if (onDefinitionsChanged) onDefinitionsChanged({name}, true);
     return true;
 }
 
