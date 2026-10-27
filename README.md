@@ -96,6 +96,10 @@ y = floor(x)
 
 **Mathematical expression editing (Issue #32).** Scientific and graph inputs use `MathExpressionEdit`, a Qt Widgets single-line editor with cursor-aware insertion, selected-expression wrapping, paired parentheses, and an on-screen graph symbol strip (`π`, `√`, `²`, `×`, `÷`, `−`). Supported Unicode symbols are translated at the expression-compiler boundary by the Qt-independent, header-only `MathExpressionInput` helper; the visible text and caret are not rewritten. Graph rows show immediate parser-backed valid, invalid, or incomplete-edit feedback, while geometric redraw remains debounced. Scientific preview also recognizes the supported symbols. Parenthesized roots such as `√(9)` are supported; arbitrary mathematical typesetting, syntax highlighting within individual tokens, and a full equation-layout editor are outside this issue. **Issue #32 does not change evaluation grammar, graph sampling, caching, sliders, or persistence.**
 
+<!-- ISSUE33_README_UPDATED -->
+
+**Inline expression diagnostics (Issue #33).** The Qt-independent `Expression` parser publishes an optional `ExpressionDiagnostic` describing invalid input using a category, readable message, source byte offset, and token extent while preserving the existing `error()` string API. `MathExpressionInput::sourceColumn` maps offsets from normalized parser input back to visible UTF-8 character columns when the editor contains supported symbols such as `π`, `√`, or `²`. Scientific and graph editors display actionable errors in their existing inline hint rows and editor tooltips, clear obsolete messages after recovery, and distinguish incomplete edits from malformed syntax where supported. Invalid graph rows remain outside the render curve set, while unrelated valid rows remain available. This is **not** a grammar expansion, an exhaustive syntax predictor, a full token underlining editor, or a guarantee of every domain error at parse time. The graph repaint debounce and selective geometry caching remain unchanged.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -134,6 +138,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | Component | Responsibility |
 |---|---|
 | `Rational` | Exact fractions, normalization, parsing, arithmetic, comparisons, and decimal conversion. |
+| `ExpressionDiagnostic` | Structured parser errors: category, source offset/length, and readable message; legacy error-string compatibility. |
 | `Expression` | Parsing, operator precedence, mathematical functions, constants, named-variable nodes, explicit scope validation, and repeated evaluation with per-call bindings. |
 | `VariableScope` / `VariableBindings` | Qt-independent declared identifier sets and normalized finite runtime values used by the assignment owner. |
 | `VariableDefinitions` | Qt-independent assignment parsing, compiled scalar definitions, dependency graph, circular-reference rejection, selective re-evaluation, undefined propagation, and bindings snapshots. |
@@ -233,6 +238,8 @@ RationalStudio/
     ├── GraphVariableRefreshTests.cpp
     ├── MathExpressionInputTests.cpp
     ├── MathExpressionEditorTests.cpp
+    ├── ExpressionDiagnosticTests.cpp
+    ├── ExpressionInlineFeedbackTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -314,7 +321,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **31 tests from 30 executables**: twenty-one Qt-independent tests and ten offscreen Qt invocations from nine widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-one tests:
+With GUI and testing enabled, CTest registers **33 tests from 32 executables**: twenty-two Qt-independent tests and eleven offscreen Qt invocations from ten widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-two tests:
 
 | Executable | Focus |
 |---|---|
@@ -347,6 +354,8 @@ With GUI and testing enabled, CTest registers **31 tests from 30 executables**: 
 | `RationalGraphVariableRefreshTests` | Offscreen GraphCanvas and real MainWindow integration: named-variable graph parsing, selective cache reuse, value edits, declaration, removal, and restoration. |
 | `RationalMathExpressionInputTests` | Qt-free Unicode mathematical symbol translation, parser compatibility, numerical results, and incomplete-edit heuristics. |
 | `RationalMathExpressionEditorTests` | Offscreen Qt editor selection/caret semantics, bracket insertion, graph symbol toolbar, live syntax feedback, and scientific/graph integration. |
+| `RationalExpressionDiagnosticTests` | Qt-independent parser error kinds, source offsets, unknown names, function failures, Unicode source-column translation, and deterministic invalid-expression sweeps. |
+| `RationalExpressionInlineFeedbackTests` | Offscreen Qt real MainWindow feedback, error tooltips, Unicode positions, invalid-row isolation, and recovery without corrupting other graph rows. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 

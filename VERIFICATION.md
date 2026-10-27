@@ -1,13 +1,13 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE32_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE33_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 27, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **AUTOMATED PASS — Issue #32 (M2-06), mathematical expression editing and input feedback.** GCC 15.2.0 GUI-enabled Debug **31/31 CTests PASS** (11.19 s); GUI-enabled Release **31/31 CTests PASS** (5.99 s); core-only ASan/UBSan **21/21 CTests PASS** (7.15 s). **4,032** input-normalization and **19** Qt editor assertions PASS. Before/after 62-entry source/documentation manifests match. **Manual GUI:** PASS — developer-attested Issue #32 manual GUI checklist; not an automated desktop test. Core-only sanitizer testing excludes Qt Widgets. No native Windows/Qt 5 or performance improvement is claimed.
+**Current status:** **AUTOMATED PASS — Issue #33 (M2-07), expression validation and inline error reporting.** Linux GCC 15.2.0 GUI-enabled Debug **33/33 CTests PASS** (11.57 s), GUI-enabled Release **33/33 CTests PASS** (6.41 s), and core-only ASan/UBSan **22/22 CTests PASS** (7.14 s). **323 ExpressionDiagnostic** and **19 ExpressionInlineFeedback** assertions PASS. Before/after recorded provenance manifests contain **64 matching entries**. **Manual GUI:** PASS — developer-reported manual Issue #33 desktop GUI check; not independently instrumented. Full Qt sanitizer, Windows, and Qt 5 validation remain unverified; historical Issue #25 benchmarks are not a new performance result.
 
-This document records Issue #32 mathematical symbol input, caret/selection editing and immediate parser-backed feedback, following Issues #27–#31. The previous verification history and Issue #25 measured benchmarks are preserved. Automated results do not constitute manual desktop acceptance; this report distinguishes the two. Core-only ASan/UBSan does not cover Qt widgets.
+This document records Issue #33 structured parser diagnostics, readable inline scientific and graph-expression errors, Unicode-visible columns, invalid graph-row isolation, and recovery, building on Issue #32. Earlier regression results and the Issue #25 measured benchmarks remain historical. Offscreen widget regressions are distinguished from developer-reported manual desktop checks. Core-only ASan/UBSan does not cover Qt Widgets.
 
 ## 1. Build environment
 
@@ -17,7 +17,8 @@ This document records Issue #32 mathematical symbol input, caret/selection editi
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #32 application builds | GCC 15.2.0 Linux Debug (incremental), Release (114/114), and core-only ASan/UBSan (52/52), with **31/31**, **31/31**, and **21/21 CTests PASS**; provenance identical during run |
+| Current Issue #33 application builds | GCC 15.2.0 Linux GUI-enabled Debug (86/86 final Ninja progress), GUI-enabled Release (124/124), core-only ASan/UBSan (54/54); **33/33**, **33/33**, **22/22** CTests PASS; matching source provenance |
+| Historical Issue #32 application builds | GCC 15.2.0 Linux Debug (incremental), Release (114/114), and core-only ASan/UBSan (52/52), with **31/31**, **31/31**, and **21/21 CTests PASS**; provenance identical during run |
 | Historical Issue #31 application builds | Linux GCC 15.2.0; GUI-enabled Debug and Release full builds, **29/29** CTests each; core-only ASan/UBSan build, **20/20** CTests; identical before/after verification provenance |
 | Historical Issue #30 application builds | GCC 15.2.0 Linux GUI-enabled Debug and Release configurations: 27/27 CTests each; core-only ASan/UBSan: 19/19 CTests (validated against local CTest logs) |
 | Historical Issue #29 application builds | GCC 15.2.0 GUI-enabled Debug full build 25/25 CTests; GUI-enabled Release full build 25/25 CTests; core-only ASan/UBSan build 18/18 CTests |
@@ -34,7 +35,15 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #32 current Debug and Release build and CTest results
+### Issue #33 current Debug and Release build and CTest results
+
+**Debug:** `build-issue33` — successful GUI-enabled Ninja build; final progress **86/86**, **33/33 CTests PASS**, **11.57 s** CTest wall-clock. This is not attested as a fresh-from-empty-tree build; the build log contains regeneration activity before its final progress sequence.
+
+**Release:** `build-issue33-release` — successful GUI-enabled build **124/124**, **33/33 CTests PASS**, **6.41 s** CTest wall-clock.
+
+`verify_issue33.sh` timestamp `2026-10-27T19:26:47-04:00`; compiler `c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0`; `cmake version 4.2.3`, Ninja `1.13.2`, base Git HEAD `2de81c7aafca6aa055b45282c6212d09bec5f4a8` plus working-tree changes. These are recorded Linux build/CTest outcomes, not Windows or Qt 5 results.
+
+### Issue #32 historical Debug and Release build and CTest results
 
 **Debug:** `build-issue32` — successful **incremental 6/6 Ninja build**, **31/31 CTests PASS** (11.19 s CTest wall-clock).
 
@@ -222,7 +231,23 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #32 current automated regression results
+### Issue #33 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| Debug GUI-enabled CTest | **33/33 PASS**, 11.57 s |
+| Release GUI-enabled CTest | **33/33 PASS**, 6.41 s |
+| Core-only ASan/UBSan CTest | **22/22 PASS**, 7.14 s |
+| `RationalExpressionDiagnosticTests` direct Debug | **323 assertions PASS** |
+| `RationalExpressionInlineFeedbackTests` direct offscreen Qt Debug | **19 assertions PASS** |
+
+The Qt-independent diagnostic suite checks error categories, source byte offsets, malformed inputs, identifier/function errors and Unicode column mapping. The real MainWindow offscreen suite checks inline messages, valid/invalid row isolation, recovery, and symbol-aware locations. The tests do not prove every input case or runtime-domain error.
+
+**Evidence SHA-256:** Debug CTest `dcf58729dbe71d0832ee841a30e3a146d00d8b08218e84d274f1211669233079`; Release CTest `d505a3c57f406df88dcfc0977e7e28378d0f9ccf54c0f5ca64b01a052b1231fe`; ASan/UBSan CTest `3a9b47fd6cccd51fc3976a50d19a21577b65643745fa4d0a8745a73de44ad423`; diagnostic direct run `ba169fc4b81cbebcb414434d71f6b3c2b65e76c8ac82aafcebb90d9154944bed`; inline direct run `a4807d6d10ca614c43caaf03e853e09bb0fe254b3ea7efe57649ed9a4312f334`.
+
+**Provenance:** 64 matching before/after SHA-256 entries; manifest SHA-256 `c863667c4ee7e117cad97309e9f4fc2824feb56f0168c0e883780570bf511706`. This establishes stability **during** verification. The subsequent README and VERIFICATION documentation updates are not covered by that comparison.
+
+### Issue #32 historical automated regression results
 
 | Verification | Recorded result |
 |---|---|
@@ -459,6 +484,8 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalVariableSliderPanelTests` | Offscreen Qt widget integration for creating sliders, editing values/ranges/steps, and updating scalar variables and dependents. |
 | `RationalGraphVariableDependencyTests` | Qt-independent graph-to-variable dependency selection, transitive scalar dependencies, and function-captured variable references. |
 | `RationalGraphVariableRefreshTests` | Qt offscreen MainWindow and GraphCanvas integration, recognizing slider variables in expressions, selective refresh, and invalid/repaired row transitions. |
+| `RationalExpressionDiagnosticTests` | Qt-free structured diagnostics: error kinds, readable messages, source positions, function/identifier errors and Unicode-visible column translation. |
+| `RationalExpressionInlineFeedbackTests` | Offscreen Qt MainWindow integration for scientific/graph error text, row isolation, recovery and Unicode columns. |
 | `RationalMathExpressionInputTests` | Unicode-to-parser translation, mathematical evaluation and incomplete/invalid operator classification (Qt-independent). |
 | `RationalMathExpressionEditorTests` | Offscreen Qt caret and selection handling, math symbol insertion, immediate syntax feedback, scientific and graph MainWindow integration. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
@@ -798,7 +825,11 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #32 current complete core-only sanitizer suite — PASS
+### Issue #33 current complete core-only sanitizer suite — PASS
+
+`build-issue33-asan` completed **54/54 Ninja steps**, **22/22 CTests PASS**, CTest wall-clock **7.14 s**. The Qt-independent ExpressionDiagnostic suite is included; the GUI inline-feedback suite is excluded. The Qt application has not been tested under sanitizers in this qualification.
+
+### Issue #32 historical complete core-only sanitizer suite — PASS
 
 `build-issue32-asan`: **52/52 Ninja build steps**, **21/21 CTests PASS**, CTest wall-clock 7.15 s; GUI and benchmark targets disabled. The Qt-independent Unicode-input test is included. Qt Widgets and the full desktop application are **not** sanitizer-qualified.
 
@@ -946,7 +977,11 @@ The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-f
 
 ## 5. Desktop GUI — current acceptance and historical results
 
-### Issue #32 manual desktop GUI acceptance
+### Issue #33 manual desktop GUI acceptance
+
+PASS — developer-reported manual Issue #33 desktop GUI check; not independently instrumented. The developer reported that inline scientific and graph diagnostics, correction/recovery, and other existing GUI behavior looked correct. This is an informal report, not an independently captured case-by-case checklist or separate Release desktop run.
+
+### Issue #32 historical manual desktop GUI acceptance
 
 PASS — developer-attested Issue #32 manual GUI checklist; not an automated desktop test. The recommended checklist covers symbol entry, selection wrapping, automatic parenthesis pairing, cursor placement, valid/incomplete/invalid feedback, scientific result/history, graph rendering, sliders, save/reopen and navigation. Offscreen Qt tests passing alone do not attest these manual steps.
 
@@ -1112,6 +1147,9 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
+| Linux Debug, Qt GUI enabled (Issue #33) | PASS — build final 86/86 | **33/33 PASS** | Offscreen inline test PASS; PASS — developer-reported manual Issue #33 desktop GUI check; not independently instrumented. |
+| Linux Release, Qt GUI enabled (Issue #33) | PASS — 124/124 build | **33/33 PASS** | Offscreen GUI tests PASS; interactive Release launch not separately attested |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #33) | PASS — 54/54 build | **22/22 PASS** | Qt-free diagnostics PASS; Qt Widgets excluded |
 | Linux Debug, Qt GUI enabled (Issue #32) | PASS — incremental 6/6 build | **31/31 PASS** | Qt editor offscreen PASS; PASS — developer-attested Issue #32 manual GUI checklist; not an automated desktop test. |
 | Linux Release, Qt GUI enabled (Issue #32) | PASS — 114/114 build | **31/31 PASS** | Qt editor offscreen PASS; interactive Release launch not separately recorded |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #32) | PASS — 52/52 build | **21/21 PASS** | Qt-free input checked; Qt excluded |
@@ -1146,6 +1184,7 @@ The following areas remain outside the current verification scope or are known a
 
 - Issues #27–#30 provide named identifiers, scalar assignments and dependencies, reusable compiled functions, and session-local GUI sliders. **Issue #31 connects declared variables and current bindings to plotted curves and coordinate tracing**, invalidating only curves referencing changed scalar values. Slider configurations are **not persisted** with saved workspaces (Issue #35), and GUI function-definition/assignment editing rows are not yet implemented. Scalar assignments cannot depend on `x` or `ans`.
 - Issue #32 provides a **single-line** editor, limited supported Unicode glyph normalization, selection/caret editing, and parser-backed syntax state. It does not offer a two-dimensional typesetting engine or exhaustive syntax classification. Symbol text remains visible; only parsed copies are normalized. GUI function-definition authoring and slider persistence remain pending.
+- Issue #33 provides parser error categories, positions and readable inline feedback; it does not guarantee complete predictive syntax diagnostics, token-level underlining, or detection of all runtime mathematical domain failures. Invalid rows do not replace unrelated valid graph curves.
 - Finite probing cannot detect all discontinuities, arbitrarily narrow domain gaps, or unsampled singularities.
 - Bounded terminal refinement improves steep continuous curves, but sufficiently narrow or extreme nonlinear features may still be omitted or approximated imperfectly.
 - Highly oscillatory functions may be undersampled.
@@ -1183,12 +1222,22 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #32 validation used `build-issue32`, `build-issue32-release`, and `build-issue32-asan` with `verify_issue32.sh` and `issue32-evidence/`. Historical Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #33 validation used `build-issue33`, `build-issue33-release`, and `build-issue33-asan` with `verify_issue33.sh` and `issue33-evidence/`. Historical Issue #32 validation used `build-issue32`, `build-issue32-release`, and `build-issue32-asan` with `verify_issue32.sh` and `issue32-evidence/`. Historical Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
+| Issue #33 Debug GUI-enabled build (final progress) | **86/86 PASS** |
+| Issue #33 Release GUI-enabled build | **124/124 PASS** |
+| Issue #33 core-only ASan/UBSan build | **54/54 PASS** |
+| Issue #33 Debug GUI-enabled CTest | **33/33 PASS** |
+| Issue #33 Release GUI-enabled CTest | **33/33 PASS** |
+| Issue #33 core-only ASan/UBSan CTest | **22/22 PASS** |
+| Issue #33 diagnostic direct assertions | **323 PASS** |
+| Issue #33 Qt inline-feedback direct assertions | **19 PASS** |
+| Issue #33 provenance manifests | **64 matching paths** |
+| Issue #33 manual desktop GUI check | PASS — developer-reported manual Issue #33 desktop GUI check; not independently instrumented. |
 | Issue #32 Debug GUI-enabled incremental build | **6/6 steps PASS** |
 | Issue #32 Release GUI-enabled build | **114/114 steps PASS** |
 | Issue #32 core-only ASan/UBSan build | **52/52 steps PASS** |
@@ -1262,7 +1311,9 @@ These generic commands describe a reproducible procedure. Current Issue #32 vali
 | Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Current assessment — Issue #32:** GCC 15.2.0 Linux GUI-enabled Debug and Release **31/31 CTests PASS** each, core-only ASan/UBSan **21/21 CTests PASS**. **4,032** Qt-independent mathematical-input and **19** offscreen Qt-editor assertions passed. Before/after source provenance matches across 62 paths. Manual GUI: PASS — developer-attested Issue #32 manual GUI checklist; not an automated desktop test. No native Windows/Qt 5, full Qt sanitizer or controlled performance improvement is claimed; the Issue #25 benchmark is historical.
+**Current assessment — Issue #33:** Linux GCC 15.2.0 GUI-enabled **33/33 Debug and 33/33 Release CTests PASS**, core-only ASan/UBSan **22/22 CTests PASS**. Direct suites report **323 structured diagnostic** and **19 offscreen GUI feedback** assertions. The 64-entry provenance manifests match during testing. Manual GUI: PASS — developer-reported manual Issue #33 desktop GUI check; not independently instrumented. No Windows, Qt 5, complete Qt sanitizer, or controlled speedup claims are made; Issue #25 performance data remain historical.
+
+**Historical assessment — Issue #32:** GCC 15.2.0 Linux GUI-enabled Debug and Release **31/31 CTests PASS** each, core-only ASan/UBSan **21/21 CTests PASS**. **4,032** Qt-independent mathematical-input and **19** offscreen Qt-editor assertions passed. Before/after source provenance matches across 62 paths. Manual GUI: PASS — developer-attested Issue #32 manual GUI checklist; not an automated desktop test. No native Windows/Qt 5, full Qt sanitizer or controlled performance improvement is claimed; the Issue #25 benchmark is historical.
 
 **Historical assessment — Issue #31:** Linux GCC 15.2.0 GUI-enabled Debug and Release **29/29 CTests PASS** each, core-only ASan/UBSan **20/20 CTests PASS**. New direct suites report **1,223** dependency assertions and **40** Qt refresh assertions. Before/after manifests covering 57 paths are identical during testing. Manual GUI: PASS — developer-reported manual desktop GUI acceptance: slider variables are accepted in graph expressions and changing sliders updates plotted curves. Selective mathematical invalidation is covered by tests, but no new benchmark comparison or speedup is claimed. Slider persistence and GUI function authoring remain pending. Full Qt sanitizers, Windows, and Qt 5 remain unverified.
 

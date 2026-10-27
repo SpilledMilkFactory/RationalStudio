@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 #include <cstddef>
+#include <optional>
 
 namespace rationalstudio {
 
@@ -33,6 +34,20 @@ public:
     bool lookup(std::string_view name, double& value) const;
 private:
     std::map<std::string, double, std::less<>> values_;
+};
+
+// Positions use zero-based byte offsets in the source passed to Expression.
+// When the GUI normalizes Unicode symbols, it maps these offsets back to
+// visible character columns via MathExpressionInput::sourceColumn().
+enum class ExpressionErrorKind {
+    Lexical, Syntax, UnknownIdentifier, FunctionCall, Arity, Limit
+};
+
+struct ExpressionDiagnostic {
+    ExpressionErrorKind kind = ExpressionErrorKind::Syntax;
+    std::string message;            // Human-readable, without duplicated position suffix.
+    std::size_t offset = 0;         // Byte position in parser-compatible source.
+    std::size_t length = 0;         // Zero means expected input at end of expression.
 };
 
 class Expression;
@@ -73,6 +88,8 @@ public:
 
     bool valid() const noexcept;
     const std::string& error() const noexcept;
+    // nullptr if valid; structured error details for inline editor feedback.
+    const ExpressionDiagnostic* diagnostic() const noexcept;
     bool dependsOnX() const noexcept;
     bool dependsOnAns() const noexcept;
     const std::vector<std::string>& referencedVariables() const noexcept;
