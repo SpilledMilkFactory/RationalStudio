@@ -71,6 +71,27 @@ QPushButton* makeButton(const QString& name, const QString& property = {}) {
     if (!property.isEmpty()) button->setProperty("kind", property);
     return button;
 }
+// The core parser owns syntax validity and byte locations. This presentation
+// helper maps normalized offsets back to readable Unicode character columns.
+bool isIncompleteEdit(const Expression& expression, const std::string& normalized) {
+    const auto* diagnostic = expression.diagnostic();
+    return diagnostic && diagnostic->kind == ExpressionErrorKind::Syntax &&
+        MathExpressionInput::looksIncomplete(normalized);
+}
+
+QString inlineErrorMessage(const Expression& expression, const QString& visibleBody) {
+    const auto* diagnostic = expression.diagnostic();
+    if (!diagnostic) return QString::fromStdString(expression.error());
+    const auto original = visibleBody.toStdString();
+    const auto column = MathExpressionInput::sourceColumn(original, diagnostic->offset);
+    QString message = QString("Column %1: %2")
+        .arg(static_cast<qulonglong>(column))
+        .arg(QString::fromStdString(diagnostic->message));
+    if (diagnostic->kind == ExpressionErrorKind::UnknownIdentifier)
+        message += " — check the name or declare a slider variable.";
+    return message;
+}
+
 QString normalizedGraphInput(QString input) {
     input = input.trimmed();
     if (input.startsWith("y", Qt::CaseInsensitive)) {
@@ -158,6 +179,8 @@ QWidget* MainWindow::makeScientificPage() {
     layout->addWidget(scientificResult_);
 
     scientificHint_ = new QLabel("Enter to calculate  ·  ^ for powers  ·  ! for factorial");
+    scientificHint_->setTextFormat(Qt::PlainText);
+    scientificHint_->setWordWrap(true);
     scientificHint_->setStyleSheet("color:#98aac0;");
     layout->addWidget(scientificHint_);
 
@@ -237,19 +260,25 @@ void MainWindow::updateScientificPreview() {
     const QString source = scientificInput_->text().trimmed();
     if (source.isEmpty()) {
         scientificInput_->setSyntaxState("empty");
+        scientificInput_->setToolTip(QString());
         scientificResult_->setText("0"); scientificHint_->setText("Enter to calculate  ·  ^ for powers  ·  ! for factorial");
         return;
     }
     Expression expression(MathExpressionInput::normalize(source.toStdString()));
     if (!expression.valid()) {
-        const bool incomplete = MathExpressionInput::looksIncomplete(MathExpressionInput::normalize(source.toStdString()));
+        const std::string canonical = MathExpressionInput::normalize(source.toStdString());
+        const bool incomplete = isIncompleteEdit(expression, canonical);
         scientificInput_->setSyntaxState(incomplete ? "incomplete" : "invalid");
         scientificResult_->setText("…");
-        scientificHint_->setText(incomplete ? "Continue typing to complete the expression."
-                                              : QString::fromStdString(expression.error()));
+        const QString message = incomplete
+            ? "Incomplete expression — " + inlineErrorMessage(expression, source)
+            : inlineErrorMessage(expression, source);
+        scientificHint_->setText(message);
+        scientificInput_->setToolTip(message);
         return;
     }
     scientificInput_->setSyntaxState("valid");
+    scientificInput_->setToolTip(QString());
     if (expression.dependsOnX()) {
         scientificResult_->setText("f(x)");
         scientificHint_->setText("Contains x — use the Graphing tab to plot this expression.");
@@ -263,7 +292,13 @@ void MainWindow::calculateScientific() {
     const QString source = scientificInput_->text().trimmed();
     if (source.isEmpty()) return;
     Expression expression(MathExpressionInput::normalize(source.toStdString()));
-    if (!expression.valid()) { scientificInput_->setSyntaxState("invalid"); scientificHint_->setText(QString::fromStdString(expression.error())); return; }
+    if (!expression.valid()) {
+        const QString message = inlineErrorMessage(expression, source);
+        scientificInput_->setSyntaxState("invalid");
+        scientificHint_->setText(message);
+        scientificInput_->setToolTip(message);
+        return;
+    }
     if (expression.dependsOnX()) {
         scientificHint_->setText("Use the Graphing tab for expressions containing x."); return;
     }
@@ -432,6 +467,7 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     controls->addWidget(remove);
     frame->addLayout(controls);
     row->info = new QLabel;
+    row->info->setTextFormat(Qt::PlainText);
     row->info->setWordWrap(true);
     row->info->setStyleSheet("color:#9aadbf; padding-left:9px; font-size:11px;");
     frame->addWidget(row->info);
@@ -472,6 +508,7 @@ void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
         row->parsedSource.clear();
         row->parsedExpression.reset();
         row->input->setSyntaxState("empty");
+        row->input->setToolTip(QString());
         row->info->setText("Enter an expression to plot.");
         row->info->setStyleSheet("color:#93a4b9; font-size:11px;");
         return;
@@ -484,13 +521,17 @@ void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     }
     if (row->parsedExpression->valid()) {
         row->input->setSyntaxState("valid");
+        row->input->setToolTip(QString());
         row->info->setText("Valid expression · updating curve…");
         row->info->setStyleSheet("color:#91baa4; font-size:11px;");
     } else {
-        const bool incomplete = MathExpressionInput::looksIncomplete(source.toStdString());
+        const bool incomplete = isIncompleteEdit(*row->parsedExpression, source.toStdString());
         row->input->setSyntaxState(incomplete ? "incomplete" : "invalid");
-        row->info->setText(incomplete ? "Continue typing to complete the expression." :
-            QString::fromStdString(row->parsedExpression->error()));
+        const QString message = incomplete
+            ? "Incomplete expression — " + inlineErrorMessage(*row->parsedExpression, normalized)
+            : inlineErrorMessage(*row->parsedExpression, normalized);
+        row->info->setText(message);
+        row->input->setToolTip(message);
         row->info->setStyleSheet(incomplete ? "color:#e4bd7a; font-size:11px;" :
                                             "color:#ff9299; font-size:11px;");
     }
@@ -549,15 +590,19 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
         }
         const auto& function = row->parsedExpression;
         if (!function->valid()) {
-            const bool incomplete = MathExpressionInput::looksIncomplete(source.toStdString());
+            const bool incomplete = isIncompleteEdit(*function, source.toStdString());
             row->input->setSyntaxState(incomplete ? "incomplete" : "invalid");
-            row->info->setText(incomplete ? "Continue typing to complete the expression." :
-                               QString::fromStdString(function->error()));
+            const QString message = incomplete
+                ? "Incomplete expression — " + inlineErrorMessage(*function, normalizedGraphInput(raw))
+                : inlineErrorMessage(*function, normalizedGraphInput(raw));
+            row->info->setText(message);
+            row->input->setToolTip(message);
             row->info->setStyleSheet(incomplete ? "color:#e4bd7a; font-size:11px;" :
                                                 "color:#ff9299; font-size:11px;");
             continue;
         }
         row->input->setSyntaxState("valid");
+        row->input->setToolTip(QString());
         row->info->setText(row->visible->isChecked() ? "Visible · drag graph to explore" : "Hidden");
         row->info->setStyleSheet("color:#91baa4; font-size:11px;");
         curves.push_back({row->color, function, row->visible->isChecked(), raw});

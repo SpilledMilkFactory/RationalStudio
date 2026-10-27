@@ -30,6 +30,18 @@ namespace rationalstudio {
         constexpr double nan =
         std::numeric_limits<double>::quiet_NaN();
 
+        class ParseFailure final : public std::runtime_error {
+        public:
+            ParseFailure(std::string message, ExpressionErrorKind kind,
+                         std::size_t offset, std::size_t length,
+                         bool showPosition = true)
+                : std::runtime_error(showPosition
+                    ? message + " at position " + std::to_string(offset + 1)
+                    : message),
+                  details{kind, std::move(message), offset, length} {}
+            ExpressionDiagnostic details;
+        };
+
         enum class Type {
             Number,
             Name,
@@ -99,9 +111,8 @@ namespace rationalstudio {
 
             if (s.size() > 2048) {
 
-                throw std::runtime_error(
-                    "Expression exceeds 2048 characters"
-                );
+                throw ParseFailure("Expression exceeds 2048 characters",
+                    ExpressionErrorKind::Limit, s.size(), 0, false);
             }
 
             std::vector<Token> tokens;
@@ -126,9 +137,8 @@ namespace rationalstudio {
 
                 if (tokens.size() >= 1024) {
 
-                    throw std::runtime_error(
-                        "Too many expression tokens"
-                    );
+                    throw ParseFailure("Too many expression tokens",
+                        ExpressionErrorKind::Limit, i, 1, false);
                 }
 
                 const std::size_t start = i;
@@ -156,10 +166,8 @@ namespace rationalstudio {
                         !std::isfinite(d)
                     ) {
 
-                        throw std::runtime_error(
-                            "Invalid or out-of-range number at position " +
-                            std::to_string(i + 1)
-                        );
+                        throw ParseFailure("Invalid or out-of-range number",
+                            ExpressionErrorKind::Lexical, start, 1);
                     }
 
                     i = static_cast<std::size_t>(
@@ -280,10 +288,8 @@ namespace rationalstudio {
 
                     default:
 
-                        throw std::runtime_error(
-                            "Unknown character at position " +
-                            std::to_string(start + 1)
-                        );
+                        throw ParseFailure("Unknown character",
+                            ExpressionErrorKind::Lexical, start, 1);
                 }
 
                 tokens.push_back({
@@ -477,16 +483,29 @@ namespace rationalstudio {
                 return false;
             }
 
+            static ExpressionErrorKind errorKind(const std::string& message) {
+                if (message.starts_with("Unknown identifier"))
+                    return ExpressionErrorKind::UnknownIdentifier;
+                if (message.find(" expects ") != std::string::npos)
+                    return ExpressionErrorKind::Arity;
+                if (message.starts_with("Function '"))
+                    return ExpressionErrorKind::FunctionCall;
+                if (message.find("complex") != std::string::npos ||
+                    message.find("deep") != std::string::npos)
+                    return ExpressionErrorKind::Limit;
+                return ExpressionErrorKind::Syntax;
+            }
+
             [[noreturn]]
             void fail(const std::string& message) const {
+                throw ParseFailure(message, errorKind(message), peek().position,
+                    peek().type == Type::End ? 0 : peek().text.size());
+            }
 
-                throw std::runtime_error(
-                    message +
-                    " at position " +
-                    std::to_string(
-                        peek().position + 1
-                    )
-                );
+            [[noreturn]]
+            void failAt(const std::string& message, const Token& token) const {
+                throw ParseFailure(message, errorKind(message), token.position,
+                    token.text.size());
             }
 
             std::unique_ptr<Node> node(Node::Kind kind) {
@@ -692,8 +711,8 @@ namespace rationalstudio {
 
                 if (peek().type == Type::Name) {
 
-                    const std::string name =
-                    tokens_[index_++].text;
+                    const Token nameToken = tokens_[index_++];
+                    const std::string name = nameToken.text;
 
                     if (name == "x") {
 
@@ -745,7 +764,7 @@ namespace rationalstudio {
                         const auto callable = functions_->lookup(name);
                         if (callable) {
                             if (!take(Type::Open)) {
-                                fail("Function '" + name + "' requires parentheses");
+                                failAt("Function '" + name + "' requires parentheses", nameToken);
                             }
                             auto n = node(Node::Kind::UserCall);
                             n->function = name;
@@ -757,9 +776,9 @@ namespace rationalstudio {
                                 if (!take(Type::Close)) fail("Expected ')'");
                             }
                             if (n->args.size() != callable->parameters.size()) {
-                                fail("Function '" + name + "' expects " +
+                                failAt("Function '" + name + "' expects " +
                                      std::to_string(callable->parameters.size()) +
-                                     " argument(s)");
+                                     " argument(s)", nameToken);
                             }
                             namedFunctions_.insert(name);
                             for (const auto& dep : callable->variableDependencies) {
@@ -775,20 +794,12 @@ namespace rationalstudio {
 
                     if (it == functions().end()) {
 
-                        fail(
-                            "Unknown identifier '" +
-                            name +
-                            "'"
-                        );
+                        failAt("Unknown identifier '" + name + "'", nameToken);
                     }
 
                     if (!take(Type::Open)) {
 
-                        fail(
-                            "Function '" +
-                            name +
-                            "' requires parentheses"
-                        );
+                        failAt("Function '" + name + "' requires parentheses", nameToken);
                     }
 
                     auto n = node(Node::Kind::Function);
@@ -813,13 +824,8 @@ namespace rationalstudio {
 
                     if (n->args.size() != it->second) {
 
-                        fail(
-                            "Function '" +
-                            name +
-                            "' expects " +
-                            std::to_string(it->second) +
-                            " argument(s)"
-                        );
+                        failAt("Function '" + name + "' expects " +
+                            std::to_string(it->second) + " argument(s)", nameToken);
                     }
 
                     return n;
@@ -1225,6 +1231,7 @@ namespace rationalstudio {
         std::unique_ptr<Node> root;
 
         std::string error;
+        std::optional<ExpressionDiagnostic> diagnostic;
 
         bool hasX = false;
         bool hasAns = false;
@@ -1253,8 +1260,14 @@ namespace rationalstudio {
                                               parser.namedFunctions().end());
             impl_->functionVariables.assign(parser.functionVariables().begin(),
                                             parser.functionVariables().end());
+        } catch (const ParseFailure& failure) {
+            impl_->error = failure.what();
+            impl_->diagnostic = failure.details;
         } catch (const std::exception& exception) {
+            // Defensive fallback preserves the legacy API on unexpected errors.
             impl_->error = exception.what();
+            impl_->diagnostic = ExpressionDiagnostic{
+                ExpressionErrorKind::Syntax, exception.what(), 0, 0};
         }
     }
 
@@ -1279,6 +1292,10 @@ namespace rationalstudio {
                         return impl_
                         ? impl_->error
                         : movedFrom;
+    }
+
+    const ExpressionDiagnostic* Expression::diagnostic() const noexcept {
+        return impl_ && impl_->diagnostic ? &*impl_->diagnostic : nullptr;
     }
 
     bool Expression::dependsOnX() const noexcept {

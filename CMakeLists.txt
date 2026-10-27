@@ -427,6 +427,18 @@ if(BUILD_TESTING)
         LABELS "core;regression;expression;input"
     )
 
+    # ---------------------------------------------------------
+    # Issue #33 — structured expression diagnostics (Qt independent)
+    # ---------------------------------------------------------
+    add_executable(RationalExpressionDiagnosticTests
+        tests/ExpressionDiagnosticTests.cpp
+    )
+    target_link_libraries(RationalExpressionDiagnosticTests PRIVATE RationalCore)
+    add_test(NAME RationalExpressionDiagnosticTests COMMAND RationalExpressionDiagnosticTests)
+    set_tests_properties(RationalExpressionDiagnosticTests PROPERTIES
+        LABELS "core;regression;expression;diagnostics"
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -455,6 +467,7 @@ if(BUILD_TESTING)
         RationalVariableSliderScaleTests
         RationalGraphVariableDependencyTests
         RationalMathExpressionInputTests
+        RationalExpressionDiagnosticTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -838,6 +851,36 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalMathExpressionEditorTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;expression;input;qt;offscreen"
+            TIMEOUT 60
+        )
+        # ---------------------------------------------------------
+        # Issue #33 — inline expression feedback in real MainWindow
+        # ---------------------------------------------------------
+        add_executable(RationalExpressionInlineFeedbackTests
+            tests/ExpressionInlineFeedbackTests.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp
+        )
+        target_include_directories(RationalExpressionInlineFeedbackTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalExpressionInlineFeedbackTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalExpressionInlineFeedbackTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalExpressionInlineFeedbackTests
+                 COMMAND RationalExpressionInlineFeedbackTests)
+        set_tests_properties(RationalExpressionInlineFeedbackTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;expression;diagnostics;offscreen;qt"
             TIMEOUT 60
         )
     endif()

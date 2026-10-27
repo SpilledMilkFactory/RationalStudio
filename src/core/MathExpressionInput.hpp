@@ -37,6 +37,45 @@ namespace rationalstudio {
             return result;
         }
 
+        // Convert a parser offset in normalized UTF-8 to a one-based visible
+        // Unicode character column in the original (unnormalized) input.
+        // Each supported glyph expansion maps back to that glyph's column.
+        static std::size_t sourceColumn(std::string_view original,
+                                        std::size_t normalizedOffset) {
+            std::size_t cursor = 0;
+            std::size_t output = 0;
+            std::size_t column = 1;
+            while (cursor < original.size()) {
+                std::size_t sourceBytes = 1;
+                std::size_t outputBytes = 1;
+                const auto glyph = original.substr(cursor);
+                const auto mapGlyph = [&](std::string_view symbol, std::size_t outputSize) {
+                    if (!glyph.starts_with(symbol)) return false;
+                    sourceBytes = symbol.size();
+                    outputBytes = outputSize;
+                    return true;
+                };
+                if (mapGlyph("\xCF\x80", 2) || mapGlyph("\xCF\x84", 3) ||
+                    mapGlyph("\xC3\x97", 1) || mapGlyph("\xC3\xB7", 1) ||
+                    mapGlyph("\xE2\x88\x92", 1) || mapGlyph("\xE2\x88\x99", 1) ||
+                    mapGlyph("\xC2\xB7", 1) || mapGlyph("\xC2\xB2", 2) ||
+                    mapGlyph("\xC2\xB3", 2) || mapGlyph("\xE2\x88\x9A", 4)) {
+                    // matched
+                } else {
+                    const unsigned char c = static_cast<unsigned char>(original[cursor]);
+                    sourceBytes = c < 0x80 ? 1 : (c & 0xe0) == 0xc0 ? 2 :
+                                  (c & 0xf0) == 0xe0 ? 3 : (c & 0xf8) == 0xf0 ? 4 : 1;
+                    if (sourceBytes > original.size() - cursor) sourceBytes = 1;
+                    outputBytes = sourceBytes;
+                }
+                if (normalizedOffset < output + outputBytes) return column;
+                output += outputBytes;
+                cursor += sourceBytes;
+                ++column;
+            }
+            return column;
+        }
+
         // Only a hint for an incomplete edit. The authoritative parser decides
         // whether a completed expression is valid; this is NOT syntax validation.
         static bool looksIncomplete(std::string_view normalized) {
