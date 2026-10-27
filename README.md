@@ -92,6 +92,10 @@ y = floor(x)
 
 **Automatic variable-driven graph updates (Issue #31).** The graph editor compiles expressions against variables currently declared in the session slider panel. Curve sampling and point tracing consume immutable per-job snapshots of current `VariableBindings`. On an accepted slider edit, the scalar assignment owner reports changed numeric results (including transitive scalar dependents); only curves referencing those names directly or through compiled user-function captures have their geometry invalidated. Unrelated compiled expression identities, finished paths, and in-progress sampling jobs remain intact. Creating a variable can repair previously invalid graph rows; removing it invalidates affected rows without reparsing unrelated valid ones. The existing bounded sampling and repaint scheduling remain in force. GUI authoring of reusable functions and persistence of sliders are still outside this issue; no measured frame-rate or latency improvement is claimed.
 
+<!-- ISSUE32_README_UPDATED -->
+
+**Mathematical expression editing (Issue #32).** Scientific and graph inputs use `MathExpressionEdit`, a Qt Widgets single-line editor with cursor-aware insertion, selected-expression wrapping, paired parentheses, and an on-screen graph symbol strip (`π`, `√`, `²`, `×`, `÷`, `−`). Supported Unicode symbols are translated at the expression-compiler boundary by the Qt-independent, header-only `MathExpressionInput` helper; the visible text and caret are not rewritten. Graph rows show immediate parser-backed valid, invalid, or incomplete-edit feedback, while geometric redraw remains debounced. Scientific preview also recognizes the supported symbols. Parenthesized roots such as `√(9)` are supported; arbitrary mathematical typesetting, syntax highlighting within individual tokens, and a full equation-layout editor are outside this issue. **Issue #32 does not change evaluation grammar, graph sampling, caching, sliders, or persistence.**
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -135,6 +139,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `VariableDefinitions` | Qt-independent assignment parsing, compiled scalar definitions, dependency graph, circular-reference rejection, selective re-evaluation, undefined propagation, and bindings snapshots. |
 | `FunctionScope` / `FunctionDefinitions` | Explicit compiled-function lookup, lexical positional parameters, checked calls, transitive scalar dependencies, transactional redefinition, recursion rejection, and immutable scope publication. |
 | `VariableSliderScale` | Qt-free validation and mapping of finite slider ranges and steps onto bounded integer ticks, including a reachable terminal endpoint. |
+| `MathExpressionInput` | Qt-independent translation of supported UTF-8 mathematical symbols and incomplete-edit hints; the Expression parser remains authoritative. |
 | `GraphVariableDependencies` | Qt-independent matching of changed scalar names against direct expression and transitive function-captured dependencies. |
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
@@ -144,7 +149,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `GraphGridLayout` | Qt-independent validation of grid steps and pixel-space grid positions at viewport boundaries and extreme finite centers. |
 | `CurveGeometryCache` | Qt-independent, expression-identity-based cache management, lazy geometry construction, reuse, and invalidation. |
 
-The Qt-specific `VariableSliderPanel` provides interactive session-local scalar controls backed by `VariableDefinitions`; it notifies `MainWindow` of value and scope edits, and `GraphCanvas` selectively invalidates only affected curves. Slider configurations are not yet persisted. The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
+The Qt-specific `MathExpressionEdit` wraps `QLineEdit` with selection-aware math insertion and syntax-state properties; `MainWindow` performs immediate expression feedback without forcing curve redraw on each keystroke. The Qt-specific `VariableSliderPanel` provides interactive session-local scalar controls backed by `VariableDefinitions`; it notifies `MainWindow` of value and scope edits, and `GraphCanvas` selectively invalidates only affected curves. Slider configurations are not yet persisted. The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
 
 `RationalCLI` links against `RationalCore` without using Qt.
 
@@ -172,6 +177,7 @@ RationalStudio/
 │   │   ├── FunctionDefinitions.cpp
 │   │   ├── VariableSliderScale.hpp
 │   │   ├── VariableSliderScale.cpp
+│   │   ├── MathExpressionInput.hpp
 │   │   ├── GraphVariableDependencies.hpp
 │   │   ├── GraphViewport.hpp
 │   │   ├── GraphViewport.cpp
@@ -183,6 +189,8 @@ RationalStudio/
 │   └── gui/
 │       ├── MainWindow.hpp
 │       ├── MainWindow.cpp
+│       ├── MathExpressionEdit.hpp
+│       ├── MathExpressionEdit.cpp
 │       ├── VariableSliderPanel.hpp
 │       ├── VariableSliderPanel.cpp
 │       ├── GraphCanvas.hpp
@@ -223,6 +231,8 @@ RationalStudio/
     ├── VariableSliderPanelTests.cpp
     ├── GraphVariableDependencyTests.cpp
     ├── GraphVariableRefreshTests.cpp
+    ├── MathExpressionInputTests.cpp
+    ├── MathExpressionEditorTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -304,7 +314,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **29 tests from 28 executables**: twenty Qt-independent tests and nine offscreen Qt invocations from eight widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty tests:
+With GUI and testing enabled, CTest registers **31 tests from 30 executables**: twenty-one Qt-independent tests and ten offscreen Qt invocations from nine widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-one tests:
 
 | Executable | Focus |
 |---|---|
@@ -335,6 +345,8 @@ With GUI and testing enabled, CTest registers **29 tests from 28 executables**: 
 | `RationalVariableSliderPanelTests` | Offscreen Qt slider creation, duplicate-name rejection, range editing, input synchronization, scalar dependency propagation, and safe deletion. |
 | `RationalGraphVariableDependencyTests` | Qt-free dependency selection, transitive assignment changes, nested function scalar captures, and unaffected-expression preservation. |
 | `RationalGraphVariableRefreshTests` | Offscreen GraphCanvas and real MainWindow integration: named-variable graph parsing, selective cache reuse, value edits, declaration, removal, and restoration. |
+| `RationalMathExpressionInputTests` | Qt-free Unicode mathematical symbol translation, parser compatibility, numerical results, and incomplete-edit heuristics. |
+| `RationalMathExpressionEditorTests` | Offscreen Qt editor selection/caret semantics, bracket insertion, graph symbol toolbar, live syntax feedback, and scientific/graph integration. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 

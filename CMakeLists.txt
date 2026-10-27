@@ -415,6 +415,18 @@ if(BUILD_TESTING)
         LABELS "core;regression;graphing;variables"
     )
 
+    # ---------------------------------------------------------
+    # Issue #32 — Mathematical Input Symbols / Incomplete Edits
+    # ---------------------------------------------------------
+    add_executable(RationalMathExpressionInputTests
+        tests/MathExpressionInputTests.cpp
+    )
+    target_link_libraries(RationalMathExpressionInputTests PRIVATE RationalCore)
+    add_test(NAME RationalMathExpressionInputTests COMMAND RationalMathExpressionInputTests)
+    set_tests_properties(RationalMathExpressionInputTests PROPERTIES
+        LABELS "core;regression;expression;input"
+    )
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -442,6 +454,7 @@ if(BUILD_TESTING)
         RationalFunctionDefinitionsTests
         RationalVariableSliderScaleTests
         RationalGraphVariableDependencyTests
+        RationalMathExpressionInputTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -521,6 +534,8 @@ if(RATIONALSTUDIO_BUILD_GUI)
     )
 
     target_sources(RationalStudio PRIVATE
+        src/gui/MathExpressionEdit.hpp
+        src/gui/MathExpressionEdit.cpp
         src/gui/VariableSliderPanel.hpp
         src/gui/VariableSliderPanel.cpp
     )   
@@ -732,7 +747,9 @@ if(RATIONALSTUDIO_BUILD_GUI)
             src/gui/VariableSliderPanel.cpp     
 
             src/gui/MainWindow.hpp
-            src/gui/MainWindow.cpp      
+            src/gui/MainWindow.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
 
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
@@ -761,6 +778,8 @@ if(RATIONALSTUDIO_BUILD_GUI)
         # ---------------------------------------------------------
         add_executable(RationalGraphVariableRefreshTests
             tests/GraphVariableRefreshTests.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
             src/gui/GraphCanvas.hpp
@@ -792,6 +811,35 @@ if(RATIONALSTUDIO_BUILD_GUI)
             TIMEOUT 60
         )
 
+        # ---------------------------------------------------------
+        # Issue #32 — Mathematical Expression Editor Integration
+        # ---------------------------------------------------------
+        add_executable(RationalMathExpressionEditorTests
+            tests/MathExpressionEditorTests.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp
+        )
+        target_include_directories(RationalMathExpressionEditorTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalMathExpressionEditorTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalMathExpressionEditorTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalMathExpressionEditorTests COMMAND RationalMathExpressionEditorTests)
+        set_tests_properties(RationalMathExpressionEditorTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;expression;input;qt;offscreen"
+            TIMEOUT 60
+        )
     endif()
 
 endif()

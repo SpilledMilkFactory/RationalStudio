@@ -24,6 +24,7 @@ class QToolButton;
 namespace rationalstudio {
 
 class VariableSliderPanel;
+class MathExpressionEdit;
 
 class MainWindow final : public QMainWindow {
 public:
@@ -32,7 +33,7 @@ public:
 private:
     struct GraphRow {
         QWidget* widget = nullptr;
-        QLineEdit* input = nullptr;
+        MathExpressionEdit* input = nullptr;
         QToolButton* visible = nullptr;
         QLabel* info = nullptr;
         QColor color;
@@ -50,6 +51,7 @@ private:
     void addGraphRow(const QString& text = QString(), bool visible = true, QColor color = QColor());
     void removeGraphRow(GraphRow* row);
     void rebuildGraph(const std::vector<std::string>& changedScope = {});
+    void updateGraphEditorFeedback(GraphRow* row);
     void onVariableDefinitionsChanged(const std::vector<std::string>& changed,
                                       bool scopeChanged);
     void saveGraph();
@@ -61,7 +63,7 @@ private:
     QTabWidget* tabs_ = nullptr;
     QPushButton* radiansButton_ = nullptr;
     QPushButton* degreesButton_ = nullptr;
-    QLineEdit* scientificInput_ = nullptr;
+    MathExpressionEdit* scientificInput_ = nullptr;
     QLabel* scientificResult_ = nullptr;
     QLabel* scientificHint_ = nullptr;
     QListWidget* history_ = nullptr;
@@ -72,6 +74,7 @@ private:
     QLabel* fractionDecimal_ = nullptr;
     GraphCanvas* graph_ = nullptr;
     VariableSliderPanel* variableSliders_ = nullptr;
+    MathExpressionEdit* activeGraphInput_ = nullptr;
     QVBoxLayout* graphList_ = nullptr;
     QLabel* graphStatus_ = nullptr;
     QTimer* graphDebounce_ = nullptr;
