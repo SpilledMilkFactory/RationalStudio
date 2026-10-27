@@ -1,6 +1,8 @@
 #include "MainWindow.hpp"
 #include "Rational.hpp"
 #include "VariableSliderPanel.hpp"
+#include "MathExpressionEdit.hpp"
+#include "MathExpressionInput.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -94,6 +96,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QTabBar::tab:selected { background:#34587a; color:white; }
         QLineEdit, QComboBox, QListWidget { background:#0e1723; border:1px solid #34475e; border-radius:8px; padding:10px; selection-background-color:#426e94; }
         QLineEdit:focus { border:1px solid #60b5eb; }
+        QLineEdit[syntaxState="invalid"] { border:2px solid #f07d86; }
+        QLineEdit[syntaxState="incomplete"] { border:1px solid #d7ad63; }
         QPushButton, QToolButton { background:#25364a; color:#edf4fc; border:1px solid #32465c; border-radius:8px; padding:8px; }
         QPushButton:hover, QToolButton:hover { background:#354f69; }
         QPushButton:pressed, QToolButton:pressed { background:#486e91; }
@@ -132,7 +136,7 @@ QWidget* MainWindow::makeScientificPage() {
     layout->setSpacing(12);
     layout->addWidget(heading("Scientific calculator", "Type expressions directly, or use the keypad."));
 
-    scientificInput_ = new QLineEdit;
+    scientificInput_ = new MathExpressionEdit;
     scientificInput_->setObjectName("ScientificExpression");
     scientificInput_->setPlaceholderText("Try: 2sin(pi/4)^2 + sqrt(9)");
     scientificInput_->setMinimumHeight(63);
@@ -160,10 +164,10 @@ QWidget* MainWindow::makeScientificPage() {
     // Button labels and inserted expressions are separated so the UI remains readable.
     const std::vector<std::vector<std::pair<QString, QString>>> keys = {
         {{"sin", "sin("}, {"cos", "cos("}, {"tan", "tan("}, {"asin", "asin("}, {"acos", "acos("}, {"atan", "atan("}},
-        {{"ln", "ln("}, {"log₁₀", "log("}, {"√", "sqrt("}, {"|x|", "abs("}, {"x!", "!"}, {"xʸ", "^"}},
-        {{"(", "("}, {")", ")"}, {"π", "pi"}, {"e", "e"}, {"%", "%"}, {"÷", "/"}},
-        {{"7", "7"}, {"8", "8"}, {"9", "9"}, {"⌫", "BACK"}, {"C", "CLEAR"}, {"×", "*"}},
-        {{"4", "4"}, {"5", "5"}, {"6", "6"}, {"1/x", "1/("}, {"x²", "^2"}, {"−", "-"}},
+        {{"ln", "ln("}, {"log₁₀", "log("}, {"√", "√"}, {"|x|", "abs("}, {"x!", "!"}, {"xʸ", "^"}},
+        {{"(", "("}, {")", ")"}, {"π", "π"}, {"e", "e"}, {"%", "%"}, {"÷", "÷"}},
+        {{"7", "7"}, {"8", "8"}, {"9", "9"}, {"⌫", "BACK"}, {"C", "CLEAR"}, {"×", "×"}},
+        {{"4", "4"}, {"5", "5"}, {"6", "6"}, {"1/x", "1/("}, {"x²", "²"}, {"−", "−"}},
         {{"1", "1"}, {"2", "2"}, {"3", "3"}, {"ANS", "ans"}, {".", "."}, {"+", "+"}},
         {{"0", "0"}, {"00", "00"}, {"10ˣ", "10^("}, {"exp", "exp("}, {"Graph ↗", "GRAPH"}, {"=", "EQUAL"}}
     };
@@ -227,21 +231,25 @@ QWidget* MainWindow::makeScientificPage() {
 }
 
 void MainWindow::appendScientificText(const QString& text) {
-    scientificInput_->insert(text);
-    scientificInput_->setFocus();
+    scientificInput_->insertMathSymbol(text);
 }
 void MainWindow::updateScientificPreview() {
     const QString source = scientificInput_->text().trimmed();
     if (source.isEmpty()) {
+        scientificInput_->setSyntaxState("empty");
         scientificResult_->setText("0"); scientificHint_->setText("Enter to calculate  ·  ^ for powers  ·  ! for factorial");
         return;
     }
-    Expression expression(source.toStdString());
+    Expression expression(MathExpressionInput::normalize(source.toStdString()));
     if (!expression.valid()) {
+        const bool incomplete = MathExpressionInput::looksIncomplete(MathExpressionInput::normalize(source.toStdString()));
+        scientificInput_->setSyntaxState(incomplete ? "incomplete" : "invalid");
         scientificResult_->setText("…");
-        scientificHint_->setText(QString::fromStdString(expression.error()));
+        scientificHint_->setText(incomplete ? "Continue typing to complete the expression."
+                                              : QString::fromStdString(expression.error()));
         return;
     }
+    scientificInput_->setSyntaxState("valid");
     if (expression.dependsOnX()) {
         scientificResult_->setText("f(x)");
         scientificHint_->setText("Contains x — use the Graphing tab to plot this expression.");
@@ -254,8 +262,8 @@ void MainWindow::updateScientificPreview() {
 void MainWindow::calculateScientific() {
     const QString source = scientificInput_->text().trimmed();
     if (source.isEmpty()) return;
-    Expression expression(source.toStdString());
-    if (!expression.valid()) { scientificHint_->setText(QString::fromStdString(expression.error())); return; }
+    Expression expression(MathExpressionInput::normalize(source.toStdString()));
+    if (!expression.valid()) { scientificInput_->setSyntaxState("invalid"); scientificHint_->setText(QString::fromStdString(expression.error())); return; }
     if (expression.dependsOnX()) {
         scientificHint_->setText("Use the Graphing tab for expressions containing x."); return;
     }
@@ -313,6 +321,27 @@ QWidget* MainWindow::makeGraphPage() {
     inputHead->addWidget(add);
     connect(add, &QPushButton::clicked, this, [this] { addGraphRow(); });
     sv->addLayout(inputHead);
+
+    // Issue #32: buttons insert genuine mathematical glyphs into the
+    // currently active row without stealing or resetting its cursor.
+    auto* mathSymbols = new QHBoxLayout;
+    mathSymbols->setSpacing(3);
+    const std::vector<std::pair<QString, QString>> symbolButtons = {
+        {"π", "Pi"}, {"√", "Root"}, {"²", "Squared"},
+        {"×", "Multiply"}, {"÷", "Divide"}, {"−", "Minus"}
+    };
+    for (const auto& [symbol, name] : symbolButtons) {
+        auto* button = new QToolButton(side);
+        button->setObjectName("graphMathSymbol" + name);
+        button->setText(symbol);
+        button->setToolTip("Insert " + symbol + " at the expression cursor");
+        button->setMinimumHeight(28);
+        mathSymbols->addWidget(button);
+        connect(button, &QToolButton::clicked, this, [this, symbol] {
+            if (activeGraphInput_) activeGraphInput_->insertMathSymbol(symbol);
+        });
+    }
+    sv->addLayout(mathSymbols);
     // Issue #30: Session-local interactive variable sliders.
     // Issue #31 supplies scalar bindings and selective graph invalidation.
     // Workspace persistence is handled in Issue #35.   
@@ -390,7 +419,8 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     row->visible->setChecked(visible);
     row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
     controls->addWidget(row->visible);
-    row->input = new QLineEdit;
+    row->input = new MathExpressionEdit;
+    row->input->setObjectName(QString("GraphExpression_%1").arg(nextColor_));
     row->input->setPlaceholderText("y = f(x)");
     row->input->setText(text);
     row->input->setMinimumHeight(46);
@@ -407,7 +437,16 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     frame->addWidget(row->info);
     graphList_->insertWidget(graphList_->count() - 1, row->widget);
     graphRows_.push_back(row);
-    connect(row->input, &QLineEdit::textChanged, this, [this] { graphDebounce_->start(); });
+    activeGraphInput_ = row->input;
+    connect(row->input, &QLineEdit::cursorPositionChanged, this,
+            [this, row] { activeGraphInput_ = row->input; });
+    connect(row->input, &QLineEdit::selectionChanged, this,
+            [this, row] { activeGraphInput_ = row->input; });
+    connect(row->input, &QLineEdit::textChanged, this, [this, row] {
+        activeGraphInput_ = row->input;
+        updateGraphEditorFeedback(row); // immediate, before debounced rendering
+        if (graphDebounce_) graphDebounce_->start();
+    });
     connect(row->visible, &QToolButton::toggled, this, [this] { rebuildGraph(); });
     connect(remove, &QToolButton::clicked, this, [this, row] { removeGraphRow(row); });
     if (graphDebounce_) graphDebounce_->start();
@@ -417,9 +456,44 @@ void MainWindow::removeGraphRow(GraphRow* row) {
     auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
     if (it == graphRows_.end()) return;
     graphRows_.erase(it);
+    if (activeGraphInput_ == row->input)
+        activeGraphInput_ = graphRows_.empty() ? nullptr : graphRows_.back()->input;
     row->widget->deleteLater();
     delete row;
     rebuildGraph();
+}
+
+void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
+    if (!row || !row->input) return;
+    const QString normalized = normalizedGraphInput(row->input->text());
+    const QString source = QString::fromStdString(
+        MathExpressionInput::normalize(normalized.toStdString()));
+    if (source.isEmpty()) {
+        row->parsedSource.clear();
+        row->parsedExpression.reset();
+        row->input->setSyntaxState("empty");
+        row->info->setText("Enter an expression to plot.");
+        row->info->setStyleSheet("color:#93a4b9; font-size:11px;");
+        return;
+    }
+    if (!row->parsedExpression || row->parsedSource != source) {
+        const VariableScope scope = variableSliders_ ?
+            variableSliders_->definitions().scope() : VariableScope{};
+        row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope);
+        row->parsedSource = source;
+    }
+    if (row->parsedExpression->valid()) {
+        row->input->setSyntaxState("valid");
+        row->info->setText("Valid expression · updating curve…");
+        row->info->setStyleSheet("color:#91baa4; font-size:11px;");
+    } else {
+        const bool incomplete = MathExpressionInput::looksIncomplete(source.toStdString());
+        row->input->setSyntaxState(incomplete ? "incomplete" : "invalid");
+        row->info->setText(incomplete ? "Continue typing to complete the expression." :
+            QString::fromStdString(row->parsedExpression->error()));
+        row->info->setStyleSheet(incomplete ? "color:#e4bd7a; font-size:11px;" :
+                                            "color:#ff9299; font-size:11px;");
+    }
 }
 
 void MainWindow::onVariableDefinitionsChanged(
@@ -437,12 +511,14 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
     curves.reserve(graphRows_.size());
     for (auto* row : graphRows_) {
         const QString raw = row->input->text().trimmed();
-        const QString source = normalizedGraphInput(raw);
+        const QString source = QString::fromStdString(
+            MathExpressionInput::normalize(normalizedGraphInput(raw).toStdString()));
         if (source.isEmpty()) {
             // Emptying a row drops the old compiled scope. Restoring identical
             // text after a declaration was removed must not revive a stale AST.
             row->parsedExpression.reset();
             row->parsedSource.clear();
+            row->input->setSyntaxState("empty");
             row->info->setText("Enter an expression to plot.");
             row->info->setStyleSheet("color:#93a4b9; font-size:11px;");
             continue;
@@ -473,10 +549,15 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
         }
         const auto& function = row->parsedExpression;
         if (!function->valid()) {
-            row->info->setText(QString::fromStdString(function->error()));
-            row->info->setStyleSheet("color:#ff9299; font-size:11px;");
+            const bool incomplete = MathExpressionInput::looksIncomplete(source.toStdString());
+            row->input->setSyntaxState(incomplete ? "incomplete" : "invalid");
+            row->info->setText(incomplete ? "Continue typing to complete the expression." :
+                               QString::fromStdString(function->error()));
+            row->info->setStyleSheet(incomplete ? "color:#e4bd7a; font-size:11px;" :
+                                                "color:#ff9299; font-size:11px;");
             continue;
         }
+        row->input->setSyntaxState("valid");
         row->info->setText(row->visible->isChecked() ? "Visible · drag graph to explore" : "Hidden");
         row->info->setStyleSheet("color:#91baa4; font-size:11px;");
         curves.push_back({row->color, function, row->visible->isChecked(), raw});
