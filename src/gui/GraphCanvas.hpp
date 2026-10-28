@@ -2,6 +2,7 @@
 
 #include "Expression.hpp"
 #include "CurveSampler.hpp"
+#include "ParametricSampler.hpp"
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
 #include "GraphRepaintScheduler.hpp"
@@ -55,6 +56,15 @@ struct GraphCurve {
     std::shared_ptr<const Expression> function;
     bool enabled = true;
     QString label;
+    // Non-null yCoordinate means parametric X(t),Y(t). function is X(t).
+    // The existing path geometry cache and raster pipeline remain shared.
+    std::shared_ptr<const Expression> yCoordinate{};
+    double tMin = 0;
+    double tMax = 0;
+    // Stable cache identity for this coordinate pair and interval. Created
+    // by GraphCanvas; never used as a mathematical coordinate expression.
+    std::shared_ptr<const Expression> cacheToken{};
+    [[nodiscard]] bool parametric() const noexcept { return bool(yCoordinate); }
 };
 
 class GraphCanvas final : public QWidget {
@@ -124,6 +134,7 @@ private:
     void invalidateGeometry(bool retainPreview = false);
     struct PendingGeometry {
         std::unique_ptr<CurveSamplingJob> job;
+        std::unique_ptr<ParametricSamplingJob> parametricJob;
         QPointF samplingOffset;
         QPainterPath preview;
         QImage raster;

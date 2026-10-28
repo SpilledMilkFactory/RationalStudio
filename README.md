@@ -41,7 +41,7 @@ Scientific calculations use IEEE-754 double-precision floating-point arithmetic;
 
 ### Graphing calculator
 
-The graphing workspace plots multiple explicit Cartesian functions of the form `y = f(x)`.
+The graphing workspace supports explicit Cartesian functions `y = f(x)` and parametric coordinate pairs `x(t)`, `y(t)` over configurable parameter intervals (M3-01).
 
 - Editable expressions with individually configurable curve visibility and colors.
 - Mouse-driven panning, precision-aware cursor-anchored wheel zooming, validated navigation limits, and a dynamically spaced Cartesian grid.
@@ -112,6 +112,10 @@ y = floor(x)
 
 **Variable, function and dynamic-evaluation regressions (Issue #36).** Two Qt-independent CTest executables (`RationalVariableFunctionInteractionTests` and `RationalDynamicEvaluationMatrixTests`) validate the complete compiled-expression/variable/function interaction path using explicit numerical oracles. Coverage includes direct and transitive resolution, case-normalized names, dependency-first recomputation, exact changed-name reporting, transactional rollback on malformed/cyclic definitions, function arity/recursion safeguards, immutable function-scope and variable-binding snapshots, undefined-domain propagation and recovery, lexical parameter shadowing, angle-mode updates, selective graph invalidation, and a fixed 240-update × 17-point numerical matrix. This issue adds tests only; it does **not** change parser grammar, runtime semantics, GUI interaction, persistence schema, or rendering algorithms. The suites run in GUI-enabled builds and in the Qt-free sanitizer build.
 
+<!-- ISSUE37_README_UPDATED -->
+
+**Parametric equation graphing (Issue #37; Milestone 3).** The graph sidebar now supports paired `x(t)` and `y(t)` coordinate expressions with editable finite parameter intervals `t min` and `t max` (bounded to ±1e8, with `min < max`). The parameter `t` is local to each sampled curve and may be combined with declared scalar variables and reusable functions. A typical circle uses `x(t) = cos(t)`, `y(t) = sin(t)`, interval `[0, 2π]` in radian mode; in degree mode use `[0, 360]`. The new Qt-free `ParametricSampler` adaptively approximates (X(t),Y(t)) with screen-space error checks, bounded recursion and shared evaluation-budget accounting; invalid points disconnect strokes rather than being painted as real coordinates. The existing `GraphCanvas` owns both Cartesian and parametric curves and reuses its Qt path/raster caching, navigation coalescing, incremental sampling, viewport clipping, and selection of curves affected by variable changes. Editing either coordinate or the parameter interval invalidates its cached geometry. Mixed workspaces containing parametric rows use a version-3 JSON representation with per-row kind and parameter bounds; Cartesian-only workspaces still save as version 2, and legacy versions 1 and 2 remain loadable. Parametric tracing, polar, implicit, and inequality graphing are planned for later M3 issues. Like the Cartesian sampler, finite sampling does not guarantee detection of every singularity or high-frequency feature. No performance improvement is claimed without a controlled benchmark.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -157,9 +161,10 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `FunctionScope` / `FunctionDefinitions` | Explicit compiled-function lookup, lexical positional parameters, checked calls, transitive scalar dependencies, transactional redefinition, recursion rejection, and immutable scope publication. |
 | `VariableSliderScale` | Qt-free validation and mapping of finite slider ranges and steps onto bounded integer ticks, including a reachable terminal endpoint. |
 | `MathExpressionInput` | Qt-independent translation of supported UTF-8 mathematical symbols and incomplete-edit hints; the Expression parser remains authoritative. |
-| `GraphWorkspacePersistence` | Qt JSON version-1/2 workspace codec, bounded schema/dependency validation, and deterministic definition ordering for safe round trips. |
+| `GraphWorkspacePersistence` | Qt JSON version-1/2/3 workspace codec, mixed Cartesian/parametric graph persistence, bounded schema and dependency validation, and deterministic definition ordering for safe round trips. |
 | `GraphVariableDependencies` | Qt-independent matching of changed scalar names against direct expression and transitive function-captured dependencies. |
 | `GraphViewport` | Cartesian coordinate transformations, viewport state, precision-aware panning, cursor-anchored zooming, zoom-limit stability, numerical validation, and transactional state preservation. |
+| `ParametricSampler` | Qt-free adaptive parameter-interval sampling to shared screen-space geometry, with bounded work, invalid-point disconnection, and incremental jobs. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveSamplingJob` | Incremental visible-geometry builds, bounded work per advance, retained probes, and completion reporting. |
 | `CurveEvaluationBudget` | Qt-independent callback accounting shared across curve-sampling operations, with explicit exhaustion reporting. |
@@ -201,6 +206,8 @@ RationalStudio/
 │   │   ├── GraphViewport.cpp
 │   │   ├── CurveSampler.hpp
 │   │   ├── CurveSampler.cpp
+│   │   ├── ParametricSampler.hpp
+│   │   ├── ParametricSampler.cpp
 │   │   ├── CurveGeometryCache.hpp
 │   │   ├── GraphRepaintScheduler.hpp
 │   │   └── GraphGridLayout.hpp
@@ -258,6 +265,8 @@ RationalStudio/
     ├── GraphWorkspacePersistenceTests.cpp
     ├── VariableFunctionInteractionTests.cpp
     ├── DynamicEvaluationMatrixTests.cpp
+    ├── ParametricSamplerTests.cpp
+    ├── ParametricGraphTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -339,7 +348,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **37 tests from 36 executables**: twenty-four Qt-independent tests and thirteen offscreen Qt invocations from twelve widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-four tests:
+With GUI and testing enabled, CTest registers **39 tests from 38 executables**: twenty-five Qt-independent tests and fourteen offscreen Qt invocations from thirteen widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-five tests:
 
 | Executable | Focus |
 |---|---|
@@ -378,6 +387,8 @@ With GUI and testing enabled, CTest registers **37 tests from 36 executables**: 
 | `RationalGraphWorkspacePersistenceTests` | Version-1 and version-2 JSON round trips, slider values/ranges, scalar and function dependencies, malformed-input rejection, MainWindow Save/Open and rollback protections. |
 | `RationalVariableFunctionInteractionTests` | Cross-owner scalar/function dependency resolution, nested captures, immutable snapshots, rejected cycles/invalid updates, domain recovery, scope rollback and selective graph invalidation. |
 | `RationalDynamicEvaluationMatrixTests` | Fixed deterministic scalar-update and evaluation matrix with independent numeric oracles, exact dependency/change reporting, unrelated-curve preservation and angle-mode transition regressions. |
+| `RationalParametricSamplerTests` | Qt-free circle reference geometry, adaptive incremental sampling, shared budgets, invalid-interval and invalid-domain cases. |
+| `RationalParametricGraphTests` | Qt offscreen mixed Cartesian/parametric graph rendering, editor feedback, version-3 workspace round trips, and malformed-workspace rejection. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
@@ -482,7 +493,7 @@ Expressions are parsed into an abstract syntax tree before evaluation. Exponenti
 
 - **Scientific arithmetic:** IEEE-754 `double`, subject to normal floating-point rounding and range constraints; no arbitrary-precision decimal or symbolic arithmetic.
 - **Rational arithmetic:** Exact integer fractions; decimal displays are rounded approximations (up to 15 places in the current GUI).
-- **Graphing:** Explicit Cartesian `y = f(x)` only. Adaptive sampling includes bounded secondary refinement to preserve steep continuous curves. Domain and discontinuity detection rely on finite numerical samples and cannot guarantee correct rendering of every mathematical function.
+- **Graphing:** Explicit Cartesian `y = f(x)` and finite-interval parametric `x(t), y(t)` are supported. Polar, implicit and inequality graphs, parametric hover tracing, and advanced coordinate inspection remain future work. Adaptive sampling includes bounded secondary refinement for Cartesian curves; neither representation can guarantee detection of every narrow mathematical discontinuity or high-frequency feature.
 - **Viewport precision:** Viewport navigation uses double-precision coordinates and precision-aware pan/zoom calculations. Operations that cannot be represented within the configured screen-space error tolerance are rejected without modifying viewport state. Arbitrary-precision navigation is not supported.
 - **Rendering:** Valid paths are cached, and rapid navigation coalesces geometry refreshes with temporary affine previews. Resize changes invalidate stale paths and obsolete timers. Grid lines/labels use bounded pixel-space positions; extremely large finite viewport centers may suppress unreliable grid markers. Invalidated paths rebuild incrementally under per-curve-per-paint and shared callback budgets; complete replacements may take multiple paints. Retained previews include finite surrounding coverage and can omit newly exposed regions after sufficiently large navigation changes. The single-call sampler can still return explicitly truncated geometry. Sampling and other mathematical callbacks remain on the GUI thread. Coalescing and callback ceilings do not guarantee frame time, input latency, or increased FPS.
 - **Not yet supported:** Implicit, parametric, or polar graphs; complex arithmetic; matrices; GUI authoring of reusable functions and general scalar assignments; symbolic algebra; numerical integration and differentiation; and inequality shading.

@@ -8,10 +8,12 @@
 #include <QColor>
 #include <QString>
 #include <memory>
+#include <limits>
 #include <vector>
 
 class QButtonGroup;
 class QComboBox;
+class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
@@ -40,6 +42,14 @@ private:
     struct GraphRow {
         QWidget* widget = nullptr;
         MathExpressionEdit* input = nullptr;
+        MathExpressionEdit* yInput = nullptr; // Parametric second coordinate.
+        QDoubleSpinBox* tMinimum = nullptr;
+        QDoubleSpinBox* tMaximum = nullptr;
+        bool parametric = false;
+        QString parsedYSource;
+        double compiledMinimum = std::numeric_limits<double>::quiet_NaN();
+        double compiledMaximum = std::numeric_limits<double>::quiet_NaN();
+        std::shared_ptr<const Expression> parsedYExpression;
         QToolButton* visible = nullptr;
         QLabel* info = nullptr;
         QColor color;
@@ -55,6 +65,10 @@ private:
     void updateScientificPreview();
     void calculateFraction();
     void addGraphRow(const QString& text = QString(), bool visible = true, QColor color = QColor());
+    void addParametricRow(const QString& x = "x(t) = cos(t)",
+                          const QString& y = "y(t) = sin(t)",
+                          double minimum = 0, double maximum = 6.283185307179586,
+                          bool visible = true, QColor color = QColor());
     void removeGraphRow(GraphRow* row);
     void rebuildGraph(const std::vector<std::string>& changedScope = {});
     void updateGraphEditorFeedback(GraphRow* row);

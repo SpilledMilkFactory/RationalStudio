@@ -17,6 +17,7 @@ Thumbs.db
 /benchmarks/*
 /benchmark-results/*
 
+# ctest verifications
 /verification-results/*
 /issue31-evidence*
 /issue32-evidence*
@@ -24,3 +25,4 @@ Thumbs.db
 /issue34-evidence*
 /issue35-evidence*
 /issue36-evidence*
+/issue37-evidence*
