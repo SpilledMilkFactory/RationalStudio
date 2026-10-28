@@ -55,7 +55,7 @@ VariableSliderPanel::VariableSliderPanel(QWidget* parent)
     outer->setContentsMargins(0, 2, 0, 2);
     outer->setSpacing(6);
 
-    auto* header = new QLabel("Variables · session only", this);
+    auto* header = new QLabel("Variables · saved in graph workspaces", this);
     header->setStyleSheet("font-weight:bold; color:#92ddc0;");
     outer->addWidget(header);
 
@@ -87,7 +87,7 @@ VariableSliderPanel::VariableSliderPanel(QWidget* parent)
     outer->addWidget(group);
     message_ = new QLabel(
         "Slider changes refresh affected graph curves. "
-        "Workspace saving: Issue #35.", this);
+        "Workspace Save/Open preserves slider settings.", this);
     message_->setObjectName("sliderMessage");
     message_->setWordWrap(true);
     message_->setStyleSheet("color:#9aacbf; font-size:11px;");
@@ -119,6 +119,7 @@ bool VariableSliderPanel::addVariable(
     VariableScope valid;
     if (!valid.declare(name, error)) return false;
     const std::string canonical = *valid.names().begin();
+    if (mayAddVariable && !mayAddVariable(canonical, error)) return false;
     if (definitions_.contains(canonical)) {
         setError(error, "Variable already exists");
         return false;
@@ -221,7 +222,7 @@ bool VariableSliderPanel::addVariable(
     });
     setError(error, {});
     showMessage("Added slider for " + displayName(canonical), false);
-    if (onDefinitionsChanged) onDefinitionsChanged({canonical}, true);
+    if (!restoring_ && onDefinitionsChanged) onDefinitionsChanged({canonical}, true);
     return true;
 }
 
@@ -260,7 +261,7 @@ bool VariableSliderPanel::setVariableValue(
     }
     syncRow(*row);
     setError(error, {});
-    if (!update.changed.empty()) {
+    if (!restoring_ && !update.changed.empty()) {
         if (onDefinitionsChanged) onDefinitionsChanged(update.changed, false);
         if (onValueChanged) onValueChanged(row->name, snapped);
     }
@@ -286,7 +287,7 @@ bool VariableSliderPanel::configureVariable(
     row->scale = *proposed;
     syncRow(*row);
     setError(error, {});
-    if (!update.changed.empty()) {
+    if (!restoring_ && !update.changed.empty()) {
         if (onDefinitionsChanged) onDefinitionsChanged(update.changed, false);
         if (onValueChanged) onValueChanged(row->name, snapped);
     }
@@ -296,6 +297,7 @@ bool VariableSliderPanel::configureVariable(
 bool VariableSliderPanel::removeVariable(const std::string& name, std::string* error) {
     Row* row = findRow(name);
     if (!row) { setError(error, "Unknown slider variable"); return false; }
+    if (mayRemoveVariable && !mayRemoveVariable(row->name, error)) return false;
     const VariableUpdate update = definitions_.erase(row->name);
     if (!update.accepted) { setError(error, update.error); return false; }
     const auto it = std::find_if(rows_.begin(), rows_.end(),
@@ -311,7 +313,46 @@ bool VariableSliderPanel::removeVariable(const std::string& name, std::string* e
     }
     showMessage("Removed slider for " + displayName(name), false);
     setError(error, {});
-    if (onDefinitionsChanged) onDefinitionsChanged({name}, true);
+    if (!restoring_ && onDefinitionsChanged) onDefinitionsChanged({name}, true);
+    return true;
+}
+
+std::vector<WorkspaceSlider> VariableSliderPanel::snapshotSliders() const {
+    std::vector<WorkspaceSlider> result;
+    result.reserve(rows_.size());
+    for (const auto& row : rows_) {
+        result.push_back({row->name, definitions_.value(row->name).value_or(0),
+                          row->scale.minimum(), row->scale.maximum(), row->scale.step()});
+    }
+    return result;
+}
+
+bool VariableSliderPanel::replaceWorkspace(
+    const std::vector<WorkspaceSlider>& sliders,
+    const VariableDefinitions& validated, std::string* error) {
+    // This is invoked only after GraphWorkspacePersistence has checked the
+    // complete document, all scalar dependencies and slider constraints.
+    // Keep the mathematical owner available for all restored callbacks.
+    restoring_ = true;
+    for (auto& row : rows_) {
+        // Deleting immediately avoids duplicate object names during reload.
+        delete row->container;
+    }
+    rows_.clear();
+    definitions_ = VariableDefinitions(validated.angleMode());
+    for (const auto& slider : sliders) {
+        if (!addVariable(slider.name, slider.value, slider.minimum,
+                         slider.maximum, slider.step, error)) {
+            restoring_ = false;
+            return false;
+        }
+    }
+    definitions_ = validated;
+    for (auto& row : rows_) syncRow(*row);
+    restoring_ = false;
+    showMessage("Workspace variables restored", false);
+    if (onDefinitionsChanged) onDefinitionsChanged(definitions_.names(), true);
+    if (error) error->clear();
     return true;
 }
 

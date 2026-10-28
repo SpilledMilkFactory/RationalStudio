@@ -2,6 +2,7 @@
 
 #include "VariableDefinitions.hpp"
 #include "VariableSliderScale.hpp"
+#include "GraphWorkspacePersistence.hpp"
 
 #include <QWidget>
 
@@ -42,6 +43,13 @@ public:
     VariableDefinitions& definitions() noexcept { return definitions_; }
     const VariableDefinitions& definitions() const noexcept { return definitions_; }
     std::size_t rowCount() const noexcept { return rows_.size(); }
+    [[nodiscard]] std::vector<WorkspaceSlider> snapshotSliders() const;
+    // Only call with a fully validated, staged workspace. UI notifications
+    // are coalesced so no intermediate state can reach GraphCanvas.
+    bool replaceWorkspace(const std::vector<WorkspaceSlider>& sliders,
+                          const VariableDefinitions& validated, std::string* error = nullptr);
+    std::function<bool(const std::string&, std::string*)> mayAddVariable;
+    std::function<bool(const std::string&, std::string*)> mayRemoveVariable;
 
     // Called only after a successful value change, including dependent updates.
     std::function<void(const std::string&, double)> onValueChanged;
@@ -74,6 +82,7 @@ private:
     QLineEdit* nameInput_ = nullptr;
     QVBoxLayout* list_ = nullptr;
     QLabel* message_ = nullptr;
+    bool restoring_ = false;
 };
 
 } // namespace rationalstudio
