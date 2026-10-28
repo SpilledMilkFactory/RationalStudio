@@ -64,7 +64,11 @@ struct GraphCurve {
     // Stable cache identity for this coordinate pair and interval. Created
     // by GraphCanvas; never used as a mathematical coordinate expression.
     std::shared_ptr<const Expression> cacheToken{};
+    // Polar curves use two compiled Cartesian coordinates but preserve their
+    // own representation identity for caching and workspace semantics.
+    bool polarCurve = false;
     [[nodiscard]] bool parametric() const noexcept { return bool(yCoordinate); }
+    [[nodiscard]] bool polar() const noexcept { return polarCurve; }
 };
 
 class GraphCanvas final : public QWidget {

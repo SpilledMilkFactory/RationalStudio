@@ -473,6 +473,17 @@ if(BUILD_TESTING)
         LABELS "core;regression;graphing;parametric")
 
     # -----------------------------------------------------
+    # M3 / Issue #38 — Polar input adapter and numerical reference cases
+    # -----------------------------------------------------
+    add_executable(RationalPolarExpressionTests
+        tests/PolarExpressionTests.cpp
+    )
+    target_link_libraries(RationalPolarExpressionTests PRIVATE RationalCore)
+    add_test(NAME RationalPolarExpressionTests COMMAND RationalPolarExpressionTests)
+    set_tests_properties(RationalPolarExpressionTests PROPERTIES
+        LABELS "core;regression;graphing;polar")
+
+    # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
@@ -504,6 +515,7 @@ if(BUILD_TESTING)
         RationalVariableFunctionInteractionTests
         RationalDynamicEvaluationMatrixTests
         RationalParametricSamplerTests
+        RationalPolarExpressionTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -1001,6 +1013,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalParametricGraphTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;parametric;graphing;qt;offscreen"
+            TIMEOUT 90)
+        # ---------------------------------------------------------
+        # M3 / Issue #38 — Polar graph integration and v3 persistence
+        # ---------------------------------------------------------
+        add_executable(RationalPolarGraphTests
+            tests/PolarGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalPolarGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalPolarGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalPolarGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalPolarGraphTests COMMAND RationalPolarGraphTests)
+        set_tests_properties(RationalPolarGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;polar;graphing;qt;offscreen"
             TIMEOUT 90)
     endif()
 

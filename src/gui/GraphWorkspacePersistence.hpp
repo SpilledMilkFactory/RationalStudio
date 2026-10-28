@@ -8,6 +8,7 @@
 #include "MathExpressionInput.hpp"
 #include "GraphViewport.hpp"
 #include "ParametricSampler.hpp"
+#include "PolarExpression.hpp"
 
 #include <QByteArray>
 #include <QColor>
@@ -42,6 +43,7 @@ struct WorkspaceCurve {
     QString yExpression{};
     double tMinimum = 0;
     double tMaximum = 0;
+    bool polar = false;
 };
 
 struct GraphWorkspaceState {
@@ -94,7 +96,7 @@ public:
         QJsonObject root;
         root["format"] = "RationalStudioGraph";
         const bool hasParametric = std::any_of(state.curves.begin(), state.curves.end(),
-            [](const WorkspaceCurve& row) { return row.parametric; });
+            [](const WorkspaceCurve& row) { return row.parametric || row.polar; });
         root["version"] = hasParametric ? 3 : 2;
         root["centerX"] = state.centerX;
         root["centerY"] = state.centerY;
@@ -105,7 +107,12 @@ public:
             QJsonObject item{{"expression", row.expression},
                              {"visible", row.visible},
                              {"color", row.color.name()}};
-            if (hasParametric) item["kind"] = row.parametric ? "parametric" : "cartesian";
+            if (hasParametric) item["kind"] = row.polar ? "polar" :
+                (row.parametric ? "parametric" : "cartesian");
+            if (row.polar) {
+                item["tMin"] = row.tMinimum;
+                item["tMax"] = row.tMaximum;
+            }
             if (row.parametric) {
                 item["yExpression"] = row.yExpression;
                 item["tMin"] = row.tMinimum;
@@ -217,6 +224,15 @@ public:
                         return reject("Parametric coordinate labels must be x(t) and y(t).");
                     // Validate syntax against restored variable/function owners below,
                     // after the definition arrays are loaded in dependency order.
+                } else if (kind == "polar") {
+                    if (!obj.value("tMin").isDouble() || !obj.value("tMax").isDouble())
+                        return reject("Malformed polar angular interval.");
+                    row.polar = true;
+                    row.tMinimum = obj.value("tMin").toDouble();
+                    row.tMaximum = obj.value("tMax").toDouble();
+                    if (!validParameterInterval(row.tMinimum, row.tMaximum) ||
+                        !polarCoordinateSources(row.expression.toStdString()).valid())
+                        return reject("Invalid polar radius or angular interval.");
                 } else if (kind != "cartesian") {
                     return reject("Unknown curve representation kind.");
                 }
@@ -317,6 +333,17 @@ public:
             VariableScope parameterScope = stage.validatedVariables.scope();
             if (!parameterScope.contains("t")) (void)parameterScope.declare("t");
             for (const auto& row : stage.curves) {
+                if (row.polar) {
+                    const auto sources = polarCoordinateSources(row.expression.toStdString());
+                    if (!sources.valid()) return reject("Invalid polar radius label or body.");
+                    for (const auto& coordinate : {sources.x, sources.y}) {
+                        Expression compiled(coordinate, parameterScope, stage.validatedFunctions.scope());
+                        if (!compiled.valid() || compiled.dependsOnX())
+                            return reject("Invalid polar radius: " +
+                                QString::fromStdString(compiled.error()));
+                    }
+                    continue;
+                }
                 if (!row.parametric) continue;
                 const auto body = [](QString text) {
                     const int equal = text.indexOf('=');
