@@ -155,7 +155,7 @@ QWidget* MainWindow::makeScientificPage() {
     auto* calculator = new QWidget;
     auto* layout = new QVBoxLayout(calculator);
     layout->setSpacing(12);
-    layout->addWidget(heading("Scientific calculator", "Type expressions directly, or use the keypad."));
+    layout->addWidget(heading("Scientific calculator", "Type directly or use the keypad · Alt+P π · Alt+R √ · Alt+2 ² · Alt+S sin"));
 
     scientificInput_ = new MathExpressionEdit;
     scientificInput_->setObjectName("ScientificExpression");
@@ -369,7 +369,12 @@ QWidget* MainWindow::makeGraphPage() {
         auto* button = new QToolButton(side);
         button->setObjectName("graphMathSymbol" + name);
         button->setText(symbol);
-        button->setToolTip("Insert " + symbol + " at the expression cursor");
+        const QString shortcut =
+            name == "Pi" ? "Alt+P" : name == "Root" ? "Alt+R" :
+            name == "Squared" ? "Alt+2" : name == "Multiply" ? "Alt+M" :
+            name == "Divide" ? "Alt+D" : QString();
+        button->setToolTip("Insert " + symbol + " at the expression cursor" +
+                           (shortcut.isEmpty() ? QString() : " (" + shortcut + ")"));
         button->setMinimumHeight(28);
         mathSymbols->addWidget(button);
         connect(button, &QToolButton::clicked, this, [this, symbol] {
@@ -416,7 +421,9 @@ QWidget* MainWindow::makeGraphPage() {
     scroll->setWidget(scrollContent);
     sv->addWidget(scroll, 1);
     auto* sideHelp = new QLabel("Examples: sin(x), x^2, 2x+1, sqrt(abs(x))\n"
-                                 "Supported: y = ..., f(x) = ..., constants, functions.");
+                                 "Supported: y = ..., f(x) = ..., constants, functions.\n"
+                                 "Alt+P π · Alt+R √ · Alt+2 ² · Alt+S sin\n"
+                                 "Alt+↑/↓ switch rows · Ctrl+Enter add a row.");
     sideHelp->setWordWrap(true);
     sideHelp->setStyleSheet("color:#91a6be; font-size:12px;");
     sv->addWidget(sideHelp);
@@ -457,6 +464,7 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("GraphExpression_%1").arg(nextColor_));
     row->input->setPlaceholderText("y = f(x)");
+    row->input->setGraphEditingMode(true);
     row->input->setText(text);
     row->input->setMinimumHeight(46);
     row->input->setMaxLength(2048);
@@ -474,6 +482,27 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     graphList_->insertWidget(graphList_->count() - 1, row->widget);
     graphRows_.push_back(row);
     activeGraphInput_ = row->input;
+    // Keyboard-only graph authoring. Sender lifetime is owned by the row;
+    // navigation is scoped to the current row order and wraps at both ends.
+    connect(row->input, &MathExpressionEdit::graphNavigationRequested, this,
+            [this, row](int direction) {
+                auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
+                if (it == graphRows_.end() || graphRows_.empty()) return;
+                const auto index = static_cast<std::size_t>(it - graphRows_.begin());
+                const auto count = graphRows_.size();
+                const auto target = direction < 0 ? (index + count - 1) % count
+                                                  : (index + 1) % count;
+                activeGraphInput_ = graphRows_[target]->input;
+                activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+            });
+    connect(row->input, &MathExpressionEdit::graphRowRequested, this, [this] {
+        const auto count = graphRows_.size();
+        addGraphRow();
+        if (graphRows_.size() > count) {
+            activeGraphInput_ = graphRows_.back()->input;
+            activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+        }
+    });
     connect(row->input, &QLineEdit::cursorPositionChanged, this,
             [this, row] { activeGraphInput_ = row->input; });
     connect(row->input, &QLineEdit::selectionChanged, this,
