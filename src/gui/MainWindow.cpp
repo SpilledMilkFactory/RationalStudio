@@ -3,12 +3,14 @@
 #include "VariableSliderPanel.hpp"
 #include "MathExpressionEdit.hpp"
 #include "MathExpressionInput.hpp"
+#include "GraphWorkspacePersistence.hpp"
 
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
 #include <QFile>
 #include <QFileDialog>
+#include <QSaveFile>
 #include <QFont>
 #include <QFormLayout>
 #include <QFrame>
@@ -388,6 +390,23 @@ QWidget* MainWindow::makeGraphPage() {
 
     variableSliders_ = new VariableSliderPanel(side);   
 
+    variableSliders_->mayAddVariable = [this](const std::string& name, std::string* error) {
+        if (functionDefinitions_.contains(name)) {
+            if (error) *error = "Name conflicts with workspace function";
+            return false;
+        }
+        return true;
+    };
+    variableSliders_->mayRemoveVariable = [this](const std::string& name, std::string* error) {
+        for (const auto& function : functionDefinitions_.names()) {
+            const auto deps = functionDefinitions_.variableDependencies(function);
+            if (std::find(deps.begin(), deps.end(), name) != deps.end()) {
+                if (error) *error = "Slider is referenced by function '" + function + "'";
+                return false;
+            }
+        }
+        return true;
+    };
     variableSliders_->onDefinitionsChanged =
         [this](const std::vector<std::string>& changed, bool scopeChanged) {
             onVariableDefinitionsChanged(changed, scopeChanged);
@@ -545,7 +564,7 @@ void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     if (!row->parsedExpression || row->parsedSource != source) {
         const VariableScope scope = variableSliders_ ?
             variableSliders_->definitions().scope() : VariableScope{};
-        row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope);
+        row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope, functionDefinitions_.scope());
         row->parsedSource = source;
     }
     if (row->parsedExpression->valid()) {
@@ -570,7 +589,22 @@ void MainWindow::onVariableDefinitionsChanged(
     const std::vector<std::string>& changed, bool scopeChanged) {
     if (!variableSliders_ || !graph_) return;
     graph_->setVariableBindings(variableSliders_->definitions().bindings(), changed);
-    if (scopeChanged) rebuildGraph(changed);
+    if (scopeChanged) {
+        const auto update = functionDefinitions_.setVariableScope(variableSliders_->definitions().scope());
+        if (update.accepted && !update.recompiled.empty()) {
+            // Preserve unrelated compiled graph expressions. Only expressions
+            // referencing a recompiled function need a fresh function scope.
+            for (auto* row : graphRows_) {
+                if (!row->parsedExpression) continue;
+                const auto& referenced = row->parsedExpression->referencedFunctions();
+                if (std::any_of(referenced.begin(), referenced.end(), [&](const std::string& name) {
+                        return std::find(update.recompiled.begin(), update.recompiled.end(), name) !=
+                               update.recompiled.end();
+                    })) row->parsedExpression.reset();
+            }
+        }
+        rebuildGraph(changed);
+    }
 }
 
 void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
@@ -614,7 +648,7 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
             }
         }
         if (!row->parsedExpression || row->parsedSource != source || scopeAffectsRow) {
-            row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope);
+            row->parsedExpression = std::make_shared<Expression>(source.toStdString(), scope, functionDefinitions_.scope());
             row->parsedSource = source;
         }
         const auto& function = row->parsedExpression;
@@ -660,72 +694,106 @@ void MainWindow::graphScientificExpression() {
     tabs_->setCurrentIndex(1);
 }
 
+bool MainWindow::defineWorkspaceFunction(const QString& statement, QString* error) {
+    if (!variableSliders_) {
+        if (error) *error = "Graph workspace is not initialized.";
+        return false;
+    }
+    auto staged = functionDefinitions_;
+    const auto result = staged.define(statement.toStdString());
+    if (!result.accepted) {
+        if (error) *error = QString::fromStdString(result.error);
+        return false;
+    }
+    functionDefinitions_ = std::move(staged);
+    for (auto* row : graphRows_) row->parsedExpression.reset();
+    rebuildGraph();
+    if (error) error->clear();
+    return true;
+}
+
+bool MainWindow::saveWorkspace(const QString& path, QString* error) const {
+    if (!variableSliders_ || !graph_) {
+        if (error) *error = "Graph workspace is not initialized.";
+        return false;
+    }
+    GraphWorkspaceState state;
+    state.centerX = graph_->centerX();
+    state.centerY = graph_->centerY();
+    state.pixelsPerUnit = graph_->pixelsPerUnit();
+    state.angle = angleMode_;
+    for (const auto* row : graphRows_)
+        state.curves.push_back({row->input->text(), row->visible->isChecked(), row->color});
+    state.sliders = variableSliders_->snapshotSliders();
+    state.assignments = GraphWorkspacePersistence::orderedAssignments(
+        variableSliders_->definitions(), state.sliders);
+    state.functions = GraphWorkspacePersistence::orderedFunctions(functionDefinitions_);
+    const QByteArray bytes = GraphWorkspacePersistence::encode(state);
+    if (bytes.size() > GraphWorkspacePersistence::MaxFileBytes) {
+        if (error) *error = "Workspace exceeds maximum file size.";
+        return false;
+    }
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() ||
+        !file.commit()) {
+        file.cancelWriting();
+        if (error) *error = "Unable to atomically save workspace.";
+        return false;
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool MainWindow::loadWorkspace(const QString& path, QString* error) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly) || file.size() > GraphWorkspacePersistence::MaxFileBytes) {
+        if (error) *error = "Cannot read workspace or file is too large.";
+        return false;
+    }
+    GraphWorkspaceState staged;
+    if (!GraphWorkspacePersistence::decode(file.readAll(), staged, error)) return false;
+    GraphViewport checkedView;
+    if (!checkedView.setDimensions(graph_->width(), graph_->height()) ||
+        !checkedView.setView(staged.centerX, staged.centerY, staged.pixelsPerUnit)) {
+        if (error) *error = "Workspace viewport cannot be represented at the current graph size.";
+        return false;
+    }
+    // All scalar/function dependencies and settings have been validated in
+    // scratch owners before touching any existing UI state.
+    functionDefinitions_ = std::move(staged.validatedFunctions);
+    std::string panelError;
+    if (!variableSliders_->replaceWorkspace(staged.sliders,
+                                            staged.validatedVariables, &panelError)) {
+        if (error) *error = "Could not restore slider controls: " + QString::fromStdString(panelError);
+        return false;
+    }
+    if (graphDebounce_) graphDebounce_->stop();
+    for (auto* row : graphRows_) { delete row->widget; delete row; }
+    graphRows_.clear();
+    activeGraphInput_ = nullptr;
+    for (const auto& row : staged.curves)
+        addGraphRow(row.expression, row.visible, row.color);
+    graph_->setView(staged.centerX, staged.centerY, staged.pixelsPerUnit);
+    setAngleMode(staged.angle);
+    rebuildGraph();
+    if (error) error->clear();
+    return true;
+}
+
 void MainWindow::saveGraph() {
     const QString path = QFileDialog::getSaveFileName(this, "Save graph workspace", "graph.json", "Graph JSON (*.json)");
     if (path.isEmpty()) return;
-    QJsonObject root;
-    root["format"] = "RationalStudioGraph";
-    root["version"] = 1;
-    root["centerX"] = graph_->centerX();
-    root["centerY"] = graph_->centerY();
-    root["pixelsPerUnit"] = graph_->pixelsPerUnit();
-    root["angleMode"] = angleMode_ == AngleMode::Degrees ? "degrees" : "radians";
-    QJsonArray expressions;
-    for (const auto* row : graphRows_) {
-        QJsonObject entry;
-        entry["expression"] = row->input->text();
-        entry["visible"] = row->visible->isChecked();
-        entry["color"] = row->color.name();
-        expressions.append(entry);
-    }
-    root["expressions"] = expressions;
-    QFile file(path);
-    const QByteArray output = QJsonDocument(root).toJson(QJsonDocument::Indented);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
-        file.write(output) != output.size()) {
-        QMessageBox::warning(this, "Save failed", "Could not write the graph workspace.");
-    }
+    QString error;
+    if (!saveWorkspace(path, &error)) QMessageBox::warning(this, "Save failed", error);
 }
+
 void MainWindow::loadGraph() {
     const QString path = QFileDialog::getOpenFileName(this, "Open graph workspace", QString(), "Graph JSON (*.json)");
     if (path.isEmpty()) return;
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly) || file.size() > 512 * 1024) {
-        QMessageBox::warning(this, "Open failed", "Cannot read the file or file is too large."); return;
-    }
-    QJsonParseError error;
-    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
-    if (error.error != QJsonParseError::NoError || !doc.isObject()) {
-        QMessageBox::warning(this, "Invalid graph", "Invalid JSON workspace."); return;
-    }
-    const QJsonObject root = doc.object();
-    if (root.value("format").toString() != "RationalStudioGraph" ||
-        root.value("version").toInt() != 1 || !root.value("expressions").isArray() ||
-        root.value("expressions").toArray().size() > 40) {
-        QMessageBox::warning(this, "Invalid graph", "Unsupported graph workspace format."); return;
-    }
-    const QJsonArray expressions = root.value("expressions").toArray();
-    // Parse and validate first; only replace the workspace after basic validation succeeds.
-    for (const auto& value : expressions) {
-        if (!value.isObject() || !value.toObject().value("expression").isString() ||
-            value.toObject().value("expression").toString().size() > 2048) {
-            QMessageBox::warning(this, "Invalid graph", "Workspace contains an invalid expression entry.");
-            return;
-        }
-    }
-    for (auto* row : graphRows_) { row->widget->deleteLater(); delete row; }
-    graphRows_.clear();
-    for (const auto& value : expressions) {
-        const QJsonObject obj = value.toObject();
-        addGraphRow(obj.value("expression").toString(), obj.value("visible").toBool(true),
-                    QColor(obj.value("color").toString()));
-    }
-    graph_->setView(root.value("centerX").toDouble(0), root.value("centerY").toDouble(0),
-                    root.value("pixelsPerUnit").toDouble(58));
-    // Angle mode is shared across tabs; update graph and the scientific preview.
-    setAngleMode(root.value("angleMode").toString() == "degrees" ? AngleMode::Degrees : AngleMode::Radians);
-    rebuildGraph();
+    QString error;
+    if (!loadWorkspace(path, &error)) QMessageBox::warning(this, "Open failed", error);
 }
+
 void MainWindow::exportImage() {
     const QString path = QFileDialog::getSaveFileName(this, "Export graph image", "graph.png", "PNG image (*.png)");
     if (path.isEmpty()) return;

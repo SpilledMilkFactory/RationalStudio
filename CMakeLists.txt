@@ -913,6 +913,37 @@ if(RATIONALSTUDIO_BUILD_GUI)
             LABELS "gui;regression;keyboard;expression;qt;offscreen"
             TIMEOUT 60
         )
+        # ---------------------------------------------------------
+        # Issue #35 — Transactional graph workspace persistence (v1/v2)
+        # ---------------------------------------------------------
+        add_executable(RationalGraphWorkspacePersistenceTests
+            tests/GraphWorkspacePersistenceTests.cpp
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalGraphWorkspacePersistenceTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalGraphWorkspacePersistenceTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalGraphWorkspacePersistenceTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalGraphWorkspacePersistenceTests
+                 COMMAND RationalGraphWorkspacePersistenceTests)
+        set_tests_properties(RationalGraphWorkspacePersistenceTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;persistence;variables;functions;qt;offscreen"
+            TIMEOUT 60
+        )
     endif()
 
 endif()

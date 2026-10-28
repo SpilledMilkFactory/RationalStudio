@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Expression.hpp"
+#include "FunctionDefinitions.hpp"
 #include "GraphCanvas.hpp"
 
 #include <QMainWindow>
@@ -29,6 +30,11 @@ class MathExpressionEdit;
 class MainWindow final : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
+    // File-based entry points for deterministic GUI integration tests and
+    // Save/Open actions. No modal dialogs on failure.
+    bool saveWorkspace(const QString& path, QString* error = nullptr) const;
+    bool loadWorkspace(const QString& path, QString* error = nullptr);
+    bool defineWorkspaceFunction(const QString& statement, QString* error = nullptr);
 
 private:
     struct GraphRow {
@@ -74,6 +80,7 @@ private:
     QLabel* fractionDecimal_ = nullptr;
     GraphCanvas* graph_ = nullptr;
     VariableSliderPanel* variableSliders_ = nullptr;
+    FunctionDefinitions functionDefinitions_;
     MathExpressionEdit* activeGraphInput_ = nullptr;
     QVBoxLayout* graphList_ = nullptr;
     QLabel* graphStatus_ = nullptr;
