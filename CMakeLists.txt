@@ -439,6 +439,27 @@ if(BUILD_TESTING)
         LABELS "core;regression;expression;diagnostics"
     )
 
+    # ---------------------------------------------------------
+    # Issue #36 — Cross-owner regressions and dynamic evaluation
+    # ---------------------------------------------------------
+    add_executable(RationalVariableFunctionInteractionTests
+        tests/VariableFunctionInteractionTests.cpp
+    )
+    target_link_libraries(RationalVariableFunctionInteractionTests PRIVATE RationalCore)
+    add_test(NAME RationalVariableFunctionInteractionTests
+             COMMAND RationalVariableFunctionInteractionTests)
+    set_tests_properties(RationalVariableFunctionInteractionTests PROPERTIES
+        LABELS "core;regression;variables;functions;integration")
+
+    add_executable(RationalDynamicEvaluationMatrixTests
+        tests/DynamicEvaluationMatrixTests.cpp
+    )
+    target_link_libraries(RationalDynamicEvaluationMatrixTests PRIVATE RationalCore)
+    add_test(NAME RationalDynamicEvaluationMatrixTests
+             COMMAND RationalDynamicEvaluationMatrixTests)
+    set_tests_properties(RationalDynamicEvaluationMatrixTests PROPERTIES
+        LABELS "core;regression;variables;functions;dynamic")
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -468,6 +489,8 @@ if(BUILD_TESTING)
         RationalGraphVariableDependencyTests
         RationalMathExpressionInputTests
         RationalExpressionDiagnosticTests
+        RationalVariableFunctionInteractionTests
+        RationalDynamicEvaluationMatrixTests
     )
 
         target_compile_options(${test_target} PRIVATE
