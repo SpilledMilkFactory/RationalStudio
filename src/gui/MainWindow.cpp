@@ -4,6 +4,7 @@
 #include "MathExpressionEdit.hpp"
 #include "MathExpressionInput.hpp"
 #include "GraphWorkspacePersistence.hpp"
+#include "PolarExpression.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -380,6 +381,11 @@ QWidget* MainWindow::makeGraphPage() {
     addParametric->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     connect(addParametric, &QPushButton::clicked, this, [this] { addParametricRow(); });
     inputHead->addWidget(addParametric);
+    auto* addPolar = makeButton("+ Polar");
+    addPolar->setObjectName("addPolarGraphRow");
+    addPolar->setToolTip("Add r = f(θ) with an angle interval");
+    connect(addPolar, &QPushButton::clicked, this, [this] { addPolarRow(); });
+    inputHead->addWidget(addPolar);
     sv->addLayout(inputHead);
 
     // Issue #32: buttons insert genuine mathematical glyphs into the
@@ -463,7 +469,8 @@ QWidget* MainWindow::makeGraphPage() {
     scroll->setWidget(scrollContent);
     sv->addWidget(scroll, 1);
     auto* sideHelp = new QLabel("Cartesian: y = sin(x) · Parametric: x(t) = cos(t), y(t) = sin(t)\n"
-                                 "Parametric intervals are finite and configurable.\n"
+                                 "Polar: r = 2cos(θ) · angle intervals use current RAD/DEG mode.\n"
+                                 "Parametric and polar intervals are finite and configurable.\n"
                                  "Supported: y = ..., f(x) = ..., constants, functions.\n"
                                  "Alt+P π · Alt+R √ · Alt+2 ² · Alt+S sin\n"
                                  "Alt+↑/↓ switch rows · Ctrl+Enter add a row.");
@@ -665,6 +672,95 @@ void MainWindow::addParametricRow(const QString& x, const QString& y,
     if (graphDebounce_) graphDebounce_->start();
 }
 
+void MainWindow::addPolarRow(const QString& expression, double minimum, double maximum,
+                             bool visible, QColor color) {
+    if (graphRows_.size() >= 40) {
+        QMessageBox::information(this, "Graph limit", "This version supports up to 40 expressions per workspace.");
+        return;
+    }
+    auto* row = new GraphRow;
+    row->polar = true;
+    const QColor next = seriesColors[nextColor_++ % (sizeof(seriesColors) / sizeof(seriesColors[0]))];
+    row->color = color.isValid() ? color : next;
+    row->widget = new QWidget;
+    auto* frame = new QVBoxLayout(row->widget);
+    frame->setContentsMargins(3, 4, 3, 4);
+    auto* headingRow = new QHBoxLayout;
+    row->visible = new QToolButton;
+    row->visible->setText("●");
+    row->visible->setCheckable(true);
+    row->visible->setChecked(visible);
+    row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
+    headingRow->addWidget(row->visible);
+    headingRow->addWidget(new QLabel("Polar r(θ)"), 1);
+    auto* remove = new QToolButton;
+    remove->setText("×");
+    remove->setToolTip("Remove polar curve");
+    headingRow->addWidget(remove);
+    frame->addLayout(headingRow);
+    row->input = new MathExpressionEdit;
+    row->input->setObjectName(QString("PolarRadius_%1").arg(nextColor_));
+    row->input->setGraphEditingMode(true);
+    row->input->setPlaceholderText("r = 2cos(θ)");
+    row->input->setMaxLength(2048);
+    row->input->setText(expression);
+    frame->addWidget(row->input);
+    auto* interval = new QHBoxLayout;
+    interval->addWidget(new QLabel("θ min:"));
+    row->tMinimum = new QDoubleSpinBox;
+    row->tMinimum->setObjectName("polarMinimum");
+    row->tMinimum->setRange(-1e8, 1e8);
+    row->tMinimum->setDecimals(12);
+    row->tMinimum->setValue(minimum);
+    interval->addWidget(row->tMinimum);
+    interval->addWidget(new QLabel("θ max:"));
+    row->tMaximum = new QDoubleSpinBox;
+    row->tMaximum->setObjectName("polarMaximum");
+    row->tMaximum->setRange(-1e8, 1e8);
+    row->tMaximum->setDecimals(12);
+    row->tMaximum->setValue(maximum);
+    interval->addWidget(row->tMaximum);
+    frame->addLayout(interval);
+    row->info = new QLabel;
+    row->info->setTextFormat(Qt::PlainText);
+    row->info->setWordWrap(true);
+    frame->addWidget(row->info);
+    graphList_->insertWidget(graphList_->count() - 1, row->widget);
+    graphRows_.push_back(row);
+    activeGraphInput_ = row->input;
+    connect(row->input, &QLineEdit::textChanged, this, [this, row] {
+        activeGraphInput_ = row->input;
+        updateGraphEditorFeedback(row);
+        if (graphDebounce_) graphDebounce_->start();
+    });
+    connect(row->input, &QLineEdit::cursorPositionChanged, this, [this, row] {
+        activeGraphInput_ = row->input;
+    });
+    connect(row->input, &MathExpressionEdit::graphRowRequested, this, [this] {
+        addPolarRow();
+        if (activeGraphInput_) activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+    });
+    connect(row->input, &MathExpressionEdit::graphNavigationRequested, this, [this, row](int direction) {
+        const auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
+        if (it == graphRows_.end()) return;
+        const auto index = static_cast<std::size_t>(it - graphRows_.begin());
+        const auto n = graphRows_.size();
+        activeGraphInput_ = graphRows_[direction < 0 ? (index + n - 1) % n : (index + 1) % n]->input;
+        activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+    });
+    for (auto* spin : {row->tMinimum, row->tMaximum}) {
+        connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                [this, row](double) {
+                    updateGraphEditorFeedback(row);
+                    if (graphDebounce_) graphDebounce_->start();
+                });
+    }
+    connect(row->visible, &QToolButton::toggled, this, [this] { rebuildGraph(); });
+    connect(remove, &QToolButton::clicked, this, [this, row] { removeGraphRow(row); });
+    updateGraphEditorFeedback(row);
+    if (graphDebounce_) graphDebounce_->start();
+}
+
 void MainWindow::removeGraphRow(GraphRow* row) {
     auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
     if (it == graphRows_.end()) return;
@@ -678,6 +774,45 @@ void MainWindow::removeGraphRow(GraphRow* row) {
 
 void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     if (!row || !row->input) return;
+    if (row->polar) {
+        const auto coordinates = polarCoordinateSources(row->input->text().toStdString());
+        QString error;
+        if (!coordinates.valid()) {
+            error = "Enter a polar expression such as r = 2cos(θ).";
+        } else if (!validParameterInterval(row->tMinimum->value(), row->tMaximum->value())) {
+            error = "Angle interval requires finite -1e8 <= min < max <= 1e8.";
+        } else {
+            VariableScope local = variableSliders_ ?
+                variableSliders_->definitions().scope() : VariableScope{};
+            if (!local.contains("t")) (void)local.declare("t");
+            const auto x = QString::fromStdString(coordinates.x);
+            const auto y = QString::fromStdString(coordinates.y);
+            if (!row->parsedExpression || !row->parsedYExpression ||
+                row->parsedSource != x || row->parsedYSource != y ||
+                row->compiledMinimum != row->tMinimum->value() ||
+                row->compiledMaximum != row->tMaximum->value()) {
+                row->parsedExpression = std::make_shared<Expression>(coordinates.x, local, functionDefinitions_.scope());
+                row->parsedYExpression = std::make_shared<Expression>(coordinates.y, local, functionDefinitions_.scope());
+                row->parsedSource = x;
+                row->parsedYSource = y;
+                row->compiledMinimum = row->tMinimum->value();
+                row->compiledMaximum = row->tMaximum->value();
+            }
+            if (!row->parsedExpression->valid())
+                error = "Polar radius: " + QString::fromStdString(row->parsedExpression->error());
+            else if (!row->parsedYExpression->valid())
+                error = "Polar radius: " + QString::fromStdString(row->parsedYExpression->error());
+            else if (row->parsedExpression->dependsOnX() || row->parsedYExpression->dependsOnX())
+                error = "Use θ as the polar parameter, not Cartesian x.";
+        }
+        const bool valid = error.isEmpty();
+        row->input->setSyntaxState(valid ? "valid" : "invalid");
+        row->input->setToolTip(error);
+        row->info->setText(valid ? "Polar radius · θ interval uses selected angle mode" : error);
+        row->info->setStyleSheet(valid ? "color:#91baa4; font-size:11px;" :
+                                        "color:#ff9299; font-size:11px;");
+        return;
+    }
     if (row->parametric) {
         const auto xRaw = parametricBody(row->input->text(), 'x');
         const auto yRaw = parametricBody(row->yInput->text(), 'y');
@@ -793,6 +928,47 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
     std::vector<GraphCurve> curves;
     curves.reserve(graphRows_.size());
     for (auto* row : graphRows_) {
+        if (row->polar) {
+            const auto sources = polarCoordinateSources(row->input->text().toStdString());
+            if (sources.valid() && validParameterInterval(row->tMinimum->value(), row->tMaximum->value())) {
+                VariableScope local = scope;
+                if (!local.contains("t")) (void)local.declare("t");
+                const auto nx = QString::fromStdString(sources.x);
+                const auto ny = QString::fromStdString(sources.y);
+                bool refresh = !row->parsedExpression || !row->parsedYExpression ||
+                    row->parsedSource != nx || row->parsedYSource != ny ||
+                    row->compiledMinimum != row->tMinimum->value() ||
+                    row->compiledMaximum != row->tMaximum->value();
+                if (!changedScope.empty()) {
+                    for (const auto& name : changedScope) {
+                        for (const auto& expression : {row->parsedExpression, row->parsedYExpression}) {
+                            if (!expression || !expression->valid() ||
+                                std::find(expression->referencedVariables().begin(),
+                                          expression->referencedVariables().end(), name) !=
+                                    expression->referencedVariables().end()) refresh = true;
+                        }
+                    }
+                }
+                if (refresh) {
+                    row->parsedExpression = std::make_shared<Expression>(sources.x, local, functionDefinitions_.scope());
+                    row->parsedYExpression = std::make_shared<Expression>(sources.y, local, functionDefinitions_.scope());
+                    row->parsedSource = nx;
+                    row->parsedYSource = ny;
+                    row->compiledMinimum = row->tMinimum->value();
+                    row->compiledMaximum = row->tMaximum->value();
+                }
+                if (row->parsedExpression->valid() && row->parsedYExpression->valid() &&
+                    !row->parsedExpression->dependsOnX() && !row->parsedYExpression->dependsOnX()) {
+                    GraphCurve curve{row->color, row->parsedExpression, row->visible->isChecked(),
+                                     row->input->text(), row->parsedYExpression,
+                                     row->tMinimum->value(), row->tMaximum->value()};
+                    curve.polarCurve = true;
+                    curves.push_back(std::move(curve));
+                }
+            }
+            updateGraphEditorFeedback(row);
+            continue;
+        }
         if (row->parametric) {
             const auto xRaw = parametricBody(row->input->text(), 'x');
             const auto yRaw = parametricBody(row->yInput->text(), 'y');
@@ -949,7 +1125,11 @@ bool MainWindow::saveWorkspace(const QString& path, QString* error) const {
     state.angle = angleMode_;
     for (const auto* row : graphRows_) {
         WorkspaceCurve saved{row->input->text(), row->visible->isChecked(), row->color};
-        if (row->parametric) {
+        if (row->polar) {
+            saved.polar = true;
+            saved.tMinimum = row->tMinimum->value();
+            saved.tMaximum = row->tMaximum->value();
+        } else if (row->parametric) {
             saved.parametric = true;
             saved.yExpression = row->yInput->text();
             saved.tMinimum = row->tMinimum->value();
@@ -1005,7 +1185,9 @@ bool MainWindow::loadWorkspace(const QString& path, QString* error) {
     graphRows_.clear();
     activeGraphInput_ = nullptr;
     for (const auto& row : staged.curves) {
-        if (row.parametric) addParametricRow(row.expression, row.yExpression,
+        if (row.polar) addPolarRow(row.expression, row.tMinimum, row.tMaximum,
+            row.visible, row.color);
+        else if (row.parametric) addParametricRow(row.expression, row.yExpression,
             row.tMinimum, row.tMaximum, row.visible, row.color);
         else addGraphRow(row.expression, row.visible, row.color);
     }

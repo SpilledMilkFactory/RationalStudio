@@ -145,7 +145,7 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
             // its parameter interval. A new Y expression or interval must
             // invalidate its path even when X's AST pointer is unchanged.
             for (const auto& previous : curves_) {
-                if (!previous.parametric()) continue;
+                if (!previous.parametric() || previous.polar() != curve.polar()) continue;
                 if (curve.function == previous.function &&
                     curve.yCoordinate == previous.yCoordinate &&
                     curve.tMin == previous.tMin && curve.tMax == previous.tMax) {

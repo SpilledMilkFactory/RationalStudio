@@ -46,6 +46,7 @@ private:
         QDoubleSpinBox* tMinimum = nullptr;
         QDoubleSpinBox* tMaximum = nullptr;
         bool parametric = false;
+        bool polar = false;
         QString parsedYSource;
         double compiledMinimum = std::numeric_limits<double>::quiet_NaN();
         double compiledMaximum = std::numeric_limits<double>::quiet_NaN();
@@ -69,6 +70,9 @@ private:
                           const QString& y = "y(t) = sin(t)",
                           double minimum = 0, double maximum = 6.283185307179586,
                           bool visible = true, QColor color = QColor());
+    void addPolarRow(const QString& expression = "r = 2cos(θ)",
+                     double minimum = 0, double maximum = 6.283185307179586,
+                     bool visible = true, QColor color = QColor());
     void removeGraphRow(GraphRow* row);
     void rebuildGraph(const std::vector<std::string>& changedScope = {});
     void updateGraphEditorFeedback(GraphRow* row);
