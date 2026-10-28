@@ -10,6 +10,7 @@
 #include <QComboBox>
 #include <QFile>
 #include <QFileDialog>
+#include <QDoubleSpinBox>
 #include <QSaveFile>
 #include <QFont>
 #include <QFormLayout>
@@ -92,6 +93,22 @@ QString inlineErrorMessage(const Expression& expression, const QString& visibleB
     if (diagnostic->kind == ExpressionErrorKind::UnknownIdentifier)
         message += " — check the name or declare a slider variable.";
     return message;
+}
+
+// The parametric equation labels are presentation syntax. The coordinate
+// expressions are compiled against a declared local t, not an extra global
+// variable or a new parser grammar.
+QString parametricBody(QString input, QChar coordinate) {
+    input = input.trimmed();
+    const int equal = input.indexOf('=');
+    if (equal >= 0) {
+        QString name = input.left(equal).trimmed();
+        name.remove(' ');
+        if (name.compare(QString(coordinate) + "(t)", Qt::CaseInsensitive) != 0)
+            return QString();
+        return input.mid(equal + 1).trimmed();
+    }
+    return input;
 }
 
 QString normalizedGraphInput(QString input) {
@@ -357,6 +374,12 @@ QWidget* MainWindow::makeGraphPage() {
     add->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     inputHead->addWidget(add);
     connect(add, &QPushButton::clicked, this, [this] { addGraphRow(); });
+    auto* addParametric = makeButton("+ Parametric");
+    addParametric->setObjectName("addParametricGraphRow");
+    addParametric->setToolTip("Add X(t), Y(t) coordinate expressions and a parameter interval");
+    addParametric->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    connect(addParametric, &QPushButton::clicked, this, [this] { addParametricRow(); });
+    inputHead->addWidget(addParametric);
     sv->addLayout(inputHead);
 
     // Issue #32: buttons insert genuine mathematical glyphs into the
@@ -439,7 +462,8 @@ QWidget* MainWindow::makeGraphPage() {
     graphList_->addStretch(1);
     scroll->setWidget(scrollContent);
     sv->addWidget(scroll, 1);
-    auto* sideHelp = new QLabel("Examples: sin(x), x^2, 2x+1, sqrt(abs(x))\n"
+    auto* sideHelp = new QLabel("Cartesian: y = sin(x) · Parametric: x(t) = cos(t), y(t) = sin(t)\n"
+                                 "Parametric intervals are finite and configurable.\n"
                                  "Supported: y = ..., f(x) = ..., constants, functions.\n"
                                  "Alt+P π · Alt+R √ · Alt+2 ² · Alt+S sin\n"
                                  "Alt+↑/↓ switch rows · Ctrl+Enter add a row.");
@@ -536,11 +560,116 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     if (graphDebounce_) graphDebounce_->start();
 }
 
+void MainWindow::addParametricRow(const QString& x, const QString& y,
+                                  double minimum, double maximum,
+                                  bool visible, QColor color) {
+    if (graphRows_.size() >= 40) {
+        QMessageBox::information(this, "Graph limit", "This version supports up to 40 expressions per workspace.");
+        return;
+    }
+    auto* row = new GraphRow;
+    row->parametric = true;
+    const QColor next = seriesColors[nextColor_++ % (sizeof(seriesColors) / sizeof(seriesColors[0]))];
+    row->color = color.isValid() ? color : next;
+    row->widget = new QWidget;
+    auto* frame = new QVBoxLayout(row->widget);
+    frame->setContentsMargins(3, 4, 3, 4);
+    auto* headingRow = new QHBoxLayout;
+    row->visible = new QToolButton;
+    row->visible->setText("●");
+    row->visible->setCheckable(true);
+    row->visible->setChecked(visible);
+    row->visible->setToolTip("Toggle parametric curve visibility");
+    row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
+    headingRow->addWidget(row->visible);
+    auto* label = new QLabel("Parametric X(t), Y(t)");
+    headingRow->addWidget(label, 1);
+    auto* remove = new QToolButton;
+    remove->setText("×");
+    remove->setToolTip("Remove parametric curve");
+    headingRow->addWidget(remove);
+    frame->addLayout(headingRow);
+    row->input = new MathExpressionEdit;
+    row->input->setObjectName(QString("ParametricX_%1").arg(nextColor_));
+    row->input->setGraphEditingMode(true);
+    row->input->setPlaceholderText("x(t) = cos(t)");
+    row->input->setMaxLength(2048);
+    row->input->setText(x);
+    row->yInput = new MathExpressionEdit;
+    row->yInput->setObjectName(QString("ParametricY_%1").arg(nextColor_));
+    row->yInput->setGraphEditingMode(true);
+    row->yInput->setPlaceholderText("y(t) = sin(t)");
+    row->yInput->setMaxLength(2048);
+    row->yInput->setText(y);
+    frame->addWidget(row->input);
+    frame->addWidget(row->yInput);
+    auto* range = new QHBoxLayout;
+    range->addWidget(new QLabel("t min:"));
+    row->tMinimum = new QDoubleSpinBox;
+    row->tMinimum->setObjectName("parametricMinimum");
+    row->tMinimum->setRange(-1e8, 1e8);
+    row->tMinimum->setDecimals(12);
+    row->tMinimum->setValue(minimum);
+    range->addWidget(row->tMinimum);
+    range->addWidget(new QLabel("t max:"));
+    row->tMaximum = new QDoubleSpinBox;
+    row->tMaximum->setObjectName("parametricMaximum");
+    row->tMaximum->setRange(-1e8, 1e8);
+    row->tMaximum->setDecimals(12);
+    row->tMaximum->setValue(maximum);
+    range->addWidget(row->tMaximum);
+    frame->addLayout(range);
+    row->info = new QLabel("Parameter interval must satisfy min < max.");
+    row->info->setTextFormat(Qt::PlainText);
+    row->info->setWordWrap(true);
+    frame->addWidget(row->info);
+    graphList_->insertWidget(graphList_->count() - 1, row->widget);
+    graphRows_.push_back(row);
+    activeGraphInput_ = row->input;
+    for (auto* input : {row->input, row->yInput}) {
+        connect(input, &QLineEdit::cursorPositionChanged, this, [this, input] {
+            activeGraphInput_ = input;
+        });
+        connect(input, &QLineEdit::selectionChanged, this, [this, input] {
+            activeGraphInput_ = input;
+        });
+        connect(input, &QLineEdit::textChanged, this, [this, row, input] {
+            activeGraphInput_ = input;
+            updateGraphEditorFeedback(row);
+            if (graphDebounce_) graphDebounce_->start();
+        });
+        connect(input, &MathExpressionEdit::graphRowRequested, this, [this] {
+            addParametricRow();
+            if (activeGraphInput_) activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+        });
+        connect(input, &MathExpressionEdit::graphNavigationRequested, this, [this, row](int direction) {
+            auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
+            if (it == graphRows_.end() || graphRows_.empty()) return;
+            const auto index = static_cast<std::size_t>(it - graphRows_.begin());
+            const auto target = direction < 0
+                ? (index + graphRows_.size() - 1) % graphRows_.size()
+                : (index + 1) % graphRows_.size();
+            activeGraphInput_ = graphRows_[target]->input;
+            activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+        });
+    }
+    for (auto* spin : {row->tMinimum, row->tMaximum}) {
+        connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                [this, row](double) {
+                    updateGraphEditorFeedback(row);
+                    if (graphDebounce_) graphDebounce_->start();
+                });
+    }
+    connect(row->visible, &QToolButton::toggled, this, [this] { rebuildGraph(); });
+    connect(remove, &QToolButton::clicked, this, [this, row] { removeGraphRow(row); });
+    if (graphDebounce_) graphDebounce_->start();
+}
+
 void MainWindow::removeGraphRow(GraphRow* row) {
     auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
     if (it == graphRows_.end()) return;
     graphRows_.erase(it);
-    if (activeGraphInput_ == row->input)
+    if (activeGraphInput_ == row->input || activeGraphInput_ == row->yInput)
         activeGraphInput_ = graphRows_.empty() ? nullptr : graphRows_.back()->input;
     row->widget->deleteLater();
     delete row;
@@ -549,6 +678,49 @@ void MainWindow::removeGraphRow(GraphRow* row) {
 
 void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     if (!row || !row->input) return;
+    if (row->parametric) {
+        const auto xRaw = parametricBody(row->input->text(), 'x');
+        const auto yRaw = parametricBody(row->yInput->text(), 'y');
+        const auto min = row->tMinimum->value(), max = row->tMaximum->value();
+        QString error;
+        if (xRaw.isEmpty() || yRaw.isEmpty()) {
+            error = "Enter x(t) = ... and y(t) = ... with valid labels.";
+        } else if (!validParameterInterval(min, max)) {
+            error = "Parameter interval requires finite -1e8 <= min < max <= 1e8.";
+        } else {
+            VariableScope scope = variableSliders_ ?
+                variableSliders_->definitions().scope() : VariableScope{};
+            if (!scope.contains("t")) (void)scope.declare("t");
+            const auto nx = MathExpressionInput::normalize(xRaw.toStdString());
+            const auto ny = MathExpressionInput::normalize(yRaw.toStdString());
+            if (!row->parsedExpression || !row->parsedYExpression ||
+                row->parsedSource != QString::fromStdString(nx) ||
+                row->parsedYSource != QString::fromStdString(ny) ||
+                row->compiledMinimum != min || row->compiledMaximum != max) {
+                row->parsedExpression = std::make_shared<Expression>(nx, scope, functionDefinitions_.scope());
+                row->parsedYExpression = std::make_shared<Expression>(ny, scope, functionDefinitions_.scope());
+                row->parsedSource = QString::fromStdString(nx);
+                row->parsedYSource = QString::fromStdString(ny);
+                row->compiledMinimum = min;
+                row->compiledMaximum = max;
+            }
+            if (!row->parsedExpression->valid())
+                error = "X(t): " + inlineErrorMessage(*row->parsedExpression, xRaw);
+            else if (!row->parsedYExpression->valid())
+                error = "Y(t): " + inlineErrorMessage(*row->parsedYExpression, yRaw);
+            else if (row->parsedExpression->dependsOnX() || row->parsedYExpression->dependsOnX())
+                error = "Use t as the parameter; x is reserved for Cartesian graphing.";
+        }
+        const bool valid = error.isEmpty();
+        for (auto* input : {row->input, row->yInput}) {
+            input->setSyntaxState(valid ? "valid" : "invalid");
+            input->setToolTip(error);
+        }
+        row->info->setText(valid ? "Parametric curve · drag to pan · scroll to zoom" : error);
+        row->info->setStyleSheet(valid ? "color:#91baa4; font-size:11px;" :
+                                       "color:#ff9299; font-size:11px;");
+        return;
+    }
     const QString normalized = normalizedGraphInput(row->input->text());
     const QString source = QString::fromStdString(
         MathExpressionInput::normalize(normalized.toStdString()));
@@ -596,11 +768,18 @@ void MainWindow::onVariableDefinitionsChanged(
             // referencing a recompiled function need a fresh function scope.
             for (auto* row : graphRows_) {
                 if (!row->parsedExpression) continue;
-                const auto& referenced = row->parsedExpression->referencedFunctions();
-                if (std::any_of(referenced.begin(), referenced.end(), [&](const std::string& name) {
+                const auto affects = [&](const std::shared_ptr<const Expression>& expression) {
+                    if (!expression) return false;
+                    const auto& referenced = expression->referencedFunctions();
+                    return std::any_of(referenced.begin(), referenced.end(), [&](const std::string& name) {
                         return std::find(update.recompiled.begin(), update.recompiled.end(), name) !=
                                update.recompiled.end();
-                    })) row->parsedExpression.reset();
+                    });
+                };
+                if (affects(row->parsedExpression) || affects(row->parsedYExpression)) {
+                    row->parsedExpression.reset();
+                    row->parsedYExpression.reset();
+                }
             }
         }
         rebuildGraph(changed);
@@ -614,6 +793,49 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
     std::vector<GraphCurve> curves;
     curves.reserve(graphRows_.size());
     for (auto* row : graphRows_) {
+        if (row->parametric) {
+            const auto xRaw = parametricBody(row->input->text(), 'x');
+            const auto yRaw = parametricBody(row->yInput->text(), 'y');
+            if (!xRaw.isEmpty() && !yRaw.isEmpty() &&
+                validParameterInterval(row->tMinimum->value(), row->tMaximum->value())) {
+                VariableScope pScope = scope;
+                if (!pScope.contains("t")) (void)pScope.declare("t");
+                const QString nx = QString::fromStdString(MathExpressionInput::normalize(xRaw.toStdString()));
+                const QString ny = QString::fromStdString(MathExpressionInput::normalize(yRaw.toStdString()));
+                bool refresh = !row->parsedExpression || !row->parsedYExpression ||
+                    row->parsedSource != nx || row->parsedYSource != ny ||
+                    row->compiledMinimum != row->tMinimum->value() ||
+                    row->compiledMaximum != row->tMaximum->value();
+                if (!changedScope.empty()) {
+                    for (const auto& name : changedScope) {
+                        for (const auto& expression : {row->parsedExpression, row->parsedYExpression}) {
+                            if (!expression || !expression->valid() ||
+                                std::find(expression->referencedVariables().begin(),
+                                          expression->referencedVariables().end(), name) !=
+                                    expression->referencedVariables().end()) refresh = true;
+                        }
+                    }
+                }
+                if (refresh) {
+                    row->parsedExpression = std::make_shared<Expression>(nx.toStdString(), pScope, functionDefinitions_.scope());
+                    row->parsedYExpression = std::make_shared<Expression>(ny.toStdString(), pScope, functionDefinitions_.scope());
+                    row->parsedSource = nx;
+                    row->parsedYSource = ny;
+                    row->compiledMinimum = row->tMinimum->value();
+                    row->compiledMaximum = row->tMaximum->value();
+                }
+                if (row->parsedExpression->valid() && row->parsedYExpression->valid() &&
+                    !row->parsedExpression->dependsOnX() && !row->parsedYExpression->dependsOnX()) {
+                    curves.push_back({row->color, row->parsedExpression, row->visible->isChecked(),
+                        row->input->text() + "; " + row->yInput->text(),
+                        row->parsedYExpression, row->tMinimum->value(), row->tMaximum->value()});
+                    updateGraphEditorFeedback(row);
+                    continue;
+                }
+            }
+            updateGraphEditorFeedback(row);
+            continue;
+        }
         const QString raw = row->input->text().trimmed();
         const QString source = QString::fromStdString(
             MathExpressionInput::normalize(normalizedGraphInput(raw).toStdString()));
@@ -706,7 +928,10 @@ bool MainWindow::defineWorkspaceFunction(const QString& statement, QString* erro
         return false;
     }
     functionDefinitions_ = std::move(staged);
-    for (auto* row : graphRows_) row->parsedExpression.reset();
+    for (auto* row : graphRows_) {
+        row->parsedExpression.reset();
+        row->parsedYExpression.reset();
+    }
     rebuildGraph();
     if (error) error->clear();
     return true;
@@ -722,8 +947,16 @@ bool MainWindow::saveWorkspace(const QString& path, QString* error) const {
     state.centerY = graph_->centerY();
     state.pixelsPerUnit = graph_->pixelsPerUnit();
     state.angle = angleMode_;
-    for (const auto* row : graphRows_)
-        state.curves.push_back({row->input->text(), row->visible->isChecked(), row->color});
+    for (const auto* row : graphRows_) {
+        WorkspaceCurve saved{row->input->text(), row->visible->isChecked(), row->color};
+        if (row->parametric) {
+            saved.parametric = true;
+            saved.yExpression = row->yInput->text();
+            saved.tMinimum = row->tMinimum->value();
+            saved.tMaximum = row->tMaximum->value();
+        }
+        state.curves.push_back(std::move(saved));
+    }
     state.sliders = variableSliders_->snapshotSliders();
     state.assignments = GraphWorkspacePersistence::orderedAssignments(
         variableSliders_->definitions(), state.sliders);
@@ -771,8 +1004,11 @@ bool MainWindow::loadWorkspace(const QString& path, QString* error) {
     for (auto* row : graphRows_) { delete row->widget; delete row; }
     graphRows_.clear();
     activeGraphInput_ = nullptr;
-    for (const auto& row : staged.curves)
-        addGraphRow(row.expression, row.visible, row.color);
+    for (const auto& row : staged.curves) {
+        if (row.parametric) addParametricRow(row.expression, row.yExpression,
+            row.tMinimum, row.tMaximum, row.visible, row.color);
+        else addGraphRow(row.expression, row.visible, row.color);
+    }
     graph_->setView(staged.centerX, staged.centerY, staged.pixelsPerUnit);
     setAngleMode(staged.angle);
     rebuildGraph();

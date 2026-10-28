@@ -17,6 +17,7 @@ add_library(RationalCore STATIC
     src/core/FunctionDefinitions.cpp
     src/core/GraphViewport.cpp
     src/core/CurveSampler.cpp
+    src/core/ParametricSampler.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -461,6 +462,17 @@ if(BUILD_TESTING)
         LABELS "core;regression;variables;functions;dynamic")
 
     # -----------------------------------------------------
+    # M3 / Issue #37 — Qt-free adaptive parametric sampling
+    # -----------------------------------------------------
+    add_executable(RationalParametricSamplerTests
+        tests/ParametricSamplerTests.cpp
+    )
+    target_link_libraries(RationalParametricSamplerTests PRIVATE RationalCore)
+    add_test(NAME RationalParametricSamplerTests COMMAND RationalParametricSamplerTests)
+    set_tests_properties(RationalParametricSamplerTests PROPERTIES
+        LABELS "core;regression;graphing;parametric")
+
+    # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
@@ -491,6 +503,7 @@ if(BUILD_TESTING)
         RationalExpressionDiagnosticTests
         RationalVariableFunctionInteractionTests
         RationalDynamicEvaluationMatrixTests
+        RationalParametricSamplerTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -967,6 +980,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
             LABELS "gui;regression;persistence;variables;functions;qt;offscreen"
             TIMEOUT 60
         )
+        # ---------------------------------------------------------
+        # M3 / Issue #37 — Parametric graph and v3 workspace integration
+        # ---------------------------------------------------------
+        add_executable(RationalParametricGraphTests
+            tests/ParametricGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalParametricGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalParametricGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalParametricGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalParametricGraphTests COMMAND RationalParametricGraphTests)
+        set_tests_properties(RationalParametricGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;parametric;graphing;qt;offscreen"
+            TIMEOUT 90)
     endif()
 
 endif()

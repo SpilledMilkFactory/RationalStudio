@@ -101,6 +101,7 @@ void GraphCanvas::invalidateGeometry(bool retainPreview) {
     for (std::size_t i = 0; i < curves_.size(); ++i) {
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
+        pending.parametricJob.reset();
         pending.raster = {};
         if (retainPreview && geometryCache_.isReady(i)) {
             pending.preview = geometryCache_.readyGeometry(i);
@@ -138,8 +139,26 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     // determines whether the existing geometry remains valid.
     std::vector<CurveGeometryCache<QPainterPath>::Key> keys;
     keys.reserve(curves.size());
-    for (const auto& curve : curves) {
-        keys.push_back(curve.function);
+    for (auto& curve : curves) {
+        if (curve.parametric()) {
+            // An XY curve is identified by BOTH compiled coordinates and
+            // its parameter interval. A new Y expression or interval must
+            // invalidate its path even when X's AST pointer is unchanged.
+            for (const auto& previous : curves_) {
+                if (!previous.parametric()) continue;
+                if (curve.function == previous.function &&
+                    curve.yCoordinate == previous.yCoordinate &&
+                    curve.tMin == previous.tMin && curve.tMax == previous.tMax) {
+                    curve.cacheToken = previous.cacheToken;
+                    break;
+                }
+            }
+            if (!curve.cacheToken)
+                curve.cacheToken = std::make_shared<Expression>("0");
+            keys.push_back(curve.cacheToken);
+        } else {
+            keys.push_back(curve.function);
+        }
     }
     deferredTimer_.stop();
     repaintScheduler_.cancelDeferred();
@@ -158,10 +177,14 @@ void GraphCanvas::setVariableBindings(VariableBindings bindings,
     bool any = false;
     for (std::size_t i = 0; i < curves_.size(); ++i) {
         const auto& expression = curves_[i].function;
-        if (!expression || !graphCurveDependsOnAny(*expression, changed)) continue;
+        if (!expression ||
+            (!graphCurveDependsOnAny(*expression, changed) &&
+             (!curves_[i].yCoordinate ||
+              !graphCurveDependsOnAny(*curves_[i].yCoordinate, changed)))) continue;
         geometryCache_.invalidate(i);
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
+        pending.parametricJob.reset();
         pending.preview = {}; // old mathematical values must never be previewed
         pending.raster = {};
         pending.hasPreview = false;
@@ -349,7 +372,8 @@ void GraphCanvas::drawCurves(QPainter& p) {
                                          temporary->ty);
                 for (std::size_t i = 0; i < curves_.size(); ++i) {
                     const auto& curve = curves_[i];
-                    if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
+                    if (!curve.enabled || !curve.function || !curve.function->valid() ||
+                        (curve.parametric() && !curve.yCoordinate->valid())) continue;
                     const QPainterPath* path = nullptr;
                     auto transform = preview;
                     if (geometryCache_.isReady(i)) {
@@ -393,6 +417,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
     for (std::size_t i = 0; i < curves_.size(); ++i) {
         const auto& curve = curves_[i];
         if (curve.enabled && curve.function && curve.function->valid() &&
+            (!curve.parametric() || curve.yCoordinate->valid()) &&
             !geometryCache_.isReady(i)) ++dirty;
     }
 
@@ -418,7 +443,8 @@ void GraphCanvas::drawCurves(QPainter& p) {
 
     for (std::size_t index = 0; index < curves_.size(); ++index) {
         const auto& curve = curves_[index];
-        if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
+        if (!curve.enabled || !curve.function || !curve.function->valid() ||
+                        (curve.parametric() && !curve.yCoordinate->valid())) continue;
 
         if (!geometryCache_.isReady(index)) {
             // When there is insufficient budget for even four callback
@@ -445,7 +471,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
             });
 
             auto& pending = pendingGeometry_[index];
-            if (!pending.job) {
+            if (!pending.job && !pending.parametricJob) {
                 const auto function = curve.function;
                 const auto answer = lastAnswer_;
                 const auto mode = angleMode_;
@@ -457,12 +483,30 @@ void GraphCanvas::drawCurves(QPainter& p) {
                 pending.samplingOffset = QPointF(
                     (samplingView.width() - width()) * 0.5,
                     (samplingView.height() - height()) * 0.5);
-                pending.job = std::make_unique<CurveSamplingJob>(samplingView,
-                    [function, answer, mode, bindings](double x) {
-                        return function->evaluate(x, answer, mode, bindings);
-                    });
+                if (curve.parametric()) {
+                    const auto yCoordinate = curve.yCoordinate;
+                    pending.parametricJob = std::make_unique<ParametricSamplingJob>(
+                        samplingView,
+                        [function, yCoordinate, answer, mode, bindings](double t) mutable {
+                            auto values = bindings;
+                            // The parameter is lexically local to this curve, not
+                            // a mutation of the session's scalar definition owner.
+                            (void)values.set("t", t);
+                            return ParametricPoint{
+                                function->evaluate(0, answer, mode, values),
+                                yCoordinate->evaluate(0, answer, mode, values)};
+                        }, curve.tMin, curve.tMax);
+                } else {
+                    pending.job = std::make_unique<CurveSamplingJob>(samplingView,
+                        [function, answer, mode, bindings](double x) {
+                            return function->evaluate(x, answer, mode, bindings);
+                        });
+                }
             }
-            if (!pending.job->advance(quota, paintBudget)) {
+            const bool complete = pending.parametricJob
+                ? pending.parametricJob->advance(quota, paintBudget)
+                : pending.job->advance(quota, paintBudget);
+            if (!complete) {
                 ++samplingDiagnostics_.truncatedCurveBuilds;
                 ++deferred;
                 --dirty;
@@ -471,7 +515,9 @@ void GraphCanvas::drawCurves(QPainter& p) {
             }
             (void)geometryCache_.getOrBuild(index, [&] {
                 QPainterPath result;
-                for (const CurveVertex& point : pending.job->samples().vertices) {
+                const auto& samples = pending.parametricJob
+                    ? pending.parametricJob->samples() : pending.job->samples();
+                for (const CurveVertex& point : samples.vertices) {
                     const QPointF position(point.screenX - pending.samplingOffset.x(),
                                            point.screenY - pending.samplingOffset.y());
                     if (point.moveTo) result.moveTo(position);
@@ -481,6 +527,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
                 return result;
             });
             pending.job.reset();
+            pending.parametricJob.reset();
             pending.preview = {};
             pending.raster = {};
             pending.hasPreview = false;
@@ -516,7 +563,7 @@ void GraphCanvas::drawTrace(QPainter& p) const {
     double nearestY = 0;
     double distance = 24;
     for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
+        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric()) continue;
         const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
         if (!std::isfinite(y)) continue;
         const double screenY = worldToScreen({world.x(), y}).y();
@@ -551,8 +598,8 @@ void GraphCanvas::updatePointerStatus() const {
     double nearestY = 0;
     double bestDistance = 24;
     for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid()) continue;
-        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_);
+        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric()) continue;
+        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
         if (!std::isfinite(y)) continue;
         const double dy = std::abs(worldToScreen({world.x(), y}).y() - pointer_.y());
         if (dy < bestDistance) { bestDistance = dy; nearest = &curve; nearestY = y; }

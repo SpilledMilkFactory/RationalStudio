@@ -7,6 +7,7 @@
 #include "VariableSliderScale.hpp"
 #include "MathExpressionInput.hpp"
 #include "GraphViewport.hpp"
+#include "ParametricSampler.hpp"
 
 #include <QByteArray>
 #include <QColor>
@@ -33,7 +34,15 @@ struct WorkspaceSlider {
 };
 struct WorkspaceAssignment { std::string name, expression; };
 struct WorkspaceFunction { std::string name, body; std::vector<std::string> parameters; };
-struct WorkspaceCurve { QString expression; bool visible = true; QColor color; };
+struct WorkspaceCurve {
+    QString expression;
+    bool visible = true;
+    QColor color;
+    bool parametric = false;
+    QString yExpression{};
+    double tMinimum = 0;
+    double tMaximum = 0;
+};
 
 struct GraphWorkspaceState {
     double centerX = 0, centerY = 0, pixelsPerUnit = 58;
@@ -84,16 +93,25 @@ public:
     static QByteArray encode(const GraphWorkspaceState& state) {
         QJsonObject root;
         root["format"] = "RationalStudioGraph";
-        root["version"] = 2;
+        const bool hasParametric = std::any_of(state.curves.begin(), state.curves.end(),
+            [](const WorkspaceCurve& row) { return row.parametric; });
+        root["version"] = hasParametric ? 3 : 2;
         root["centerX"] = state.centerX;
         root["centerY"] = state.centerY;
         root["pixelsPerUnit"] = state.pixelsPerUnit;
         root["angleMode"] = state.angle == AngleMode::Degrees ? "degrees" : "radians";
         QJsonArray expressions;
         for (const auto& row : state.curves) {
-            expressions.append(QJsonObject{{"expression", row.expression},
-                                           {"visible", row.visible},
-                                           {"color", row.color.name()}});
+            QJsonObject item{{"expression", row.expression},
+                             {"visible", row.visible},
+                             {"color", row.color.name()}};
+            if (hasParametric) item["kind"] = row.parametric ? "parametric" : "cartesian";
+            if (row.parametric) {
+                item["yExpression"] = row.yExpression;
+                item["tMin"] = row.tMinimum;
+                item["tMax"] = row.tMaximum;
+            }
+            expressions.append(item);
         }
         root["expressions"] = expressions;
         QJsonArray sliders;
@@ -135,7 +153,7 @@ public:
         if (root.value("format").toString() != "RationalStudioGraph" ||
             !root.value("version").isDouble()) return reject("Unsupported workspace format.");
         const int version = root.value("version").toInt(-1);
-        if ((version != 1 && version != 2) || !root.value("expressions").isArray())
+        if ((version != 1 && version != 2 && version != 3) || !root.value("expressions").isArray())
             return reject("Unsupported graph workspace version or expression list.");
         const auto curves = root.value("expressions").toArray();
         if (curves.size() > 40) return reject("Workspace contains more than 40 curves.");
@@ -167,10 +185,45 @@ public:
             const auto colorString = obj.value("color").toString("#50c4ef");
             const QColor color(colorString);
             if (!color.isValid()) return reject("Invalid curve color.");
-            stage.curves.push_back({obj.value("expression").toString(),
-                                     obj.value("visible").toBool(true), color});
+            WorkspaceCurve row{obj.value("expression").toString(),
+                               obj.value("visible").toBool(true), color};
+            if (version == 3) {
+                if (!obj.value("kind").isString()) return reject("Missing curve representation kind.");
+                const auto kind = obj.value("kind").toString();
+                if (kind == "parametric") {
+                    if (!obj.value("yExpression").isString() ||
+                        obj.value("yExpression").toString().isEmpty() ||
+                        obj.value("yExpression").toString().size() > 2048 ||
+                        !obj.value("tMin").isDouble() || !obj.value("tMax").isDouble())
+                        return reject("Malformed parametric coordinate expression or interval.");
+                    row.parametric = true;
+                    row.yExpression = obj.value("yExpression").toString();
+                    row.tMinimum = obj.value("tMin").toDouble();
+                    row.tMaximum = obj.value("tMax").toDouble();
+                    if (!validParameterInterval(row.tMinimum, row.tMaximum))
+                        return reject("Invalid parametric parameter interval.");
+                    const auto expressionBody = [](QString text, const QString& prefix) -> QString {
+                        text = text.trimmed();
+                        const int eq = text.indexOf('=');
+                        if (eq < 0) return text;
+                        QString label = text.left(eq).trimmed();
+                        label.remove(' ');
+                        return label.compare(prefix, Qt::CaseInsensitive) == 0
+                            ? text.mid(eq + 1).trimmed() : QString();
+                    };
+                    const auto x = expressionBody(row.expression, "x(t)");
+                    const auto y = expressionBody(row.yExpression, "y(t)");
+                    if (x.isEmpty() || y.isEmpty())
+                        return reject("Parametric coordinate labels must be x(t) and y(t).");
+                    // Validate syntax against restored variable/function owners below,
+                    // after the definition arrays are loaded in dependency order.
+                } else if (kind != "cartesian") {
+                    return reject("Unknown curve representation kind.");
+                }
+            }
+            stage.curves.push_back(std::move(row));
         }
-        if (version == 2) {
+        if (version >= 2) {
             for (const auto& key : {"sliders", "variables", "functions"}) {
                 if (!root.value(key).isArray()) return reject(QString("Missing or invalid %1 array.").arg(key));
                 if (root.value(key).toArray().size() > 128)
@@ -255,6 +308,29 @@ public:
                 if (!result.accepted) return reject("Function '" + QString::fromStdString(entry.name) +
                     "': " + QString::fromStdString(result.error));
                 stage.functions.push_back(std::move(entry));
+            }
+        }
+        // Ensure parametric rows have valid coordinate expressions in the
+        // reconstructed variable/function scope. Invalid files must not
+        // mutate the live workspace state.
+        if (version == 3) {
+            VariableScope parameterScope = stage.validatedVariables.scope();
+            if (!parameterScope.contains("t")) (void)parameterScope.declare("t");
+            for (const auto& row : stage.curves) {
+                if (!row.parametric) continue;
+                const auto body = [](QString text) {
+                    const int equal = text.indexOf('=');
+                    return equal < 0 ? text.trimmed() : text.mid(equal + 1).trimmed();
+                };
+                for (const auto& coordinate : {body(row.expression), body(row.yExpression)}) {
+                    Expression compiled(MathExpressionInput::normalize(coordinate.toStdString()),
+                        parameterScope, stage.validatedFunctions.scope());
+                    if (!compiled.valid())
+                        return reject("Invalid parametric expression: " +
+                            QString::fromStdString(compiled.error()));
+                    if (compiled.dependsOnX())
+                        return reject("Parametric coordinates must use t, not Cartesian x.");
+                }
             }
         }
         if (error) error->clear();
