@@ -883,6 +883,36 @@ if(RATIONALSTUDIO_BUILD_GUI)
             LABELS "gui;regression;expression;diagnostics;offscreen;qt"
             TIMEOUT 60
         )
+        # ---------------------------------------------------------
+        # Issue #34 — Mathematical keyboard shortcuts and row navigation
+        # ---------------------------------------------------------
+        add_executable(RationalMathKeyboardShortcutTests
+            tests/MathKeyboardShortcutTests.cpp
+            src/gui/MathExpressionEdit.hpp
+            src/gui/MathExpressionEdit.cpp
+            src/gui/MainWindow.hpp
+            src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp
+            src/gui/GraphCanvas.cpp
+            src/gui/VariableSliderPanel.hpp
+            src/gui/VariableSliderPanel.cpp
+        )
+        target_include_directories(RationalMathKeyboardShortcutTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
+        )
+        target_link_libraries(RationalMathKeyboardShortcutTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets
+        )
+        target_compile_options(RationalMathKeyboardShortcutTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+        )
+        add_test(NAME RationalMathKeyboardShortcutTests
+                 COMMAND RationalMathKeyboardShortcutTests)
+        set_tests_properties(RationalMathKeyboardShortcutTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;keyboard;expression;qt;offscreen"
+            TIMEOUT 60
+        )
     endif()
 
 endif()

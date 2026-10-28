@@ -100,6 +100,10 @@ y = floor(x)
 
 **Inline expression diagnostics (Issue #33).** The Qt-independent `Expression` parser publishes an optional `ExpressionDiagnostic` describing invalid input using a category, readable message, source byte offset, and token extent while preserving the existing `error()` string API. `MathExpressionInput::sourceColumn` maps offsets from normalized parser input back to visible UTF-8 character columns when the editor contains supported symbols such as `π`, `√`, or `²`. Scientific and graph editors display actionable errors in their existing inline hint rows and editor tooltips, clear obsolete messages after recovery, and distinguish incomplete edits from malformed syntax where supported. Invalid graph rows remain outside the render curve set, while unrelated valid rows remain available. This is **not** a grammar expansion, an exhaustive syntax predictor, a full token underlining editor, or a guarantee of every domain error at parse time. The graph repaint debounce and selective geometry caching remain unchanged.
 
+<!-- ISSUE34_README_UPDATED -->
+
+**Keyboard mathematical input (Issue #34).** The shared Qt `MathExpressionEdit` accepts editor-local Alt-key shortcuts: `Alt+P` inserts `π`, `Alt+R` inserts `√(...)`, `Alt+2`/`Alt+3` insert squared/cubed notation, `Alt+M`/`Alt+D` insert multiplication/division glyphs, and `Alt+S`/`Alt+C`/`Alt+T` insert sine/cosine/tangent templates. Selected text is wrapped by roots, function calls, and powers as in Issue #32. Graph editors also support `Alt+↑`/`Alt+↓` to move between expression rows (wrapping at either end) and `Ctrl+Enter` to append and focus a new row, up to the existing 40-row limit. Scientific `Enter` still calculates. Ordinary Qt editing, clipboard and undo shortcuts are retained; unrecognized shortcuts are forwarded to Qt. Shortcuts require focus in a mathematical editor; operating-system/global shortcuts may take precedence on some desktop configurations. No parser, variable dependency, sampling, caching or workspace format changes were made.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -154,7 +158,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `GraphGridLayout` | Qt-independent validation of grid steps and pixel-space grid positions at viewport boundaries and extreme finite centers. |
 | `CurveGeometryCache` | Qt-independent, expression-identity-based cache management, lazy geometry construction, reuse, and invalidation. |
 
-The Qt-specific `MathExpressionEdit` wraps `QLineEdit` with selection-aware math insertion and syntax-state properties; `MainWindow` performs immediate expression feedback without forcing curve redraw on each keystroke. The Qt-specific `VariableSliderPanel` provides interactive session-local scalar controls backed by `VariableDefinitions`; it notifies `MainWindow` of value and scope edits, and `GraphCanvas` selectively invalidates only affected curves. Slider configurations are not yet persisted. The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
+The Qt-specific `MathExpressionEdit` wraps `QLineEdit` with selection-aware math insertion, documented editor-local keyboard shortcuts, graph-row navigation signals, and syntax-state properties; `MainWindow` performs immediate expression feedback without forcing curve redraw on each keystroke. The Qt-specific `VariableSliderPanel` provides interactive session-local scalar controls backed by `VariableDefinitions`; it notifies `MainWindow` of value and scope edits, and `GraphCanvas` selectively invalidates only affected curves. Slider configurations are not yet persisted. The Qt-specific `GraphCanvas` handles mouse and wheel events, grid and axis painting, coordinate tracing, and rendering the sampler's screen-space geometry. It stores generated `QPainterPath` values in `CurveGeometryCache` so ordinary repaints don't reevaluate unchanged curves. Geometry cache rebuilds advance resumable sampling jobs under per-curve-per-paint and shared callback limits. Interactive navigation coalesces refreshes and temporarily transforms completed paths; replacement geometry is published after completion. Per-curve raster caches reuse unchanged rendering, account for device scale, and preserve previews while builds are deferred. Resizes cancel stale refresh work, and bounded pixel-space grid positions prevent overflowed labels at extreme coordinates. `MainWindow` constructs the scientific, graphing, and exact-fraction interfaces programmatically; no Qt Designer `.ui` files are required.
 
 `RationalCLI` links against `RationalCore` without using Qt.
 
@@ -240,6 +244,7 @@ RationalStudio/
     ├── MathExpressionEditorTests.cpp
     ├── ExpressionDiagnosticTests.cpp
     ├── ExpressionInlineFeedbackTests.cpp
+    ├── MathKeyboardShortcutTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -321,7 +326,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **33 tests from 32 executables**: twenty-two Qt-independent tests and eleven offscreen Qt invocations from ten widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-two tests:
+With GUI and testing enabled, CTest registers **34 tests from 33 executables**: twenty-two Qt-independent tests and twelve offscreen Qt invocations from eleven widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-two tests:
 
 | Executable | Focus |
 |---|---|
@@ -356,6 +361,7 @@ With GUI and testing enabled, CTest registers **33 tests from 32 executables**: 
 | `RationalMathExpressionEditorTests` | Offscreen Qt editor selection/caret semantics, bracket insertion, graph symbol toolbar, live syntax feedback, and scientific/graph integration. |
 | `RationalExpressionDiagnosticTests` | Qt-independent parser error kinds, source offsets, unknown names, function failures, Unicode source-column translation, and deterministic invalid-expression sweeps. |
 | `RationalExpressionInlineFeedbackTests` | Offscreen Qt real MainWindow feedback, error tooltips, Unicode positions, invalid-row isolation, and recovery without corrupting other graph rows. |
+| `RationalMathKeyboardShortcutTests` | Offscreen Qt keyboard symbol/function insertion, cursor selection and native edit controls, real MainWindow graph-row navigation, row creation, and immediate parser feedback. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 
