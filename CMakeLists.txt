@@ -23,6 +23,7 @@ add_library(RationalCore STATIC
     src/core/GraphFeatureDetection.cpp
     src/core/NumericalDifferentiation.cpp
     src/core/NumericalIntegration.cpp
+    src/core/NumericalRootFinding.cpp
     src/core/InequalityRegion.hpp
     src/core/InequalityRegion.cpp
     src/core/GraphTrace.cpp
@@ -80,6 +81,17 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-03 / Issue #48 — Qt-independent numerical equation/root solving.
+    add_executable(RationalNumericalRootFindingTests
+        tests/NumericalRootFindingTests.cpp)
+    target_link_libraries(RationalNumericalRootFindingTests PRIVATE RationalCore)
+    target_compile_options(RationalNumericalRootFindingTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalNumericalRootFindingTests
+        COMMAND RationalNumericalRootFindingTests)
+    set_tests_properties(RationalNumericalRootFindingTests PROPERTIES
+        LABELS "core;equations;roots;regression")
+
     # -----------------------------------------------------
     # M4-02 / Issue #47: adaptive numerical integration.
     # -----------------------------------------------------
