@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE47_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE48_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #47 (M4-02), adaptive numerical integration.** Linux GUI Debug **56/56 CTests PASS** (18.06 s), GUI Release **56/56 PASS** (12.08 s), core-only ASan/UBSan **35/35 PASS** (8.57 s); **331 NumericalIntegration assertions PASS** in each configuration. 123 matching provenance paths; zero recorded GUI compiler warnings. Manual GUI: not required for core-only M4-02. Numerical error estimates are heuristic; native Windows, Qt 5, and GUI sanitizer testing remain unverified.
+**Current status:** **PASS — Issue #48 (M4-03), numerical equation/root solving.** GUI Debug **57/57 CTests PASS** (18.83 s), GUI Release **57/57 PASS** (12.33 s), core-only ASan/UBSan **36/36 PASS** (8.69 s); **512 NumericalRootFinding assertions PASS** in each configuration. 129 matching provenance paths; zero recorded GUI compiler warnings. Manual GUI not required (core-only issue). Numerical residuals and finite sampling are not mathematical existence or completeness guarantees; native Windows and full Qt sanitizer validation remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,37 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #47 current numerical integration qualification
+## Issue #48 current numerical equation and root-finding qualification
+
+Issue #48 adds a Qt-independent bracket-preserving secant/bisection root solver,
+a finite-domain sign-change scanner, and overloads for compiled expressions and
+left/right equation solving. Refinement requires an actual residual-qualified
+candidate: bracket width alone never certifies a root. Resource limits bound
+iterations, evaluations and scan results; invalid domains and exhausted search
+budgets are explicit statuses. Tangential roots away from sample points and
+unobserved discontinuities can be missed. No parser/GUI/persistence changes.
+
+- Linux GUI Debug: **57/57 CTests PASS** — 18.83 s.
+- Linux GUI Release: **57/57 CTests PASS** — 12.33 s.
+- Core-only ASan/UBSan: **36/36 CTests PASS** — 8.69 s.
+- Dedicated NumericalRootFinding: **512 assertions PASS** in each configuration.
+- Recorded matching source/documentation paths: **129**;
+  manifest SHA-256 `cfb5850474514928625759f488c2f300102d8bd009fe93c95da28b5103073a4f`.
+- GUI compiler warnings: **zero recorded**.
+- Manual GUI: not required for core-only M4-03.
+- Toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `96c70d757da4d04bf70a11e3a0cb951bae8b6d74`;
+  qualification timestamp `2026-10-30T16:53:29-04:00`.
+
+Coverage includes analytical roots, bracket endpoints, discontinuous poles,
+resource-limit statuses, domain scans, compiled equations, RAD/DEG and `ans`,
+scalar bindings, user-defined functions, and 200 fixed-seed affine targets.
+
+**CTest log SHA-256:** Debug `ea997731719bae1391a05238aa86e1d24e7dc02423e2b731d21fcfedc27f35c3`;
+Release `a73d60d8c042ad87532c0869539fe6b46bb32a6a9e6ce5cad81dde02014e3732`; ASan `c50dcde071b6442c7d90ab8596f305bad9117c7f2d922f8735dd5f6a3ff427da`.
+
+Issue #47 and all earlier results below remain historical.
+
+## Issue #47 historical numerical integration qualification
 
 Issue #47 introduces a Qt-independent adaptive embedded Gauss–Kronrod 7/15
 quadrature service with bounded evaluation and subdivision counts, explicit

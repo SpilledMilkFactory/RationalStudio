@@ -209,6 +209,27 @@ convergence. This core-only issue introduces no `integral(...)` parser syntax,
 scientific-calculator controls, graph overlays, or workspace changes;
 user-facing access remains planned for M4-08.
 
+<!-- ISSUE48_README_UPDATED -->
+
+**Numerical equation solving and root finding (Issue #48; Milestone 4).**
+The Qt-independent `NumericalRootFinding` service provides a finite bracketed
+solver using guarded secant interpolation with a bisection fallback, plus a
+bounded uniform-domain root search that refines sampled sign changes. The
+service can solve `f(x)=0` for callbacks or compiled expressions, and
+`left(x)=right(x)` for two compiled expressions, with named-variable bindings,
+captured user functions, `ans`, and RAD/DEG modes preserved. `RootResult`
+reports the candidate coordinate only on residual-qualified convergence,
+residual, bracket endpoints, iteration and callback counts, and explicit
+invalid-input/domain/budget/unresolved statuses. `RootSearchResult` reports
+scanned roots and incomplete-domain, result-limit or evaluation-limit states;
+all refinement work shares its global evaluation budget. A narrow sign-change
+bracket is **not** treated as proof of a root: a pole or jump may trigger a
+failure instead. Finite sampling can miss off-grid repeated/even-multiplicity
+roots, rapid oscillations and undefined regions; a small residual is a
+numerical acceptance criterion, not a continuity or existence certificate.
+This core-only feature does not add `solve(...)` syntax, GUI controls, or
+persistence fields; user-facing access remains planned for M4-08.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
