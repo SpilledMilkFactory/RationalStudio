@@ -1141,6 +1141,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;inequality;graphing;qt;offscreen"
             TIMEOUT 120)
+        # M3 / Issue #43 — representation chooser, contextual labels, and
+        # mixed graph type controls (Qt-only UI, no mathematical core changes).
+        add_executable(RationalGraphRepresentationControlsTests
+            tests/GraphRepresentationControlsTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalGraphRepresentationControlsTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalGraphRepresentationControlsTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalGraphRepresentationControlsTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalGraphRepresentationControlsTests
+            COMMAND RationalGraphRepresentationControlsTests)
+        set_tests_properties(RationalGraphRepresentationControlsTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;representation;graphing;qt;offscreen"
+            TIMEOUT 120)
         # M3 / Issue #41 — feature inspection Qt integration
         add_executable(RationalGraphFeatureGraphTests
             tests/GraphFeatureGraphTests.cpp
