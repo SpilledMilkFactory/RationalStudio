@@ -3,6 +3,7 @@
 #include "Expression.hpp"
 #include "CurveSampler.hpp"
 #include "ParametricSampler.hpp"
+#include "ImplicitContour.hpp"
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
 #include "GraphRepaintScheduler.hpp"
@@ -67,6 +68,8 @@ struct GraphCurve {
     // Polar curves use two compiled Cartesian coordinates but preserve their
     // own representation identity for caching and workspace semantics.
     bool polarCurve = false;
+    bool implicitCurve = false;
+    [[nodiscard]] bool implicit() const noexcept { return implicitCurve; }
     [[nodiscard]] bool parametric() const noexcept { return bool(yCoordinate); }
     [[nodiscard]] bool polar() const noexcept { return polarCurve; }
 };
@@ -139,6 +142,7 @@ private:
     struct PendingGeometry {
         std::unique_ptr<CurveSamplingJob> job;
         std::unique_ptr<ParametricSamplingJob> parametricJob;
+        std::unique_ptr<ImplicitContourJob> implicitJob;
         QPointF samplingOffset;
         QPainterPath preview;
         QImage raster;

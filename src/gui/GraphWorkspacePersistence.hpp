@@ -9,6 +9,7 @@
 #include "GraphViewport.hpp"
 #include "ParametricSampler.hpp"
 #include "PolarExpression.hpp"
+#include "ImplicitContour.hpp"
 
 #include <QByteArray>
 #include <QColor>
@@ -44,6 +45,7 @@ struct WorkspaceCurve {
     double tMinimum = 0;
     double tMaximum = 0;
     bool polar = false;
+    bool implicit = false;
 };
 
 struct GraphWorkspaceState {
@@ -96,7 +98,7 @@ public:
         QJsonObject root;
         root["format"] = "RationalStudioGraph";
         const bool hasParametric = std::any_of(state.curves.begin(), state.curves.end(),
-            [](const WorkspaceCurve& row) { return row.parametric || row.polar; });
+            [](const WorkspaceCurve& row) { return row.parametric || row.polar || row.implicit; });
         root["version"] = hasParametric ? 3 : 2;
         root["centerX"] = state.centerX;
         root["centerY"] = state.centerY;
@@ -107,8 +109,8 @@ public:
             QJsonObject item{{"expression", row.expression},
                              {"visible", row.visible},
                              {"color", row.color.name()}};
-            if (hasParametric) item["kind"] = row.polar ? "polar" :
-                (row.parametric ? "parametric" : "cartesian");
+            if (hasParametric) item["kind"] = row.implicit ? "implicit" : (row.polar ? "polar" :
+                (row.parametric ? "parametric" : "cartesian"));
             if (row.polar) {
                 item["tMin"] = row.tMinimum;
                 item["tMax"] = row.tMaximum;
@@ -197,7 +199,11 @@ public:
             if (version == 3) {
                 if (!obj.value("kind").isString()) return reject("Missing curve representation kind.");
                 const auto kind = obj.value("kind").toString();
-                if (kind == "parametric") {
+                if (kind == "implicit") {
+                    row.implicit = true;
+                    if (!implicitEquationSource(row.expression.toStdString()).valid())
+                        return reject("Malformed implicit equation.");
+                } else if (kind == "parametric") {
                     if (!obj.value("yExpression").isString() ||
                         obj.value("yExpression").toString().isEmpty() ||
                         obj.value("yExpression").toString().size() > 2048 ||
@@ -333,6 +339,16 @@ public:
             VariableScope parameterScope = stage.validatedVariables.scope();
             if (!parameterScope.contains("t")) (void)parameterScope.declare("t");
             for (const auto& row : stage.curves) {
+                if (row.implicit) {
+                    const auto source = implicitEquationSource(row.expression.toStdString());
+                    VariableScope local = stage.validatedVariables.scope();
+                    if (!local.contains("y")) (void)local.declare("y");
+                    Expression compiled(MathExpressionInput::normalize(source.expression), local,
+                                        stage.validatedFunctions.scope());
+                    if (!compiled.valid()) return reject("Invalid implicit equation: " +
+                                        QString::fromStdString(compiled.error()));
+                    continue;
+                }
                 if (row.polar) {
                     const auto sources = polarCoordinateSources(row.expression.toStdString());
                     if (!sources.valid()) return reject("Invalid polar radius label or body.");
