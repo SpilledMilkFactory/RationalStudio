@@ -19,6 +19,7 @@ add_library(RationalCore STATIC
     src/core/CurveSampler.cpp
     src/core/ParametricSampler.cpp
     src/core/ImplicitContour.cpp
+    src/core/IntersectionDetection.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -494,6 +495,15 @@ if(BUILD_TESTING)
         LABELS "core;regression;graphing;implicit")
 
     # -----------------------------------------------------
+    # M3 / Issue #40 — bounded numerical Cartesian intersections
+    # -----------------------------------------------------
+    add_executable(RationalIntersectionDetectionTests tests/IntersectionDetectionTests.cpp)
+    target_link_libraries(RationalIntersectionDetectionTests PRIVATE RationalCore)
+    add_test(NAME RationalIntersectionDetectionTests COMMAND RationalIntersectionDetectionTests)
+    set_tests_properties(RationalIntersectionDetectionTests PROPERTIES
+        LABELS "core;regression;graphing;intersections")
+
+    # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
@@ -527,6 +537,7 @@ if(BUILD_TESTING)
         RationalParametricSamplerTests
         RationalPolarExpressionTests
         RationalImplicitContourTests
+        RationalIntersectionDetectionTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -1069,6 +1080,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;implicit;graphing;qt;offscreen"
             TIMEOUT 120)
+        # ---------------------------------------------------------
+        # M3 / Issue #40 — numerical intersections GUI integration
+        # ---------------------------------------------------------
+        add_executable(RationalIntersectionGraphTests
+            tests/IntersectionGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalIntersectionGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalIntersectionGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalIntersectionGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalIntersectionGraphTests COMMAND RationalIntersectionGraphTests)
+        set_tests_properties(RationalIntersectionGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;intersections;graphing;qt;offscreen"
+            TIMEOUT 90)
     endif()
 
 endif()
