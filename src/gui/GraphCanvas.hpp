@@ -4,6 +4,7 @@
 #include "CurveSampler.hpp"
 #include "ParametricSampler.hpp"
 #include "ImplicitContour.hpp"
+#include "InequalityRegion.hpp"
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
 #include "GraphRepaintScheduler.hpp"
@@ -69,6 +70,9 @@ struct GraphCurve {
     // own representation identity for caching and workspace semantics.
     bool polarCurve = false;
     bool implicitCurve = false;
+    bool inequalityCurve = false;
+    bool inequalityAbove = false;
+    bool inequalityInclusive = false;
     [[nodiscard]] bool implicit() const noexcept { return implicitCurve; }
     [[nodiscard]] bool parametric() const noexcept { return bool(yCoordinate); }
     [[nodiscard]] bool polar() const noexcept { return polarCurve; }
@@ -121,6 +125,7 @@ public:
     // navigation, or deferred sampling work is still outstanding. Useful for
     // reliable UI tests and future renderer diagnostics; does not paint.
     [[nodiscard]] bool visibleGeometryReady() const noexcept;
+    [[nodiscard]] bool visibleInequalityReady() const noexcept;
     void setGridVisible(bool on) { showGrid_ = on; update(); }
     void setAxesVisible(bool on) { showAxes_ = on; update(); }
     std::function<void(const QString&)> onPointerInfo;
@@ -140,6 +145,7 @@ private:
     QPointF worldToScreen(const QPointF& p) const;
     QPointF screenToWorld(const QPointF& p) const;
     void drawGrid(QPainter& painter) const;
+    void drawInequalityRegions(QPainter& painter);
     void drawCurves(QPainter& painter);
     void drawTrace(QPainter& painter) const;
     void updatePointerStatus() const;
@@ -158,6 +164,22 @@ private:
     };
     std::vector<PendingGeometry> pendingGeometry_;
     std::vector<GraphCurve> curves_;
+    struct RegionRaster {
+        QImage finished;
+        QImage building;
+        int nextColumn = 0;
+        bool active = false;
+    };
+    std::vector<RegionRaster> inequalityRasters_;
+    // Count boundary-function evaluations for shading separately from the
+    // curve sampler, so tests can assert bounded cache reuse.
+    std::size_t inequalityEvaluations_ = 0;
+    bool shadeRefreshPending_ = false;
+public:
+    [[nodiscard]] std::size_t inequalityEvaluationCount() const noexcept {
+        return inequalityEvaluations_;
+    }
+private:
     AngleMode angleMode_ = AngleMode::Radians;
     double lastAnswer_ = 0;
     VariableBindings bindings_;
