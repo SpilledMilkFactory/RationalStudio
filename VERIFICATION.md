@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE46_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE47_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #46 (M4-01), Qt-independent numerical differentiation.** GUI Debug **55/55 CTests PASS** (18.31 s), GUI Release **55/55 CTests PASS** (12.22 s), core-only ASan/UBSan **34/34 CTests PASS** (8.43 s); **338 NumericalDifferentiation assertions PASS** in each configuration. 118 matching source/documentation provenance paths, zero recorded GUI build warnings. **Manual GUI:** not required for core-only M4-01; no new GUI controls. Native Windows, Qt 5 and GUI sanitizer coverage remain unverified. Finite-difference estimates and smoothness checks are heuristic, not certified.
+**Current status:** **PASS — Issue #47 (M4-02), adaptive numerical integration.** Linux GUI Debug **56/56 CTests PASS** (18.06 s), GUI Release **56/56 PASS** (12.08 s), core-only ASan/UBSan **35/35 PASS** (8.57 s); **331 NumericalIntegration assertions PASS** in each configuration. 123 matching provenance paths; zero recorded GUI compiler warnings. Manual GUI: not required for core-only M4-02. Numerical error estimates are heuristic; native Windows, Qt 5, and GUI sanitizer testing remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,37 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #46 current numerical differentiation qualification
+## Issue #47 current numerical integration qualification
+
+Issue #47 introduces a Qt-independent adaptive embedded Gauss–Kronrod 7/15
+quadrature service with bounded evaluation and subdivision counts, explicit
+convergence/invalid-domain statuses, and no modification of GUI, graph renderer,
+expression grammar, or workspace persistence. The embedded error estimate is an
+uncertified convergence heuristic; difficult singular or oscillatory functions
+may fail or produce misleading estimates despite finite sampling.
+
+- Linux GUI Debug: **56/56 CTests PASS** — 18.06 s.
+- Linux GUI Release: **56/56 CTests PASS** — 12.08 s.
+- Core-only ASan/UBSan: **35/35 CTests PASS** — 8.57 s.
+- Dedicated NumericalIntegration: **331 assertions PASS** in each configuration.
+- Provenance: **123 matching source/documentation paths**; manifest SHA-256 `4e3697d304c068bd01461dce99c160d880c0b3231deaa18a1004ad3f76e34b91`.
+- Compiler warnings: **zero recorded in GUI Debug/Release builds**.
+- Manual GUI: not required for the core-only M4-02 implementation.
+
+Coverage includes analytical smooth integrals, reversed and zero-width limits,
+integrable endpoint singularities, bounded oscillation and discontinuity cases,
+invalid domains, callback exceptions, evaluation/subdivision/depth limits,
+RAD/DEG evaluation, scalar bindings, reusable user functions, `ans`, and a
+fixed-seed 240-case polynomial reference matrix.
+
+**CTest log SHA-256:** Debug `d61f8c815693ac2bb381c3ed9c7ec0336a2d2a33f4d23f08886f925bd7cce49a`; Release
+`3be0558e2b0bec4c6b6d6805c4914cd62ebf97c2d6f05bd420b3a5b9c4195155`; ASan `837731f5385b5442f7de2a7126b5244adb8dd081f199eb44c7ea0dcd82922a0e`.
+
+**Recorded toolchain:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; pre-qualification base HEAD `009d74e8484e98640eda4e838aace58920271436`.
+
+Issue #46 and earlier qualifications below remain historical.
+
+## Issue #46 historical numerical differentiation qualification
 
 Issue #46 adds a Qt-independent adaptive finite-difference service with central Richardson extrapolation,
 optional one-sided three-point derivatives, explicit convergence/error/evaluation diagnostics, and bounded

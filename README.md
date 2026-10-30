@@ -189,6 +189,26 @@ issue adds a reusable **core API only**, not `derivative(...)` expression gramma
 scientific-calculator buttons, graph overlays, new persistence fields, or
 symbolic/automatic differentiation. Those UI decisions are deferred to M4-08.
 
+<!-- ISSUE47_README_UPDATED -->
+
+**Numerical integration (Issue #47; Milestone 4).** The Qt-independent
+`NumericalIntegration` service approximates definite integrals of finite-valued
+callbacks or compiled explicit `f(x)` expressions over finite intervals using
+adaptive embedded Gauss–Kronrod 7/15 quadrature. Largest-estimated-error
+intervals are subdivided subject to configurable evaluation, subdivision,
+and depth limits. `IntegrationResult` reports a converged/failed status,
+result, estimated absolute error, evaluation count, and subdivision count.
+Reversed limits negate the integral; equal finite bounds return zero without
+calling the integrand. Non-finite samples or throwing callbacks fail explicitly;
+partial/unconverged results are not published as valid integrals. Compiled
+expressions honor current variable binding snapshots, reusable function
+snapshots, `ans`, and RAD/DEG semantics. Embedded-error estimates are **not
+certified error bounds**; narrow singularities, discontinuities, highly
+oscillatory functions, and difficult cancellation can evade detection or
+convergence. This core-only issue introduces no `integral(...)` parser syntax,
+scientific-calculator controls, graph overlays, or workspace changes;
+user-facing access remains planned for M4-08.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator

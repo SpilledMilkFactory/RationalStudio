@@ -22,6 +22,7 @@ add_library(RationalCore STATIC
     src/core/IntersectionDetection.cpp
     src/core/GraphFeatureDetection.cpp
     src/core/NumericalDifferentiation.cpp
+    src/core/NumericalIntegration.cpp
     src/core/InequalityRegion.hpp
     src/core/InequalityRegion.cpp
     src/core/GraphTrace.cpp
@@ -79,6 +80,19 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # -----------------------------------------------------
+    # M4-02 / Issue #47: adaptive numerical integration.
+    # -----------------------------------------------------
+
+    add_executable(RationalNumericalIntegrationTests
+        tests/NumericalIntegrationTests.cpp)
+    target_link_libraries(RationalNumericalIntegrationTests PRIVATE RationalCore)
+    target_compile_options(RationalNumericalIntegrationTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalNumericalIntegrationTests COMMAND RationalNumericalIntegrationTests)
+    set_tests_properties(RationalNumericalIntegrationTests PROPERTIES
+        LABELS "core;calculus;integration;regression")
+
     # -----------------------------------------------------
     # M4-01 / Issue #46 — Numerical Differentiation
     # -----------------------------------------------------
