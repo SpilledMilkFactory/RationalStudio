@@ -60,6 +60,17 @@ if(RATIONALSTUDIO_BUILD_CLI)
 
 endif()
 
+# M3 / Issue #45: independent optional Release numerical benchmarks.
+# Timing data is NOT a CTest pass/fail assertion.
+option(RATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS
+    "Build optional M3 advanced graph sampling/trace benchmark" OFF)
+if(RATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS)
+    add_executable(RationalAdvancedGraphBench benchmarks/AdvancedGraphBench.cpp)
+    target_link_libraries(RationalAdvancedGraphBench PRIVATE RationalCore)
+    target_compile_options(RationalAdvancedGraphBench PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+endif()
+
 # ---------------------------------------------------------
 # Automated Testing — Qt-independent tests
 # ---------------------------------------------------------
@@ -67,6 +78,17 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M3 / Issue #45 — cross-representation analytical and resource matrices.
+    foreach(suite IN ITEMS AdvancedGraphAccuracyMatrix AdvancedGraphResourceMatrix)
+        add_executable(Rational${suite}Tests tests/${suite}Tests.cpp)
+        target_link_libraries(Rational${suite}Tests PRIVATE RationalCore)
+        target_compile_options(Rational${suite}Tests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME Rational${suite}Tests COMMAND Rational${suite}Tests)
+        set_tests_properties(Rational${suite}Tests PROPERTIES
+            LABELS "core;graphing;advanced;accuracy;regression")
+    endforeach()
+
 
     # M3 / Issue #44 — Qt-free nearest-segment tracing and parameter metadata.
     add_executable(RationalGraphTraceTests tests/GraphTraceTests.cpp)
@@ -629,6 +651,20 @@ if(RATIONALSTUDIO_BUILD_GUI)
     )
 
     set(CMAKE_AUTOMOC ON)
+
+    # Optional Issue #45 offscreen Qt cold-to-ready/warm-render timing.
+    # Not registered as CTest: wall-clock observations are advisory only.
+    if(RATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS)
+        add_executable(RationalAdvancedGraphCanvasBench
+            benchmarks/AdvancedGraphCanvasBench.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp)
+        target_include_directories(RationalAdvancedGraphCanvasBench PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalAdvancedGraphCanvasBench PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalAdvancedGraphCanvasBench PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    endif()
 
     # -----------------------------------------------------
     # Rational Studio Desktop Executable
