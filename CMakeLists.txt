@@ -18,6 +18,7 @@ add_library(RationalCore STATIC
     src/core/GraphViewport.cpp
     src/core/CurveSampler.cpp
     src/core/ParametricSampler.cpp
+    src/core/ImplicitContour.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -484,6 +485,15 @@ if(BUILD_TESTING)
         LABELS "core;regression;graphing;polar")
 
     # -----------------------------------------------------
+    # M3 / Issue #39 — Qt-free bounded implicit contour extraction
+    # -----------------------------------------------------
+    add_executable(RationalImplicitContourTests tests/ImplicitContourTests.cpp)
+    target_link_libraries(RationalImplicitContourTests PRIVATE RationalCore)
+    add_test(NAME RationalImplicitContourTests COMMAND RationalImplicitContourTests)
+    set_tests_properties(RationalImplicitContourTests PROPERTIES
+        LABELS "core;regression;graphing;implicit")
+
+    # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
 
@@ -516,6 +526,7 @@ if(BUILD_TESTING)
         RationalDynamicEvaluationMatrixTests
         RationalParametricSamplerTests
         RationalPolarExpressionTests
+        RationalImplicitContourTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -1036,6 +1047,28 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;polar;graphing;qt;offscreen"
             TIMEOUT 90)
+        # ---------------------------------------------------------
+        # M3 / Issue #39 — Implicit contour integration and persistence
+        # ---------------------------------------------------------
+        add_executable(RationalImplicitGraphTests
+            tests/ImplicitGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalImplicitGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalImplicitGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalImplicitGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalImplicitGraphTests COMMAND RationalImplicitGraphTests)
+        set_tests_properties(RationalImplicitGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;implicit;graphing;qt;offscreen"
+            TIMEOUT 120)
     endif()
 
 endif()

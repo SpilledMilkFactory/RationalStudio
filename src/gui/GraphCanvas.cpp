@@ -102,6 +102,7 @@ void GraphCanvas::invalidateGeometry(bool retainPreview) {
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
         pending.parametricJob.reset();
+        pending.implicitJob.reset();
         pending.raster = {};
         if (retainPreview && geometryCache_.isReady(i)) {
             pending.preview = geometryCache_.readyGeometry(i);
@@ -156,6 +157,18 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
             if (!curve.cacheToken)
                 curve.cacheToken = std::make_shared<Expression>("0");
             keys.push_back(curve.cacheToken);
+        } else if (curve.implicit()) {
+            // Even if the compiled Expression pointer is shared, an implicit
+            // zero contour must not reuse Cartesian y=f(x) path geometry.
+            for (const auto& previous : curves_) {
+                if (previous.implicit() && previous.function == curve.function) {
+                    curve.cacheToken = previous.cacheToken;
+                    break;
+                }
+            }
+            if (!curve.cacheToken)
+                curve.cacheToken = std::make_shared<Expression>("0");
+            keys.push_back(curve.cacheToken);
         } else {
             keys.push_back(curve.function);
         }
@@ -185,6 +198,7 @@ void GraphCanvas::setVariableBindings(VariableBindings bindings,
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
         pending.parametricJob.reset();
+        pending.implicitJob.reset();
         pending.preview = {}; // old mathematical values must never be previewed
         pending.raster = {};
         pending.hasPreview = false;
@@ -471,7 +485,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
             });
 
             auto& pending = pendingGeometry_[index];
-            if (!pending.job && !pending.parametricJob) {
+            if (!pending.job && !pending.parametricJob && !pending.implicitJob) {
                 const auto function = curve.function;
                 const auto answer = lastAnswer_;
                 const auto mode = angleMode_;
@@ -483,7 +497,14 @@ void GraphCanvas::drawCurves(QPainter& p) {
                 pending.samplingOffset = QPointF(
                     (samplingView.width() - width()) * 0.5,
                     (samplingView.height() - height()) * 0.5);
-                if (curve.parametric()) {
+                if (curve.implicit()) {
+                    pending.implicitJob = std::make_unique<ImplicitContourJob>(
+                        samplingView, [function, answer, mode, bindings](double x, double y) mutable {
+                            auto values = bindings;
+                            (void)values.set("y", y);
+                            return function->evaluate(x, answer, mode, values);
+                        });
+                } else if (curve.parametric()) {
                     const auto yCoordinate = curve.yCoordinate;
                     pending.parametricJob = std::make_unique<ParametricSamplingJob>(
                         samplingView,
@@ -503,9 +524,11 @@ void GraphCanvas::drawCurves(QPainter& p) {
                         });
                 }
             }
-            const bool complete = pending.parametricJob
-                ? pending.parametricJob->advance(quota, paintBudget)
-                : pending.job->advance(quota, paintBudget);
+            const bool complete = pending.implicitJob
+                ? pending.implicitJob->advance(quota, paintBudget)
+                : (pending.parametricJob
+                    ? pending.parametricJob->advance(quota, paintBudget)
+                    : pending.job->advance(quota, paintBudget));
             if (!complete) {
                 ++samplingDiagnostics_.truncatedCurveBuilds;
                 ++deferred;
@@ -515,8 +538,10 @@ void GraphCanvas::drawCurves(QPainter& p) {
             }
             (void)geometryCache_.getOrBuild(index, [&] {
                 QPainterPath result;
-                const auto& samples = pending.parametricJob
-                    ? pending.parametricJob->samples() : pending.job->samples();
+                const auto& samples = pending.implicitJob
+                    ? pending.implicitJob->samples()
+                    : (pending.parametricJob ? pending.parametricJob->samples()
+                                             : pending.job->samples());
                 for (const CurveVertex& point : samples.vertices) {
                     const QPointF position(point.screenX - pending.samplingOffset.x(),
                                            point.screenY - pending.samplingOffset.y());
@@ -528,6 +553,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
             });
             pending.job.reset();
             pending.parametricJob.reset();
+            pending.implicitJob.reset();
             pending.preview = {};
             pending.raster = {};
             pending.hasPreview = false;
@@ -563,7 +589,7 @@ void GraphCanvas::drawTrace(QPainter& p) const {
     double nearestY = 0;
     double distance = 24;
     for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric()) continue;
+        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric() || curve.implicit()) continue;
         const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
         if (!std::isfinite(y)) continue;
         const double screenY = worldToScreen({world.x(), y}).y();
@@ -598,7 +624,7 @@ void GraphCanvas::updatePointerStatus() const {
     double nearestY = 0;
     double bestDistance = 24;
     for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric()) continue;
+        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric() || curve.implicit()) continue;
         const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
         if (!std::isfinite(y)) continue;
         const double dy = std::abs(worldToScreen({world.x(), y}).y() - pointer_.y());
