@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE44_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE45_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #44 (M3-08), advanced graph tracing and coordinate inspection.** Linux GCC 15.2.0 GUI Debug **52/52 CTests PASS** (18.49 s), GUI Release **52/52 CTests PASS** (12.30 s), core-only ASan/UBSan **31/31 CTests PASS** (8.46 s). **25 GraphTrace assertions PASS** each in Debug/Release/ASan; **26 GraphTracing assertions PASS** in Debug/Release. Matching 97-path provenance; zero recorded GUI compiler warnings. **Manual GUI:** PASS — developer-reported Issue #44 advanced graph-tracing desktop acceptance; not independently instrumented case by case or separately attested in Release. Sampling and parameter interpolation are approximate; native Windows, Qt 5, full GUI sanitizers, and controlled performance remain unverified.
+**Current status:** **PASS — Issue #45 (M3-09), advanced graph numerical accuracy and performance qualification.** Linux GUI Debug **54/54 CTests PASS** (18.37 s), GUI Release **54/54 PASS** (12.18 s), core-only ASan/UBSan **33/33 PASS** (8.53 s). Analytical reference and resource matrix assertions PASS in each configuration; 6 Qt-free and 10 Qt-offscreen benchmark cases measured in Release (timings advisory). Matching 111 source provenance paths; zero GUI build warnings. **Manual GUI:** PASS — developer-reported Issue #45 cross-representation desktop inspection; not separately instrumented in Release. Native Windows, Qt 5 and GUI sanitizer testing remain unverified; benchmark timings are not cross-machine performance pass gates.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,6 +17,45 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
+## Issue #45 current advanced-graph qualification
+
+Issue #45 adds two deterministic CTests without modifying the mathematical grammar, rendering pipeline or workspace format. The reference matrix checks sampled Cartesian, parametric, signed-radius polar, implicit, vertical inequality, feature and trace results against explicit analytical oracles. Resource tests exercise callback ceilings, domain gaps and nonfinite inputs. The earlier GUI integration suites remain part of the complete 54-test Linux desktop matrix. These are finite reference cases, not a proof of mathematical completeness or certified topology.
+
+- Debug: **54/54 CTests PASS**, 18.37 s.
+- Release: **54/54 CTests PASS**, 12.18 s.
+- Core-only ASan/UBSan: **33/33 CTests PASS**, 8.53 s.
+- Dedicated accuracy matrix: **836 Debug, **836 Release, **836 ASan assertions PASS.
+- Dedicated resource matrix: **21 Debug, **21 Release, **21 ASan assertions PASS.
+- Source/documentation provenance: **111 matching paths**, SHA-256 `34f08dd4abfff4cec8f35604d0b86851426f8c81d13bebc57a577bccffe951aa`.
+- Developer-reported interactive acceptance: **PASS — developer-reported Issue #45 cross-representation desktop inspection; not separately instrumented in Release.**
+
+**Advisory Release benchmark observations** (milliseconds; warmups excluded):
+
+| Workload | Median (ms) | p95 (ms) | Maximum (ms) | Runs |
+|---|---:|---:|---:|---:|
+| Qt-independent · `cartesian_sine` | 0.038671 | 0.039601 | 0.048161 | 21 |
+| Qt-independent · `parametric_circle` | 0.026391 | 0.026481 | 0.026520 | 21 |
+| Qt-independent · `polar_rose` | 0.081272 | 0.082301 | 0.099281 | 21 |
+| Qt-independent · `implicit_circle` | 0.228434 | 0.360067 | 0.370797 | 21 |
+| Qt-independent · `inequality_boundary_and_spans` | 0.008540 | 0.013560 | 0.014301 | 21 |
+| Qt-independent · `trace_completed_geometry` | 0.143153 | 0.205144 | 0.205444 | 21 |
+| Qt offscreen · `qt_cartesian_cold_to_ready` | 1.304376 | 2.272574 | 2.272574 | 7 |
+| Qt offscreen · `qt_cartesian_warm_repaint` | 0.223974 | 0.272455 | 0.272455 | 7 |
+| Qt offscreen · `qt_parametric_cold_to_ready` | 1.839155 | 1.941168 | 1.941168 | 7 |
+| Qt offscreen · `qt_parametric_warm_repaint` | 0.220864 | 0.357027 | 0.357027 | 7 |
+| Qt offscreen · `qt_polar_cold_to_ready` | 1.941547 | 2.472838 | 2.472838 | 7 |
+| Qt offscreen · `qt_polar_warm_repaint` | 0.226024 | 0.343766 | 0.343766 | 7 |
+| Qt offscreen · `qt_implicit_cold_to_ready` | 23.042405 | 23.463973 | 23.463973 | 7 |
+| Qt offscreen · `qt_implicit_warm_repaint` | 0.328566 | 0.342476 | 0.342476 | 7 |
+| Qt offscreen · `qt_inequality_cold_to_ready` | 3.714312 | 4.134970 | 4.134970 | 7 |
+| Qt offscreen · `qt_inequality_warm_repaint` | 0.250034 | 0.299046 | 0.299046 | 7 |
+
+The Qt-independent inequality workload measures boundary evaluation and vertical span classification; Qt offscreen workloads separately measure shaded raster build and warm repaint. Cold-to-ready timings include event-loop scheduling and GUI painting, while the mathematical sampling timings exclude on-screen display. Host temperature, CPU frequency, Qt backend, and scheduling can affect these results. No performance improvement or universal frame-rate promise is established.
+
+Evidence timestamp: `2026-10-30T15:12:55-04:00`; toolchain `c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0, cmake version 4.2.3, 1.13.2`; base HEAD `b5ae3338709697512a5ba01a630d80201e39f0cf` plus recorded source provenance.
+
+Previous Issue #44 and earlier qualifications below are historical records.
+
 ## 1. Build environment
 
 | Component | Recorded configuration |
@@ -25,7 +64,8 @@ This document records Issue #40 finite-domain numerical intersection detection f
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #44 application builds | Linux GCC 15.2.0 GUI Debug **205** Ninja steps (desktop executable linked during recorded build), Release **225** (desktop executable linked during recorded build), core ASan/UBSan **78**; **52/52**, **52/52**, **31/31 CTests PASS**; **97** matching provenance paths; zero GUI warnings |
+| Current Issue #45 application builds | Linux GCC GUI Debug **54/54** CTests, GUI Release **54/54** CTests, core ASan/UBSan **33/33** CTests; 111 matching source paths; zero GUI compiler warnings; optional Qt/core Release benchmark measurements recorded |
+| Historical Issue #44 application builds | Linux GCC 15.2.0 GUI Debug **205** Ninja steps (desktop executable linked during recorded build), Release **225** (desktop executable linked during recorded build), core ASan/UBSan **78**; **52/52**, **52/52**, **31/31 CTests PASS**; **97** matching provenance paths; zero GUI warnings |
 | Historical Issue #43 application builds | Linux GCC 15.2.0 GUI Debug **180** Ninja steps (desktop executable linked during recorded build), Release **217** (desktop executable linked during recorded build), core ASan/UBSan **75** Ninja steps; **50/50**, **50/50**, **30/30 CTests PASS**; **93** matching provenance paths; zero recorded GUI warnings |
 | Historical Issue #42 application builds | Linux GCC 15.2.0 GUI Debug **178/178** Ninja steps (incremental build; existing Linux desktop executable verified, but its link was not repeated in the recorded build), Release **209/209** (desktop executable linked in recorded build), core ASan/UBSan **75/75** Ninja steps; **49/49**, **49/49**, **30/30 CTests PASS**; **92** matching provenance entries; zero GUI compiler warnings |
 | Historical Issue #41 application builds | Linux GCC 15.2.0 GUI Debug **198/198**, Release **198/198**, core ASan/UBSan **72/72** Ninja steps; **47/47**, **47/47**, **29/29 CTests PASS**; **88** matching provenance entries; zero GUI compiler warnings |
@@ -54,7 +94,7 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #44 current Debug and Release build and CTest results
+### Issue #44 historical Debug and Release build and CTest results
 
 **Debug:** `build-issue44` — **205 Ninja steps**, **52/52 CTests PASS** (18.49 s); desktop executable linked during recorded build.
 
@@ -344,7 +384,7 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #44 current automated regression results
+### Issue #44 historical automated regression results
 
 | Verification | Recorded result |
 |---|---|
@@ -1131,7 +1171,7 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #44 current complete core-only sanitizer suite — PASS
+### Issue #44 historical complete core-only sanitizer suite — PASS
 
 `build-issue44-asan`: **78 Ninja steps**, **31/31 CTests PASS** (8.46 s). Direct GraphTrace core: 25 assertions PASS. Qt widget tests were not sanitizer-qualified.
 
@@ -1327,7 +1367,7 @@ The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-f
 
 ## 5. Desktop GUI — current acceptance and historical results
 
-### Issue #44 current manual desktop GUI acceptance
+### Issue #44 historical manual desktop GUI acceptance
 
 PASS — developer-reported Issue #44 advanced graph-tracing desktop acceptance; not independently instrumented case by case or separately attested in Release. Automated offscreen tests do not substitute for interactive desktop inspection.
 
