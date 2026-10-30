@@ -10,6 +10,7 @@
 #include "ParametricSampler.hpp"
 #include "PolarExpression.hpp"
 #include "ImplicitContour.hpp"
+#include "InequalityRegion.hpp"
 
 #include <QByteArray>
 #include <QColor>
@@ -46,6 +47,7 @@ struct WorkspaceCurve {
     double tMaximum = 0;
     bool polar = false;
     bool implicit = false;
+    bool inequality = false;
 };
 
 struct GraphWorkspaceState {
@@ -98,7 +100,7 @@ public:
         QJsonObject root;
         root["format"] = "RationalStudioGraph";
         const bool hasParametric = std::any_of(state.curves.begin(), state.curves.end(),
-            [](const WorkspaceCurve& row) { return row.parametric || row.polar || row.implicit; });
+            [](const WorkspaceCurve& row) { return row.parametric || row.polar || row.implicit || row.inequality; });
         root["version"] = hasParametric ? 3 : 2;
         root["centerX"] = state.centerX;
         root["centerY"] = state.centerY;
@@ -109,8 +111,8 @@ public:
             QJsonObject item{{"expression", row.expression},
                              {"visible", row.visible},
                              {"color", row.color.name()}};
-            if (hasParametric) item["kind"] = row.implicit ? "implicit" : (row.polar ? "polar" :
-                (row.parametric ? "parametric" : "cartesian"));
+            if (hasParametric) item["kind"] = row.inequality ? "inequality" : (row.implicit ? "implicit" : (row.polar ? "polar" :
+                (row.parametric ? "parametric" : "cartesian")));
             if (row.polar) {
                 item["tMin"] = row.tMinimum;
                 item["tMax"] = row.tMaximum;
@@ -199,7 +201,11 @@ public:
             if (version == 3) {
                 if (!obj.value("kind").isString()) return reject("Missing curve representation kind.");
                 const auto kind = obj.value("kind").toString();
-                if (kind == "implicit") {
+                if (kind == "inequality") {
+                    row.inequality = true;
+                    if (!parseInequality(row.expression.toStdString()).valid())
+                        return reject("Malformed Cartesian inequality.");
+                } else if (kind == "implicit") {
                     row.implicit = true;
                     if (!implicitEquationSource(row.expression.toStdString()).valid())
                         return reject("Malformed implicit equation.");
@@ -339,6 +345,15 @@ public:
             VariableScope parameterScope = stage.validatedVariables.scope();
             if (!parameterScope.contains("t")) (void)parameterScope.declare("t");
             for (const auto& row : stage.curves) {
+                if (row.inequality) {
+                    const auto parsed = parseInequality(row.expression.toStdString());
+                    if (!parsed.valid()) return reject("Invalid inequality comparator.");
+                    Expression compiled(MathExpressionInput::normalize(parsed.expression),
+                        stage.validatedVariables.scope(), stage.validatedFunctions.scope());
+                    if (!compiled.valid()) return reject("Invalid inequality boundary: " +
+                        QString::fromStdString(compiled.error()));
+                    continue;
+                }
                 if (row.implicit) {
                     const auto source = implicitEquationSource(row.expression.toStdString());
                     VariableScope local = stage.validatedVariables.scope();

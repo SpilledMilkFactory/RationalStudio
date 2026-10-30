@@ -50,7 +50,7 @@ bool rasterMatches(const QImage& image, const QSize& size, double deviceRatio) {
 }
 QImage rasterizeCurve(const QPainterPath& path, const QColor& color,
                       const QSize& size, double deviceRatio,
-                      const QTransform& transform = {}) {
+                      const QTransform& transform = {}, bool dashed = false) {
     QImage image(QSize(qCeil(size.width() * deviceRatio), qCeil(size.height() * deviceRatio)),
                  QImage::Format_ARGB32_Premultiplied);
     image.setDevicePixelRatio(deviceRatio);
@@ -58,7 +58,7 @@ QImage rasterizeCurve(const QPainterPath& path, const QColor& color,
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setTransform(transform);
-    QPen pen(color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen(color, 2.5, dashed ? Qt::DashLine : Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     pen.setCosmetic(true);
     painter.setPen(pen);
     drawCurvePath(painter, path);
@@ -114,6 +114,7 @@ void GraphCanvas::invalidateGeometry(bool retainPreview) {
         }
     }
     geometryCache_.invalidateAll();
+    for (auto& shade : inequalityRasters_) shade = {};
 }
 
 void GraphCanvas::cancelScheduledWork() {
@@ -143,6 +144,17 @@ bool GraphCanvas::visibleGeometryReady() const noexcept {
         if (!curve.enabled || !curve.function || !curve.function->valid() ||
             (curve.parametric() && !curve.yCoordinate->valid())) continue;
         if (!geometryCache_.isReady(index)) return false;
+    }
+    return true;
+}
+
+bool GraphCanvas::visibleInequalityReady() const noexcept {
+    if (refreshQueued_ || repaintScheduler_.navigationPending() ||
+        inequalityRasters_.size() != curves_.size()) return false;
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        const auto& curve = curves_[i];
+        if (curve.inequalityCurve && curve.enabled && curve.function &&
+            curve.function->valid() && inequalityRasters_[i].finished.isNull()) return false;
     }
     return true;
 }
@@ -188,6 +200,27 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     deferredTimer_.stop();
     repaintScheduler_.cancelDeferred();
     geometryCache_.synchronize(keys);
+    // Retain completed shade images only for identical mathematical inputs,
+    // styling and row visibility. Reordering rows is safe.
+    auto previousRasters = std::move(inequalityRasters_);
+    std::vector<RegionRaster> newRasters(curves.size());
+    std::vector<bool> claimed(curves_.size(), false);
+    for (std::size_t i = 0; i < curves.size(); ++i) {
+        const auto& next = curves[i];
+        if (!next.inequalityCurve) continue;
+        for (std::size_t j = 0; j < curves_.size(); ++j) {
+            const auto& old = curves_[j];
+            if (!claimed[j] && old.inequalityCurve &&
+                old.function == next.function && old.color == next.color &&
+                old.enabled == next.enabled && old.inequalityAbove == next.inequalityAbove &&
+                old.inequalityInclusive == next.inequalityInclusive) {
+                if (j < previousRasters.size()) newRasters[i] = std::move(previousRasters[j]);
+                claimed[j] = true;
+                break;
+            }
+        }
+    }
+    inequalityRasters_ = std::move(newRasters);
     curves_ = std::move(curves);
     pendingGeometry_.clear();
     pendingGeometry_.resize(curves_.size());
@@ -207,6 +240,7 @@ void GraphCanvas::setVariableBindings(VariableBindings bindings,
              (!curves_[i].yCoordinate ||
               !graphCurveDependsOnAny(*curves_[i].yCoordinate, changed)))) continue;
         geometryCache_.invalidate(i);
+        if (i < inequalityRasters_.size()) inequalityRasters_[i] = {};
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
         pending.parametricJob.reset();
@@ -287,8 +321,22 @@ void GraphCanvas::paintEvent(QPaintEvent*) {
     const bool drawableView = width() > 0 && height() > 0 && viewport_.isValid() &&
         viewport_.width() == width() && viewport_.height() == height();
     if (!drawableView) return;
+    // Commit queued navigation invalidation once, before BOTH shade and
+    // boundary render passes. Otherwise the second pass would discard a
+    // partially built region created by the first.
+    if (refreshQueued_ && !repaintScheduler_.navigationPending()) {
+        refreshQueued_ = false;
+        invalidateGeometry(true);
+    }
+    drawInequalityRegions(p);
     if (showGrid_ || showAxes_) drawGrid(p);
     drawCurves(p);
+    if (shadeRefreshPending_) {
+        shadeRefreshPending_ = false;
+        if (!deferredTimer_.isActive()) {
+            if (repaintScheduler_.scheduleDeferred()) deferredTimer_.start();
+        }
+    }
     if (pointerInside_ && !dragging_) drawTrace(p);
     p.setPen(QColor("#8395aa"));
     p.setFont(QFont("Sans Serif", 9));
@@ -383,6 +431,86 @@ void GraphCanvas::drawGrid(QPainter& p) const {
     }
 }
 
+void GraphCanvas::drawInequalityRegions(QPainter& p) {
+    // The exact boundary path is still built by the existing Cartesian
+    // CurveSamplingJob and cached independently. The region raster has a
+    // bounded 2048 evaluations per paint across ALL inequality rows.
+    // An incomplete raster is never published as a finished result.
+    if (inequalityRasters_.size() != curves_.size())
+        inequalityRasters_.resize(curves_.size());
+    const auto preview = repaintScheduler_.navigationPending()
+        ? graphScreenPreview(geometryViewport_, viewport_) : std::nullopt;
+    if (repaintScheduler_.navigationPending()) {
+        if (!preview) return;
+        p.save();
+        p.setClipRect(rect());
+        p.setTransform(QTransform(preview->ratio, 0, 0, preview->ratio,
+                                  preview->tx, preview->ty), true);
+        for (std::size_t i = 0; i < curves_.size(); ++i) {
+            if (curves_[i].inequalityCurve && curves_[i].enabled &&
+                i < inequalityRasters_.size() && !inequalityRasters_[i].finished.isNull())
+                p.drawImage(QPointF(0, 0), inequalityRasters_[i].finished);
+        }
+        p.restore();
+        return;
+    }
+    constexpr std::size_t maxCallbacksPerPaint = 2048;
+    std::size_t budget = maxCallbacksPerPaint;
+    bool incomplete = false;
+    const double minY = viewport_.screenToWorldY(double(height()));
+    const double maxY = viewport_.screenToWorldY(0.);
+    if (!std::isfinite(minY) || !std::isfinite(maxY) || !(maxY > minY)) return;
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        const auto& curve = curves_[i];
+        if (!curve.inequalityCurve || !curve.enabled || !curve.function ||
+            !curve.function->valid()) continue;
+        auto& item = inequalityRasters_[i];
+        if (item.finished.size() != size()) item.finished = {};
+        if (!item.finished.isNull()) {
+            p.drawImage(QPointF(0, 0), item.finished);
+            continue;
+        }
+        if (!item.active || item.building.size() != size()) {
+            item.building = QImage(size(), QImage::Format_ARGB32_Premultiplied);
+            if (item.building.isNull()) continue;
+            item.building.fill(Qt::transparent);
+            item.nextColumn = 0;
+            item.active = true;
+        }
+        QColor shade = curve.color;
+        shade.setAlpha(52);
+        QPainter rasterPainter(&item.building);
+        rasterPainter.setPen(Qt::NoPen);
+        rasterPainter.setBrush(shade);
+        constexpr int columnWidth = 2;
+        while (item.nextColumn < width() && budget > 0) {
+            const int col = item.nextColumn;
+            item.nextColumn += columnWidth;
+            --budget;
+            ++inequalityEvaluations_;
+            const double x = viewport_.screenToWorldX(
+                double(col) + 0.5 * std::min(columnWidth, width() - col));
+            if (!std::isfinite(x)) continue;
+            const double boundary = curve.function->evaluate(x, lastAnswer_, angleMode_, bindings_);
+            const auto span = inequalityVerticalSpan(boundary, minY, maxY,
+                                                      double(height()), curve.inequalityAbove);
+            if (span) rasterPainter.drawRect(QRectF(double(col), span->top,
+                double(std::min(columnWidth, width()-col)), span->bottom-span->top));
+        }
+        rasterPainter.end();
+        if (item.nextColumn >= width()) {
+            item.finished = std::move(item.building);
+            item.active = false;
+            p.drawImage(QPointF(0, 0), item.finished);
+        } else incomplete = true;
+    }
+    if (incomplete) {
+        // drawCurves may cancel its deferred timer when geometry is ready.
+        // Schedule an independent follow-up paint after drawCurves completes.
+        shadeRefreshPending_ = true;
+    }
+}
+
 void GraphCanvas::drawCurves(QPainter& p) {
     p.save();
     p.setClipRect(rect());
@@ -416,7 +544,7 @@ void GraphCanvas::drawCurves(QPainter& p) {
                     p.setTransform(transform, true);
                     // The preview is temporary; final QPainterPath geometry
                     // will be resampled at the new viewport on timer expiry.
-                    QPen pen(curve.color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+                    QPen pen(curve.color, 2.5, (curve.inequalityCurve && !curve.inequalityInclusive) ? Qt::DashLine : Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
                     pen.setCosmetic(true);
                     p.setPen(pen);
                     drawCurvePath(p, *path);
@@ -427,14 +555,6 @@ void GraphCanvas::drawCurves(QPainter& p) {
         samplingDiagnostics_.lastPaintDeferredCurves = 0;
         p.restore();
         return;
-    }
-
-    // Commit invalidation only when actually entering a full refresh paint.
-    // This prevents a timer-expiry/input interleaving from briefly drawing
-    // a preview with no ready geometry.
-    if (refreshQueued_) {
-        refreshQueued_ = false;
-        invalidateGeometry(true);
     }
 
     // Count only drawable, currently dirty curves. Cached/hidden entries
@@ -463,7 +583,8 @@ void GraphCanvas::drawCurves(QPainter& p) {
             const auto transform = graphScreenPreview(pending.previewViewport, viewport_);
             if (!transform) return;
             pending.raster = rasterizeCurve(pending.preview, curves_[index].color, size(), deviceRatio,
-                QTransform(transform->ratio, 0, 0, transform->ratio, transform->tx, transform->ty));
+                QTransform(transform->ratio, 0, 0, transform->ratio, transform->tx, transform->ty),
+                curves_[index].inequalityCurve && !curves_[index].inequalityInclusive);
         }
         p.drawImage(QPointF(0, 0), pending.raster);
     };
@@ -575,7 +696,8 @@ void GraphCanvas::drawCurves(QPainter& p) {
 
         auto& raster = pendingGeometry_[index].raster;
         if (!rasterMatches(raster, size(), deviceRatio)) {
-            raster = rasterizeCurve(geometryCache_.readyGeometry(index), curve.color, size(), deviceRatio);
+            raster = rasterizeCurve(geometryCache_.readyGeometry(index), curve.color, size(), deviceRatio, {},
+                                    curve.inequalityCurve && !curve.inequalityInclusive);
         }
         p.drawImage(QPointF(0, 0), raster);
     }

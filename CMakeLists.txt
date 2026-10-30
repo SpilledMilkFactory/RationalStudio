@@ -21,6 +21,8 @@ add_library(RationalCore STATIC
     src/core/ImplicitContour.cpp
     src/core/IntersectionDetection.cpp
     src/core/GraphFeatureDetection.cpp
+    src/core/InequalityRegion.hpp
+    src/core/InequalityRegion.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -64,6 +66,14 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+
+    # M3 / Issue #42 — Qt-free inequality parsing and span classification.
+    add_executable(RationalInequalityRegionTests tests/InequalityRegionTests.cpp)
+    target_link_libraries(RationalInequalityRegionTests PRIVATE RationalCore)
+    target_compile_options(RationalInequalityRegionTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalInequalityRegionTests COMMAND RationalInequalityRegionTests)
+    set_tests_properties(RationalInequalityRegionTests PROPERTIES LABELS "core;inequality;graphing")
 
     # -----------------------------------------------------
     # Mathematical Core
@@ -1111,6 +1121,26 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;intersections;graphing;qt;offscreen"
             TIMEOUT 90)
+        # M3 / Issue #42 — inequality shading Qt integration and v3 persistence
+        add_executable(RationalInequalityGraphTests
+            tests/InequalityGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalInequalityGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalInequalityGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalInequalityGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalInequalityGraphTests COMMAND RationalInequalityGraphTests)
+        set_tests_properties(RationalInequalityGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;inequality;graphing;qt;offscreen"
+            TIMEOUT 120)
         # M3 / Issue #41 — feature inspection Qt integration
         add_executable(RationalGraphFeatureGraphTests
             tests/GraphFeatureGraphTests.cpp

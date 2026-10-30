@@ -48,6 +48,7 @@ private:
         bool parametric = false;
         bool polar = false;
         bool implicit = false;
+        bool inequality = false;
         QString parsedYSource;
         double compiledMinimum = std::numeric_limits<double>::quiet_NaN();
         double compiledMaximum = std::numeric_limits<double>::quiet_NaN();
@@ -76,6 +77,8 @@ private:
                      bool visible = true, QColor color = QColor());
     void addImplicitRow(const QString& equation = "x² + y² = 25",
                         bool visible = true, QColor color = QColor());
+    void addInequalityRow(const QString& expression = "y > x^2",
+                          bool visible = true, QColor color = QColor());
     void removeGraphRow(GraphRow* row);
     void rebuildGraph(const std::vector<std::string>& changedScope = {});
     void updateGraphEditorFeedback(GraphRow* row);

@@ -8,6 +8,7 @@
 #include "ImplicitContour.hpp"
 #include "IntersectionDetection.hpp"
 #include "GraphFeatureDetection.hpp"
+#include "InequalityRegion.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -408,6 +409,11 @@ QWidget* MainWindow::makeGraphPage() {
     addImplicit->setToolTip("Graph F(x,y)=G(x,y) using bounded marching squares");
     connect(addImplicit, &QPushButton::clicked, this, [this] { addImplicitRow(); });
     inputHead->addWidget(addImplicit);
+    auto* addInequality = makeButton("+ Inequality");
+    addInequality->setObjectName("addInequalityGraphRow");
+    addInequality->setToolTip("Add y > f(x), y >= f(x), y < f(x), or y <= f(x)");
+    connect(addInequality, &QPushButton::clicked, this, [this] { addInequalityRow(); });
+    inputHead->addWidget(addInequality);
     sv->addLayout(inputHead);
 
     // Issue #32: buttons insert genuine mathematical glyphs into the
@@ -493,6 +499,7 @@ QWidget* MainWindow::makeGraphPage() {
     auto* sideHelp = new QLabel("Cartesian: y = sin(x) · Parametric: x(t) = cos(t), y(t) = sin(t)\n"
                                  "Polar: r = 2cos(θ) · angle intervals use current RAD/DEG mode.\n"
                                  "Parametric and polar intervals are finite and configurable.\n"
+                                 "Inequalities: y > x², y ≤ sin(x), strict dashed boundary.\n"
                                  "Supported: y = ..., f(x) = ..., constants, functions.\n"
                                  "Alt+P π · Alt+R √ · Alt+2 ² · Alt+S sin\n"
                                  "Alt+↑/↓ switch rows · Ctrl+Enter add a row.");
@@ -889,6 +896,70 @@ void MainWindow::addImplicitRow(const QString& equation, bool visible, QColor co
     if (graphDebounce_) graphDebounce_->start();
 }
 
+void MainWindow::addInequalityRow(const QString& expression, bool visible, QColor color) {
+    if (graphRows_.size() >= 40) {
+        QMessageBox::information(this, "Graph limit", "This version supports up to 40 expressions per workspace.");
+        return;
+    }
+    auto* row = new GraphRow;
+    row->inequality = true;
+    const QColor next = seriesColors[nextColor_++ % (sizeof(seriesColors) / sizeof(seriesColors[0]))];
+    row->color = color.isValid() ? color : next;
+    row->widget = new QWidget;
+    auto* frame = new QVBoxLayout(row->widget);
+    frame->setContentsMargins(3, 4, 3, 4);
+    auto* controls = new QHBoxLayout;
+    row->visible = new QToolButton;
+    row->visible->setText("●");
+    row->visible->setCheckable(true);
+    row->visible->setChecked(visible);
+    row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
+    controls->addWidget(row->visible);
+    row->input = new MathExpressionEdit;
+    row->input->setObjectName(QString("InequalityEquation_%1").arg(nextColor_));
+    row->input->setGraphEditingMode(true);
+    row->input->setPlaceholderText("y > x²");
+    row->input->setMaxLength(2048);
+    row->input->setText(expression);
+    controls->addWidget(row->input, 1);
+    auto* remove = new QToolButton;
+    remove->setText("×");
+    remove->setToolTip("Remove inequality");
+    controls->addWidget(remove);
+    frame->addLayout(controls);
+    row->info = new QLabel;
+    row->info->setTextFormat(Qt::PlainText);
+    row->info->setWordWrap(true);
+    frame->addWidget(row->info);
+    graphList_->insertWidget(graphList_->count() - 1, row->widget);
+    graphRows_.push_back(row);
+    activeGraphInput_ = row->input;
+    connect(row->input, &QLineEdit::textChanged, this, [this, row] {
+        activeGraphInput_ = row->input;
+        updateGraphEditorFeedback(row);
+        if (graphDebounce_) graphDebounce_->start();
+    });
+    connect(row->input, &QLineEdit::cursorPositionChanged, this,
+            [this, row] { activeGraphInput_ = row->input; });
+    connect(row->input, &MathExpressionEdit::graphRowRequested, this, [this] {
+        addInequalityRow();
+        if (activeGraphInput_) activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+    });
+    connect(row->input, &MathExpressionEdit::graphNavigationRequested, this,
+            [this, row](int direction) {
+                const auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
+                if (it == graphRows_.end()) return;
+                const auto index = static_cast<std::size_t>(it - graphRows_.begin());
+                const auto n = graphRows_.size();
+                activeGraphInput_ = graphRows_[direction < 0 ? (index + n - 1) % n : (index + 1) % n]->input;
+                activeGraphInput_->setFocus(Qt::ShortcutFocusReason);
+            });
+    connect(row->visible, &QToolButton::toggled, this, [this] { rebuildGraph(); });
+    connect(remove, &QToolButton::clicked, this, [this, row] { removeGraphRow(row); });
+    updateGraphEditorFeedback(row);
+    if (graphDebounce_) graphDebounce_->start();
+}
+
 void MainWindow::removeGraphRow(GraphRow* row) {
     auto it = std::find(graphRows_.begin(), graphRows_.end(), row);
     if (it == graphRows_.end()) return;
@@ -902,6 +973,34 @@ void MainWindow::removeGraphRow(GraphRow* row) {
 
 void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     if (!row || !row->input) return;
+    if (row->inequality) {
+        const auto source = parseInequality(row->input->text().toStdString());
+        QString error;
+        if (!source.valid()) error = QString::fromStdString(source.error);
+        else {
+            const auto normalized = QString::fromStdString(
+                MathExpressionInput::normalize(source.expression));
+            if (!row->parsedExpression || row->parsedSource != normalized) {
+                const VariableScope scope = variableSliders_ ?
+                    variableSliders_->definitions().scope() : VariableScope{};
+                row->parsedExpression = std::make_shared<Expression>(
+                    normalized.toStdString(), scope, functionDefinitions_.scope());
+                row->parsedSource = normalized;
+            }
+            if (!row->parsedExpression->valid())
+                error = inlineErrorMessage(*row->parsedExpression,
+                                           QString::fromStdString(source.expression));
+        }
+        const bool valid = error.isEmpty();
+        row->input->setSyntaxState(valid ? "valid" : "invalid");
+        row->input->setToolTip(error);
+        row->info->setText(valid ? QString("Inequality · %1 boundary · %2 region")
+            .arg(source.inclusive ? "solid" : "dashed",
+                 source.shadeAbove ? "above" : "below") : error);
+        row->info->setStyleSheet(valid ? "color:#91baa4; font-size:11px;" :
+                                        "color:#ff9299; font-size:11px;");
+        return;
+    }
     if (row->implicit) {
         const auto source = implicitEquationSource(row->input->text().toStdString());
         QString error;
@@ -1081,6 +1180,36 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
     std::vector<GraphCurve> curves;
     curves.reserve(graphRows_.size());
     for (auto* row : graphRows_) {
+        if (row->inequality) {
+            const auto source = parseInequality(row->input->text().toStdString());
+            if (source.valid()) {
+                const QString normalized = QString::fromStdString(
+                    MathExpressionInput::normalize(source.expression));
+                bool refresh = !row->parsedExpression || row->parsedSource != normalized;
+                if (!changedScope.empty() && row->parsedExpression) {
+                    if (!row->parsedExpression->valid()) refresh = true;
+                    else for (const auto& name : changedScope) {
+                        const auto& refs = row->parsedExpression->referencedVariables();
+                        if (std::find(refs.begin(), refs.end(), name) != refs.end()) refresh = true;
+                    }
+                }
+                if (refresh) {
+                    row->parsedExpression = std::make_shared<Expression>(
+                        normalized.toStdString(), scope, functionDefinitions_.scope());
+                    row->parsedSource = normalized;
+                }
+                if (row->parsedExpression->valid()) {
+                    GraphCurve curve{row->color, row->parsedExpression,
+                                     row->visible->isChecked(), row->input->text()};
+                    curve.inequalityCurve = true;
+                    curve.inequalityAbove = source.shadeAbove;
+                    curve.inequalityInclusive = source.inclusive;
+                    curves.push_back(std::move(curve));
+                }
+            }
+            updateGraphEditorFeedback(row);
+            continue;
+        }
         if (row->implicit) {
             const auto source = implicitEquationSource(row->input->text().toStdString());
             if (source.valid()) {
@@ -1488,7 +1617,9 @@ bool MainWindow::saveWorkspace(const QString& path, QString* error) const {
     state.angle = angleMode_;
     for (const auto* row : graphRows_) {
         WorkspaceCurve saved{row->input->text(), row->visible->isChecked(), row->color};
-        if (row->implicit) {
+        if (row->inequality) {
+            saved.inequality = true;
+        } else if (row->implicit) {
             saved.implicit = true;
         } else if (row->polar) {
             saved.polar = true;
@@ -1550,7 +1681,8 @@ bool MainWindow::loadWorkspace(const QString& path, QString* error) {
     graphRows_.clear();
     activeGraphInput_ = nullptr;
     for (const auto& row : staged.curves) {
-        if (row.implicit) addImplicitRow(row.expression, row.visible, row.color);
+        if (row.inequality) addInequalityRow(row.expression, row.visible, row.color);
+        else if (row.implicit) addImplicitRow(row.expression, row.visible, row.color);
         else if (row.polar) addPolarRow(row.expression, row.tMinimum, row.tMaximum,
             row.visible, row.color);
         else if (row.parametric) addParametricRow(row.expression, row.yExpression,
