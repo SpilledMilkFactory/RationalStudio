@@ -20,6 +20,7 @@ add_library(RationalCore STATIC
     src/core/ParametricSampler.cpp
     src/core/ImplicitContour.cpp
     src/core/IntersectionDetection.cpp
+    src/core/GraphFeatureDetection.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -503,6 +504,13 @@ if(BUILD_TESTING)
     set_tests_properties(RationalIntersectionDetectionTests PROPERTIES
         LABELS "core;regression;graphing;intersections")
 
+    # M3 / Issue #41 — bounded Cartesian feature inspection
+    add_executable(RationalGraphFeatureDetectionTests tests/GraphFeatureDetectionTests.cpp)
+    target_link_libraries(RationalGraphFeatureDetectionTests PRIVATE RationalCore)
+    add_test(NAME RationalGraphFeatureDetectionTests COMMAND RationalGraphFeatureDetectionTests)
+    set_tests_properties(RationalGraphFeatureDetectionTests PROPERTIES
+        LABELS "core;regression;graphing;features")
+
     # -----------------------------------------------------
     # Shared Test Compiler Warnings
     # -----------------------------------------------------
@@ -538,6 +546,7 @@ if(BUILD_TESTING)
         RationalPolarExpressionTests
         RationalImplicitContourTests
         RationalIntersectionDetectionTests
+        RationalGraphFeatureDetectionTests
     )
 
         target_compile_options(${test_target} PRIVATE
@@ -1101,6 +1110,26 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalIntersectionGraphTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;intersections;graphing;qt;offscreen"
+            TIMEOUT 90)
+        # M3 / Issue #41 — feature inspection Qt integration
+        add_executable(RationalGraphFeatureGraphTests
+            tests/GraphFeatureGraphTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp
+        )
+        target_include_directories(RationalGraphFeatureGraphTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalGraphFeatureGraphTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalGraphFeatureGraphTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalGraphFeatureGraphTests COMMAND RationalGraphFeatureGraphTests)
+        set_tests_properties(RationalGraphFeatureGraphTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;regression;features;graphing;qt;offscreen"
             TIMEOUT 90)
     endif()
 
