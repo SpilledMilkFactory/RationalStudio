@@ -159,6 +159,10 @@ search bounds mathematical callback counts, not wall-clock latency.
 
 **Multiple-representation graph controls (Issue #43; Milestone 3).** The graph sidebar now uses a two-column, width-aware graph creation grid for Cartesian, parametric, polar, implicit, and inequality rows, instead of a crowded single horizontal toolbar. Existing object names and creation handlers are retained for backward-compatible Qt tests and keyboard flows. Each action displays an explanatory tooltip, and the collapsible **Type guide** provides short syntax examples without occupying permanent sidebar space. Cartesian, implicit, and inequality rows have consistent readable representation badges; parametric and polar rows retain their paired/angle-specific controls and now present interval minimum and maximum inputs in two vertical rows for narrow viewports. New rows receive keyboard focus from creation buttons; visibility and remove controls expose accessible names. This is a GUI/presentation-only enhancement: expression parsing, curve sampling, renderer/cache behavior, interval interpretation, version-3 workspace persistence, and analytical features remain unchanged. Existing support for five representations is retained, including strict/inclusive inequality boundaries.
 
+<!-- ISSUE44_README_UPDATED -->
+
+**Advanced graph tracing and coordinate inspection (Issue #44; Milestone 3).** Pointer hover now inspects the nearest completed, visible Cartesian, parametric, polar, implicit, or inequality-boundary curve in the shared graph canvas. The Qt-independent `GraphTrace` helper finds a bounded nearest point along existing sampled screen-space segments, without joining disconnected strokes or triggering a new sampling job. Parametric sampling retains each emitted vertex's original `t`, enabling interpolated parameter inspection. Parametric readouts include `t` and evaluated Cartesian `(x,y)`; polar readouts include angular `θ` with RAD/DEG units, signed radius `r`, and Cartesian coordinates. Implicit zero contours display approximate `(x,y)` and sampled equation residual `|F-G|`. Inequality-boundary readouts distinguish strict/excluded from inclusive boundaries. The existing **Features** action additionally publishes optional, approximately positioned root/extremum/inflection markers that can be inspected by hovering; these are cleared on edits and navigation. Inspection uses completed cached geometry and does not publish unfinished sampling paths. Values come from finite sampling and parameter interpolation, not symbolic or certified inverse solving; self-intersections can have multiple valid parameters, unsupported/narrow features can be missed, and the bounded vertex scan can omit segments in extremely dense graphs. The shared renderer, mathematical grammar, and workspace schema are unchanged, and no controlled performance improvement is claimed.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -263,6 +267,8 @@ RationalStudio/
 │   │   ├── GraphFeatureDetection.cpp
 │   │   ├── InequalityRegion.hpp
 │   │   ├── InequalityRegion.cpp
+│   │   ├── GraphTrace.hpp
+│   │   ├── GraphTrace.cpp
 │   │   ├── ParametricSampler.hpp
 │   │   ├── ParametricSampler.cpp
 │   │   ├── CurveGeometryCache.hpp
@@ -335,6 +341,8 @@ RationalStudio/
     ├── InequalityRegionTests.cpp
     ├── InequalityGraphTests.cpp
     ├── GraphRepresentationControlsTests.cpp
+    ├── GraphTraceTests.cpp
+    ├── GraphTracingTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -416,7 +424,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **50 tests from 49 executables**: thirty Qt-independent tests and twenty offscreen Qt invocations from nineteen widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register thirty tests:
+With GUI and testing enabled, CTest registers **52 tests from 51 executables**: thirty-one Qt-independent tests and twenty-one offscreen Qt invocations from twenty widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register thirty-one tests:
 
 | Executable | Focus |
 |---|---|
@@ -468,6 +476,8 @@ With GUI and testing enabled, CTest registers **50 tests from 49 executables**: 
 | `RationalInequalityRegionTests` | Qt-independent inequalities, reversed/Unicode comparators, strict/inclusive boundaries, clipped spans and non-finite/extreme-range protection. |
 | `RationalInequalityGraphTests` | Offscreen Qt inequality rows, shaded pixels, cache reuse, viewport changes, validation and version-3 workspace persistence. |
 | `RationalGraphRepresentationControlsTests` | Offscreen Qt creation controls for five graph types, accessible metadata, collapsible help, narrow-sidebar usability, focus, and mixed workspace Save/Open. |
+| `RationalGraphTraceTests` | Qt-free nearest-segment tracing, discontinuity separation, finite limits, interpolation, and retained parametric metadata. |
+| `RationalGraphTracingTests` | Offscreen Qt inspection across Cartesian, parametric, polar (including signed radius), implicit, inequality, and feature-marker cases. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 

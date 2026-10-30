@@ -23,6 +23,7 @@ add_library(RationalCore STATIC
     src/core/GraphFeatureDetection.cpp
     src/core/InequalityRegion.hpp
     src/core/InequalityRegion.cpp
+    src/core/GraphTrace.cpp
     src/core/VariableSliderScale.cpp
 )
 
@@ -66,6 +67,14 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+
+    # M3 / Issue #44 — Qt-free nearest-segment tracing and parameter metadata.
+    add_executable(RationalGraphTraceTests tests/GraphTraceTests.cpp)
+    target_link_libraries(RationalGraphTraceTests PRIVATE RationalCore)
+    target_compile_options(RationalGraphTraceTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalGraphTraceTests COMMAND RationalGraphTraceTests)
+    set_tests_properties(RationalGraphTraceTests PROPERTIES LABELS "core;trace;graphing")
 
     # M3 / Issue #42 — Qt-free inequality parsing and span classification.
     add_executable(RationalInequalityRegionTests tests/InequalityRegionTests.cpp)
@@ -1140,6 +1149,21 @@ if(RATIONALSTUDIO_BUILD_GUI)
         set_tests_properties(RationalInequalityGraphTests PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;regression;inequality;graphing;qt;offscreen"
+            TIMEOUT 120)
+        # M3 / Issue #44 — offscreen trace for all supported representations.
+        add_executable(RationalGraphTracingTests
+            tests/GraphTracingTests.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp)
+        target_include_directories(RationalGraphTracingTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalGraphTracingTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalGraphTracingTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalGraphTracingTests COMMAND RationalGraphTracingTests)
+        set_tests_properties(RationalGraphTracingTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;trace;graphing;qt;offscreen"
             TIMEOUT 120)
         # M3 / Issue #43 — representation chooser, contextual labels, and
         # mixed graph type controls (Qt-only UI, no mathematical core changes).

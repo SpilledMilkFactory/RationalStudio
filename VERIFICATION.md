@@ -1,11 +1,13 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE43_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE44_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #43 (M3-07), multiple coordinate-representation controls.** Linux GCC 15.2.0 GUI Debug **50/50 CTests PASS** (17.64 s), GUI Release **50/50 CTests PASS** (12.07 s), core-only ASan/UBSan **30/30 CTests PASS** (8.32 s). **44 GraphRepresentationControls assertions PASS** in each GUI configuration; **93** matching provenance paths; zero recorded GUI compiler warnings. **Manual GUI:** PASS — developer-reported Issue #43 multi-representation graph-controls desktop acceptance; not independently instrumented case by case or separately attested in Release. This issue changes GUI controls only; Qt GUI sanitizer, Windows, and Qt 5 remain unverified.
+**Current status:** **PASS — Issue #44 (M3-08), advanced graph tracing and coordinate inspection.** Linux GCC 15.2.0 GUI Debug **52/52 CTests PASS** (18.49 s), GUI Release **52/52 CTests PASS** (12.30 s), core-only ASan/UBSan **31/31 CTests PASS** (8.46 s). **25 GraphTrace assertions PASS** each in Debug/Release/ASan; **26 GraphTracing assertions PASS** in Debug/Release. Matching 97-path provenance; zero recorded GUI compiler warnings. **Manual GUI:** PASS — developer-reported Issue #44 advanced graph-tracing desktop acceptance; not independently instrumented case by case or separately attested in Release. Sampling and parameter interpolation are approximate; native Windows, Qt 5, full GUI sanitizers, and controlled performance remain unverified.
+
+This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
 This document records Issue #43 user-interface controls for five graph representations. The two-column creation grid, collapsible syntax guide, consistent type badges, keyboard focus and vertical interval fields preserve mathematical compilation, rendering, caching and version-3 persistence. Offscreen Qt tests cover mixed-type creation and Save/Open. The evidence does not prove all small-window sizes, accessibility toolchains or native Windows behavior. Issue #42 and earlier qualifications remain historical.
 
@@ -23,7 +25,8 @@ This document records Issue #40 finite-domain numerical intersection detection f
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #43 application builds | Linux GCC 15.2.0 GUI Debug **180** Ninja steps (desktop executable linked during recorded build), Release **217** (desktop executable linked during recorded build), core ASan/UBSan **75** Ninja steps; **50/50**, **50/50**, **30/30 CTests PASS**; **93** matching provenance paths; zero recorded GUI warnings |
+| Current Issue #44 application builds | Linux GCC 15.2.0 GUI Debug **205** Ninja steps (desktop executable linked during recorded build), Release **225** (desktop executable linked during recorded build), core ASan/UBSan **78**; **52/52**, **52/52**, **31/31 CTests PASS**; **97** matching provenance paths; zero GUI warnings |
+| Historical Issue #43 application builds | Linux GCC 15.2.0 GUI Debug **180** Ninja steps (desktop executable linked during recorded build), Release **217** (desktop executable linked during recorded build), core ASan/UBSan **75** Ninja steps; **50/50**, **50/50**, **30/30 CTests PASS**; **93** matching provenance paths; zero recorded GUI warnings |
 | Historical Issue #42 application builds | Linux GCC 15.2.0 GUI Debug **178/178** Ninja steps (incremental build; existing Linux desktop executable verified, but its link was not repeated in the recorded build), Release **209/209** (desktop executable linked in recorded build), core ASan/UBSan **75/75** Ninja steps; **49/49**, **49/49**, **30/30 CTests PASS**; **92** matching provenance entries; zero GUI compiler warnings |
 | Historical Issue #41 application builds | Linux GCC 15.2.0 GUI Debug **198/198**, Release **198/198**, core ASan/UBSan **72/72** Ninja steps; **47/47**, **47/47**, **29/29 CTests PASS**; **88** matching provenance entries; zero GUI compiler warnings |
 | Historical Issue #40 application builds | GCC 15.2.0 Linux GUI Debug and Release **187/187** steps each; core-only ASan/UBSan **69/69** steps; **45/45**, **45/45**, **28/28 CTests PASS**; **84** matching provenance entries; zero recorded Debug/Release compiler warnings |
@@ -51,7 +54,17 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #43 current Debug and Release build and CTest results
+### Issue #44 current Debug and Release build and CTest results
+
+**Debug:** `build-issue44` — **205 Ninja steps**, **52/52 CTests PASS** (18.49 s); desktop executable linked during recorded build.
+
+**Release:** `build-issue44-release` — **225 Ninja steps**, **52/52 CTests PASS** (12.30 s); desktop executable linked during recorded build.
+
+ELF executable SHA-256 at documentation time: Debug `3c0af1c8fa48135555822f108a120495e7b0751243ac825fa1f24ab93203405d`, Release `59f0203eb36079d35e93c4db1f2ff54cbb4bb0a28e47f41ad062f2e9bfbb728f`; hashes do not establish link history.
+
+`verify_issue44.sh` evidence timestamp `2026-10-30T14:36:46-04:00`; toolchain `c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0, cmake version 4.2.3, 1.13.2`; base Git HEAD `3c187f3fe9448d549953f39068e93994af7fbe36` plus working tree provenance. CTest times are not benchmarks.
+
+### Issue #43 historical Debug and Release build and CTest results
 
 **Debug:** `build-issue43` — **180 Ninja steps**, **50/50 CTests PASS** (17.64 s); desktop executable linked during recorded build.
 
@@ -331,7 +344,24 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #43 current automated regression results
+### Issue #44 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| GUI Debug CTest | **52/52 PASS** — 18.49 s |
+| GUI Release CTest | **52/52 PASS** — 12.30 s |
+| Core-only ASan/UBSan CTest | **31/31 PASS** — 8.46 s |
+| `RationalGraphTraceTests` (Debug/Release/ASan) | **25 assertions PASS each** |
+| `RationalGraphTracingTests` (Debug/Release) | **26 assertions PASS each** |
+| GUI compiler warnings | **0** |
+
+Core tests cover nearest visible sampled segments, discontinuities, bounded scans, parameter interpolation, and real sampler metadata. Offscreen GUI tests cover five representations, negative polar radii, analysis markers, and cache-preserving hover. Neither is a certified inversion solver or an exhaustive numerical topology test.
+
+**CTest SHA-256:** Debug `81aeb899bab9fcdb05d60aedc8345fcc614c72f2a87bc617587ed56311fcf9b6`, Release `15456fbbb0d57438083a30261ecb9122a8321e711e0951cb897f1a17b05654d5`, ASan `762a5be194e54bf08befe7fd80acc8e7fde0be3b2e6f3dff5327c4098eaf3738`; GUI direct Debug `5bf9481c96c46d6553e39acd6b5656e8a80b96a83abdad6b659e720446250910`, Release `5bf9481c96c46d6553e39acd6b5656e8a80b96a83abdad6b659e720446250910`; core direct Debug `2acf25f128e0c0bd35f3cfa12c6ea2b0aec8d58540151c2a0b32a961556014d6`.
+
+**Provenance:** 97 matching paths; manifest SHA-256 `372c9ef9d4769696881f4a7a9162e3ab0f473d45100b5b58a7b783e2cfb246a3`.
+
+### Issue #43 historical automated regression results
 
 | Verification | Recorded result |
 |---|---|
@@ -1101,7 +1131,11 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #43 current complete core-only sanitizer suite — PASS
+### Issue #44 current complete core-only sanitizer suite — PASS
+
+`build-issue44-asan`: **78 Ninja steps**, **31/31 CTests PASS** (8.46 s). Direct GraphTrace core: 25 assertions PASS. Qt widget tests were not sanitizer-qualified.
+
+### Issue #43 historical complete core-only sanitizer suite — PASS
 
 `build-issue43-asan`: **75 Ninja steps**, **30/30 CTests PASS** (8.32 s). There are no new Qt-free tests in Issue #43. Qt GUI sanitizers were not run.
 
@@ -1293,7 +1327,11 @@ The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-f
 
 ## 5. Desktop GUI — current acceptance and historical results
 
-### Issue #43 current manual desktop GUI acceptance
+### Issue #44 current manual desktop GUI acceptance
+
+PASS — developer-reported Issue #44 advanced graph-tracing desktop acceptance; not independently instrumented case by case or separately attested in Release. Automated offscreen tests do not substitute for interactive desktop inspection.
+
+### Issue #43 historical manual desktop GUI acceptance
 
 PASS — developer-reported Issue #43 multi-representation graph-controls desktop acceptance; not independently instrumented case by case or separately attested in Release. Qt offscreen regressions do not replace human desktop verification.
 
@@ -1609,6 +1647,9 @@ ctest --test-dir build-asan --output-on-failure
 These generic commands describe a reproducible procedure. Current Issue #41 validation uses `verify_issue41.sh`, `build-issue41*` and `issue41-evidence/`. Historical Issue #40 validation used `build-issue40`, `build-issue40-release`, and `build-issue40-asan` via `verify_issue40.sh` with evidence in `issue40-evidence/`. Historical Issue #39 validation used `build-issue39`, `build-issue39-release`, and `build-issue39-asan` via `verify_issue39.sh` with evidence in `issue39-evidence/`. Historical Issue #38 validation used `build-issue38`, `build-issue38-release`, and `build-issue38-asan` through `verify_issue38.sh` with `issue38-evidence/`. Historical Issue #37 validation used `build-issue37`, `build-issue37-release`, and `build-issue37-asan` via `verify_issue37.sh` with logs in `issue37-evidence/`. Historical Issue #36 validation used `build-issue36`, `build-issue36-release` and `build-issue36-asan` via `verify_issue36.sh` with evidence under `issue36-evidence/`. Historical Issue #35 validation used `build-issue35`, `build-issue35-release`, and `build-issue35-asan` with `verify_issue35.sh` and `issue35-evidence/`. Historical Issue #34 validation used `build-issue34`, `build-issue34-release`, and `build-issue34-asan` with `verify_issue34.sh` and `issue34-evidence/`. Historical Issue #33 validation used `build-issue33`, `build-issue33-release`, and `build-issue33-asan` with `verify_issue33.sh` and `issue33-evidence/`. Historical Issue #32 validation used `build-issue32`, `build-issue32-release`, and `build-issue32-asan` with `verify_issue32.sh` and `issue32-evidence/`. Historical Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
+
+**Issue #44 addendum:** GUI Debug/Release **52/52 CTests PASS** (18.49 / 12.30 s); core-only ASan/UBSan **31/31 PASS** (8.46 s); 25 direct core assertions per configuration; 26 GUI assertions per GUI configuration; 97 unchanged paths during verification. Manual acceptance: PASS — developer-reported Issue #44 advanced graph-tracing desktop acceptance; not independently instrumented case by case or separately attested in Release.
+
 
 **Issue #43 addendum:** GUI Debug/Release **50/50 CTests PASS** (17.64 / 12.07 s), core-only ASan/UBSan **30/30 PASS** (8.32 s), 44 direct GUI assertions per configuration, 93 unchanged provenance entries during verification. Manual acceptance: PASS — developer-reported Issue #43 multi-representation graph-controls desktop acceptance; not independently instrumented case by case or separately attested in Release.
 
