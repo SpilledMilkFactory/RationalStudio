@@ -6,6 +6,7 @@
 #include "GraphWorkspacePersistence.hpp"
 #include "PolarExpression.hpp"
 #include "ImplicitContour.hpp"
+#include "IntersectionDetection.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -33,6 +34,7 @@
 #include <QScrollBar>
 #include <QStatusBar>
 #include <QSignalBlocker>
+#include <QStringList>
 #include <QSizePolicy>
 #include <QSplitter>
 #include <QTabWidget>
@@ -356,6 +358,12 @@ QWidget* MainWindow::makeGraphPage() {
     addToolbarButton("+ Zoom", [this] { graph_->setView(graph_->centerX(), graph_->centerY(), graph_->pixelsPerUnit() * 1.25); });
     addToolbarButton("− Zoom", [this] { graph_->setView(graph_->centerX(), graph_->centerY(), graph_->pixelsPerUnit() / 1.25); });
     addToolbarButton("Home", [this] { graph_->resetView(); });
+    auto* intersections = makeButton("Intersections");
+    intersections->setObjectName("graphFindIntersections");
+    intersections->setToolTip("Numerically find intersections of visible Cartesian curves in the current X view");
+    intersections->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    tools->addWidget(intersections);
+    connect(intersections, &QPushButton::clicked, this, [this] { findGraphIntersections(); });
     addToolbarButton("Save", [this] { saveGraph(); });
     addToolbarButton("Open", [this] { loadGraph(); });
     addToolbarButton("PNG", [this] { exportImage(); });
@@ -495,6 +503,13 @@ QWidget* MainWindow::makeGraphPage() {
     graphStatus_ = new QLabel("Ready");
     graphStatus_->setStyleSheet("color:#8eacc8; padding-left:8px;");
     outer->addWidget(graphStatus_);
+    intersectionResults_ = new QLabel(page);
+    intersectionResults_->setObjectName("graphIntersectionResults");
+    intersectionResults_->setWordWrap(true);
+    intersectionResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    intersectionResults_->setStyleSheet("color:#b5d4ee; padding:6px; background:#1b293b;");
+    intersectionResults_->hide();
+    outer->addWidget(intersectionResults_);
     return page;
 }
 
@@ -1191,6 +1206,88 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
         curves.push_back({row->color, function, row->visible->isChecked(), raw});
     }
     graph_->setCurves(std::move(curves));
+    if (intersectionResults_ && intersectionResults_->isVisible()) {
+        intersectionResults_->setText("Intersection results may be stale after graph edits; "
+                                      "select Intersections to recompute.");
+    }
+}
+
+void MainWindow::findGraphIntersections() {
+    if (!intersectionResults_ || !graph_ || !variableSliders_) return;
+    if (graphDebounce_ && graphDebounce_->isActive()) {
+        graphDebounce_->stop();
+        rebuildGraph();
+    }
+    struct Candidate { std::size_t row; const Expression* expression; };
+    std::vector<Candidate> candidates;
+    for (std::size_t index = 0; index < graphRows_.size(); ++index) {
+        const auto* row = graphRows_[index];
+        if (!row || row->parametric || row->polar || row->implicit ||
+            !row->visible->isChecked() || !row->parsedExpression ||
+            !row->parsedExpression->valid()) continue;
+        candidates.push_back({index + 1, row->parsedExpression.get()});
+    }
+    if (candidates.size() < 2) {
+        intersectionResults_->setText("Intersections: select at least two visible, valid Cartesian rows. "
+                                      "Parametric, polar and implicit pairs are not supported by this detector.");
+        intersectionResults_->show();
+        return;
+    }
+    const double halfWidth = static_cast<double>(graph_->width()) /
+                             (2.0 * graph_->pixelsPerUnit());
+    const double minimum = graph_->centerX() - halfWidth;
+    const double maximum = graph_->centerX() + halfWidth;
+    IntersectionOptions options;
+    options.subdivisions = 512;
+    options.maxEvaluations = 12000;
+    options.maxResults = 12;
+    options.xTolerance = 1e-8;
+    options.residualTolerance = 1e-8;
+    const auto bindings = variableSliders_->definitions().bindings();
+    QStringList details;
+    std::size_t checkedPairs = 0;
+    bool limited = false;
+    const std::size_t maxPairs = 24;
+    for (std::size_t a = 0; a < candidates.size(); ++a) {
+        for (std::size_t b = a+1; b < candidates.size(); ++b) {
+            if (checkedPairs >= maxPairs) { limited = true; break; }
+            ++checkedPairs;
+            const auto result = findCartesianIntersections(
+                *candidates[a].expression, *candidates[b].expression,
+                minimum, maximum, angleMode_, bindings, lastAnswer_, options);
+            const QString pair = QString("Rows %1 and %2").arg(static_cast<qulonglong>(candidates[a].row)).arg(static_cast<qulonglong>(candidates[b].row));
+            if (result.status == IntersectionStatus::Coincident) {
+                details << pair + ": coincident at sampled positions (infinitely many possible intersections)";
+            } else if (result.status == IntersectionStatus::InvalidInput) {
+                details << pair + ": invalid numerical search bounds";
+            } else {
+                for (const auto& point : result.points) {
+                    details << QString("%1: (%2, %3), residual %4, bracket width %5")
+                        .arg(pair)
+                        .arg(point.x, 0, 'g', 11)
+                        .arg(point.y, 0, 'g', 11)
+                        .arg(point.residual, 0, 'g', 3)
+                        .arg(point.xBracketWidth, 0, 'g', 3);
+                    if (details.size() >= 25) { limited = true; break; }
+                }
+                if (result.status != IntersectionStatus::Complete) limited = true;
+            }
+            if (limited && details.size() >= 25) break;
+        }
+        if (limited && (checkedPairs >= maxPairs || details.size() >= 25)) break;
+    }
+    if (details.empty()) details << "No isolated Cartesian intersections detected in the visible X-domain.";
+    intersectionResults_->setText(
+        QString("Intersections (X ∈ [%1, %2], x tolerance %3, residual tolerance %4; "
+                "%5 pairs checked):\n")
+            .arg(minimum, 0, 'g', 8).arg(maximum, 0, 'g', 8)
+            .arg(options.xTolerance, 0, 'g', 2).arg(options.residualTolerance, 0, 'g', 2)
+            .arg(static_cast<qulonglong>(checkedPairs)) +
+        details.join("\n") +
+        (limited ? "\nPartial results: pair, evaluation, or output budget reached." : QString()) +
+        "\nFinite sampling can miss tangencies, close crossings, and discontinuities; "
+        "residuals do not certify completeness. Other graph types are not searched.");
+    intersectionResults_->show();
 }
 
 void MainWindow::setAngleMode(AngleMode mode) {

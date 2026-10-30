@@ -1,13 +1,13 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE39_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE40_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 29, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #39 (M3-03), implicit equation visualization.** Linux GCC 15.2.0 GUI-enabled Debug **43/43 CTests PASS** (14.16 s), GUI-enabled Release **43/43 CTests PASS** (8.20 s), core-only ASan/UBSan **27/27 CTests PASS** (8.21 s). **796 ImplicitContour assertions PASS** in each of Debug/Release/ASan; **33 ImplicitGraph assertions PASS** in Debug/Release. Zero recorded GUI compiler warnings; before/after provenance matches across **80 paths**. **Manual GUI:** PASS — developer-reported Issue #39 implicit-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. Full Qt sanitizers, native Windows and Qt 5 remain unverified; no controlled rendering-performance speedup is claimed.
+**Current status:** **PASS — Issue #40 (M3-04), numerical intersection detection.** Linux GCC 15.2.0 GUI-enabled Debug **45/45 CTests PASS** (15.39 s), GUI-enabled Release **45/45 CTests PASS** (9.52 s), core-only ASan/UBSan **28/28 CTests PASS** (8.29 s). **155 IntersectionDetection assertions PASS** in each of Debug/Release/ASan; **16 IntersectionGraph assertions PASS** in Debug/Release. Zero recorded GUI compiler warnings; before/after provenance matches across **84 paths**. **Manual GUI:** PASS — developer-reported Issue #40 intersection-analysis desktop acceptance; not independently instrumented case by case or separately attested in Release. Intersection search is currently limited to pairs of valid, visible explicit Cartesian curves; finite-domain searches and tangencies have numerical limitations. Full Qt sanitizers, native Windows and Qt 5 remain unverified; no controlled performance improvement is claimed.
 
-This document records Issue #39 implicit equation visualization via a Qt-independent bounded, incremental marching-squares contouring algorithm, normalization of F(x,y)=G(x,y) to a zero-level set, and integration with shared graph geometry, caching, variable bindings, inline errors, and version-3 mixed workspace persistence. Issue #38 and earlier qualifications remain historical, including the original Issue #25 measurements. Automated evidence and developer-reported interactive acceptance are distinguished.
+This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
 ## 1. Build environment
 
@@ -17,7 +17,8 @@ This document records Issue #39 implicit equation visualization via a Qt-indepen
 | Compiler | GCC 15.2.0 |
 | Language standard | C++20 |
 | Build system | CMake with Ninja generator |
-| Current Issue #39 application builds | GCC 15.2.0 Linux GUI Debug and Release **176/176** steps each; core-only ASan/UBSan **66/66** steps; **43/43**, **43/43**, **27/27 CTests PASS**; **80** matching provenance entries; zero recorded Debug/Release compiler warnings |
+| Current Issue #40 application builds | GCC 15.2.0 Linux GUI Debug and Release **187/187** steps each; core-only ASan/UBSan **69/69** steps; **45/45**, **45/45**, **28/28 CTests PASS**; **84** matching provenance entries; zero recorded Debug/Release compiler warnings |
+| Historical Issue #39 application builds | GCC 15.2.0 Linux GUI Debug and Release **176/176** steps each; core-only ASan/UBSan **66/66** steps; **43/43**, **43/43**, **27/27 CTests PASS**; **80** matching provenance entries; zero recorded Debug/Release compiler warnings |
 | Historical Issue #38 application builds | GCC 15.2.0 Linux GUI Debug and Release **165/165** steps each; core-only ASan/UBSan **63/63** steps; **41/41**, **41/41**, **26/26 CTests PASS**; **76** matching provenance entries; zero recorded Debug/Release compiler warnings |
 | Historical Issue #37 application builds | GCC 15.2.0 Linux GUI-enabled Debug and Release **155/155** steps each; core-only ASan/UBSan **61/61** steps; **39/39**, **39/39**, and **25/25 CTests PASS**; **73** matching provenance entries; zero recorded Debug/Release warnings |
 | Historical Issue #36 application builds | Linux GCC 15.2.0 GUI Debug and Release **144/144** steps each; GUI-disabled ASan/UBSan **58/58** steps; CTests **37/37**, **37/37**, and **24/24 PASS**; **69** matching provenance entries |
@@ -41,7 +42,15 @@ The Issue #26 GUI builds selected Qt 6. Qt 6 is the preferred development target
 
 ## 2. Debug build — PASS
 
-### Issue #39 current Debug and Release build and CTest results
+### Issue #40 current Debug and Release build and CTest results
+
+**Debug:** `build-issue40` — **187/187 Ninja steps PASS**, **45/45 CTests PASS** (15.39 s wall-clock); zero recorded compiler warnings.
+
+**Release:** `build-issue40-release` — **187/187 Ninja steps PASS**, **45/45 CTests PASS** (9.52 s wall-clock); zero recorded compiler warnings.
+
+`verify_issue40.sh` evidence timestamp `2026-10-29T23:29:10-04:00`; toolchain `c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0, cmake version 4.2.3, 1.13.2`; baseline Git HEAD `a000cfec662ee8ea1c87f364bd4a1362de18f5f6` plus recorded working-tree changes. Both GUI builds linked RationalStudio. CTest wall-clock timings are not controlled numerical or rendering benchmarks.
+
+### Issue #39 historical Debug and Release build and CTest results
 
 **Debug:** `build-issue39` — **176/176 Ninja steps PASS**, **43/43 CTests PASS** (14.16 s wall-clock); zero recorded compiler warnings.
 
@@ -285,7 +294,24 @@ No compiler warnings or errors appeared in the submitted final Issue #25 Release
 
 ## 3. Automated regression tests — PASS
 
-### Issue #39 current automated regression results
+### Issue #40 current automated regression results
+
+| Verification | Recorded result |
+|---|---|
+| GUI-enabled Debug CTest | **45/45 PASS** — 15.39 s |
+| GUI-enabled Release CTest | **45/45 PASS** — 9.52 s |
+| Core-only ASan/UBSan CTest | **28/28 PASS** — 8.29 s |
+| `RationalIntersectionDetectionTests` direct (Debug/Release/ASan) | **155 assertions PASS each** |
+| `RationalIntersectionGraphTests` direct offscreen (Debug/Release) | **16 assertions PASS each** |
+| Compiler warnings (Debug/Release) | **0 / 0 recorded** |
+
+One new Qt-independent CTest and one offscreen Qt CTest increase GUI-enabled registrations from 43 to 45 and the core-only suite from 27 to 28. The core suite covers sign crossings, sampled tangencies, duplicates, coincident functions, undefined/discontinuous evaluations, bounds, callback/result limits, and fresh variable bindings. The offscreen GUI suite tests the real MainWindow Intersections action, eligible curve selection, and numerical results. This is a finite regression matrix, not a complete or certified intersection oracle.
+
+**Evidence SHA-256:** Debug CTest `23e5159acb6bfa60c0898092f03368b5b0ec7027ffdd9e47f21fdee2d8114033`; Release CTest `260dc687bd27b3a51a74a1a5f55ba219ea960384ea3a2690b357c8cc166470a2`; ASan/UBSan CTest `38e0e07cdf362a5eed9848924063a8cbf2cb9fe4e9f3c456814d8730e98fbea9`. Direct intersection-core Debug/Release/ASan: `649a7d98512b5db1df5b51bb5b8814e20f645cfdc3326135124ac3a70f12a473` / `649a7d98512b5db1df5b51bb5b8814e20f645cfdc3326135124ac3a70f12a473` / `649a7d98512b5db1df5b51bb5b8814e20f645cfdc3326135124ac3a70f12a473`. Direct intersection-GUI Debug/Release: `0281ed0b42766a89bd994c77f1c7bb5e7fb2a134da147ed2641e6d6d8c36f2ea` / `0281ed0b42766a89bd994c77f1c7bb5e7fb2a134da147ed2641e6d6d8c36f2ea`.
+
+**Provenance:** identical before/after 84-entry manifests, manifest SHA-256 `e4555dfb2d6835a7f8020f6cde49b0fcba1298a78361c3e55739fbc7e003af50`. Equality establishes stability **during the verification run** only; later README and verification updates are separate.
+
+### Issue #39 historical automated regression results
 
 | Verification | Recorded result |
 |---|---|
@@ -647,6 +673,8 @@ The Issue #25 GUI-enabled suite includes **thirteen Qt-independent executables**
 | `RationalPolarGraphTests` | Qt offscreen polar editor, cache identity, angular bounds, mixed workspace persistence, real MainWindow integration and error recovery. |
 | `RationalImplicitContourTests` | Qt-independent bounded incremental marching squares, analytical contour reference, deterministic cell processing, non-finite cell rejection and shared evaluation-budget accounting. |
 | `RationalImplicitGraphTests` | Offscreen Qt MainWindow implicit rows, mixed rendering, cache invalidation, equation feedback, JSON version-3 round trips and invalid-load protection. |
+| `RationalIntersectionDetectionTests` | Qt-independent bounded explicit Cartesian function-pair intersection search, residual and X tolerances, sampled tangencies, coincident functions, numerical budgets, domain limits, and variable binding updates. |
+| `RationalIntersectionGraphTests` | Offscreen Qt MainWindow intersection action, supported Cartesian row selection, numerical result reporting, and preservation of unrelated graph types and user state. |
 | `RationalMathExpressionInputTests` | Unicode-to-parser translation, mathematical evaluation and incomplete/invalid operator classification (Qt-independent). |
 | `RationalMathExpressionEditorTests` | Offscreen Qt caret and selection handling, math symbol insertion, immediate syntax feedback, scientific and graph MainWindow integration. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
@@ -986,7 +1014,11 @@ The rendered checks are targeted pixel-presence and same-run image comparisons, 
 
 ## 4. AddressSanitizer / UndefinedBehaviorSanitizer — PASS
 
-### Issue #39 current complete core-only sanitizer suite — PASS
+### Issue #40 current complete core-only sanitizer suite — PASS
+
+`build-issue40-asan`: **69/69 Ninja steps PASS**, **28/28 CTests PASS** (8.29 s wall-clock). `RationalIntersectionDetectionTests` passed **155 assertions** in a direct ASan/UBSan run. Qt GUI targets were disabled; this does not establish Qt Widgets sanitizer qualification.
+
+### Issue #39 historical complete core-only sanitizer suite — PASS
 
 `build-issue39-asan`: **66/66 Ninja steps PASS**, **27/27 CTests PASS** (8.21 s wall-clock). `RationalImplicitContourTests` passed **796 assertions** in a direct ASan/UBSan run. The Qt GUI was disabled; this does not qualify Qt Widgets under sanitizers.
 
@@ -1162,7 +1194,11 @@ The core-only Debug configuration used `-fsanitize=address,undefined -fno-omit-f
 
 ## 5. Desktop GUI — current acceptance and historical results
 
-### Issue #39 manual desktop GUI acceptance
+### Issue #40 manual desktop GUI acceptance
+
+PASS — developer-reported Issue #40 intersection-analysis desktop acceptance; not independently instrumented case by case or separately attested in Release. The developer reports checking the numerical intersection workflow and existing graphing functionality after the automated verification completed. Both Debug and Release offscreen Qt regression runs passed. An independently instrumented manual case-by-case transcript or interactive Release acceptance was not supplied.
+
+### Issue #39 historical manual desktop GUI acceptance
 
 PASS — developer-reported Issue #39 implicit-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. The developer reports that the implicit-equation workflow and GUI regression checks appeared functional after verification. Offscreen Qt integration passed in Debug and Release; no independently recorded manual test transcript or interactive Release acceptance was supplied.
 
@@ -1358,6 +1394,9 @@ No separate interactive CLI execution was included in the supplied Issue #25 ter
 
 | Platform / configuration | Build | Tests | Runtime |
 |---|---|---|---|
+| Linux Debug, Qt GUI enabled (Issue #40) | PASS — 187/187 steps, 0 warnings | **45/45 PASS** | Intersection Qt offscreen PASS; manual: PASS — developer-reported Issue #40 intersection-analysis desktop acceptance; not independently instrumented case by case or separately attested in Release. |
+| Linux Release, Qt GUI enabled (Issue #40) | PASS — 187/187 steps, 0 warnings | **45/45 PASS** | Intersection Qt offscreen PASS; interactive Release not separately attested |
+| Linux Debug, GUI disabled, ASan/UBSan (Issue #40) | PASS — 69/69 steps | **28/28 PASS** | Qt-free intersection ASan/UBSan PASS; Qt excluded |
 | Linux Debug, Qt GUI enabled (Issue #39) | PASS — 176/176 steps, 0 warnings | **43/43 PASS** | Implicit offscreen Qt PASS; manual: PASS — developer-reported Issue #39 implicit-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. |
 | Linux Release, Qt GUI enabled (Issue #39) | PASS — 176/176 steps, 0 warnings | **43/43 PASS** | Implicit Qt offscreen PASS; interactive Release not separately attested |
 | Linux Debug, GUI disabled, ASan/UBSan (Issue #39) | PASS — 66/66 steps | **27/27 PASS** | Qt-independent implicit contour ASan/UBSan PASS; Qt excluded |
@@ -1456,12 +1495,22 @@ cmake --build build-asan --parallel
 ctest --test-dir build-asan --output-on-failure
 ```
 
-These generic commands describe a reproducible procedure. Current Issue #39 validation used `build-issue39`, `build-issue39-release`, and `build-issue39-asan` via `verify_issue39.sh` with evidence in `issue39-evidence/`. Historical Issue #38 validation used `build-issue38`, `build-issue38-release`, and `build-issue38-asan` through `verify_issue38.sh` with `issue38-evidence/`. Historical Issue #37 validation used `build-issue37`, `build-issue37-release`, and `build-issue37-asan` via `verify_issue37.sh` with logs in `issue37-evidence/`. Historical Issue #36 validation used `build-issue36`, `build-issue36-release` and `build-issue36-asan` via `verify_issue36.sh` with evidence under `issue36-evidence/`. Historical Issue #35 validation used `build-issue35`, `build-issue35-release`, and `build-issue35-asan` with `verify_issue35.sh` and `issue35-evidence/`. Historical Issue #34 validation used `build-issue34`, `build-issue34-release`, and `build-issue34-asan` with `verify_issue34.sh` and `issue34-evidence/`. Historical Issue #33 validation used `build-issue33`, `build-issue33-release`, and `build-issue33-asan` with `verify_issue33.sh` and `issue33-evidence/`. Historical Issue #32 validation used `build-issue32`, `build-issue32-release`, and `build-issue32-asan` with `verify_issue32.sh` and `issue32-evidence/`. Historical Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
+These generic commands describe a reproducible procedure. Current Issue #40 validation used `build-issue40`, `build-issue40-release`, and `build-issue40-asan` via `verify_issue40.sh` with evidence in `issue40-evidence/`. Historical Issue #39 validation used `build-issue39`, `build-issue39-release`, and `build-issue39-asan` via `verify_issue39.sh` with evidence in `issue39-evidence/`. Historical Issue #38 validation used `build-issue38`, `build-issue38-release`, and `build-issue38-asan` through `verify_issue38.sh` with `issue38-evidence/`. Historical Issue #37 validation used `build-issue37`, `build-issue37-release`, and `build-issue37-asan` via `verify_issue37.sh` with logs in `issue37-evidence/`. Historical Issue #36 validation used `build-issue36`, `build-issue36-release` and `build-issue36-asan` via `verify_issue36.sh` with evidence under `issue36-evidence/`. Historical Issue #35 validation used `build-issue35`, `build-issue35-release`, and `build-issue35-asan` with `verify_issue35.sh` and `issue35-evidence/`. Historical Issue #34 validation used `build-issue34`, `build-issue34-release`, and `build-issue34-asan` with `verify_issue34.sh` and `issue34-evidence/`. Historical Issue #33 validation used `build-issue33`, `build-issue33-release`, and `build-issue33-asan` with `verify_issue33.sh` and `issue33-evidence/`. Historical Issue #32 validation used `build-issue32`, `build-issue32-release`, and `build-issue32-asan` with `verify_issue32.sh` and `issue32-evidence/`. Historical Issue #31 validation used `build-issue31`, `build-issue31-release`, and `build-issue31-asan` with `verify_issue31.sh` and recorded evidence in `issue31-evidence/`. Historical Issue #30 validation used `build-issue30`, `build-issue30-release`, and `build-issue30-asan` for GUI-enabled Debug, Release, and core-only ASan/UBSan tests, respectively. Historical Issue #29 validation used `build-issue29`, `build-issue29-release`, and `build-issue29-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTests, respectively. Historical Issue #28 validation used `build-issue28`, `build-issue28-release`, and `build-issue28-asan` for GUI-enabled Debug, Release, and core-only sanitizer CTest suites, respectively. Historical Issue #27 validation used `build-issue27`, `build-issue27-release`, and `build-issue27-asan` for the prior complete Debug, Release, and core-only sanitizer suites, respectively. Historical Issue #26 implementation validation used `build-issue26`, `build-issue26-release` (desktop target), and `build-issue26-asan` (direct sampling-job sanitizer target). The latter directory was subsequently removed locally. Historical Issue #25 validation used `build-issue25`, `build-issue25-release`, and `build-issue25-asan`. The performance baseline was generated separately with `bash scripts/run_issue25_benchmarks.sh` against the Release benchmark targets.
 
 ## 10. Verification summary
 
 | Area | Result |
 |---|---|
+| Issue #40 Debug GUI-enabled build | **187/187 PASS; zero warnings** |
+| Issue #40 Release GUI-enabled build | **187/187 PASS; zero warnings** |
+| Issue #40 core-only ASan/UBSan build | **69/69 PASS** |
+| Issue #40 Debug GUI-enabled CTest | **45/45 PASS** |
+| Issue #40 Release GUI-enabled CTest | **45/45 PASS** |
+| Issue #40 core-only ASan/UBSan CTest | **28/28 PASS** |
+| Issue #40 Qt-free intersection detection (each of 3 configurations) | **155 assertions PASS** |
+| Issue #40 Qt intersection integration (Debug and Release) | **16 assertions PASS** |
+| Issue #40 before/after provenance | **84 identical entries** |
+| Issue #40 manual desktop acceptance | PASS — developer-reported Issue #40 intersection-analysis desktop acceptance; not independently instrumented case by case or separately attested in Release. |
 | Issue #39 Debug GUI-enabled build | **176/176 PASS; zero warnings** |
 | Issue #39 Release GUI-enabled build | **176/176 PASS; zero warnings** |
 | Issue #39 core-only ASan/UBSan build | **66/66 PASS** |
@@ -1604,7 +1653,9 @@ These generic commands describe a reproducible procedure. Current Issue #39 vali
 | Targeted rendered-pixel and identical-repaint tests | PASS — Issue #26; full desktop end-to-end automation not performed |
 | Native Windows verification | Not performed |
 
-**Current assessment — Issue #39:** Linux GCC 15.2.0 GUI-enabled Debug **43/43 CTests PASS** (14.16 s), Release **43/43 CTests PASS** (8.20 s), and core-only ASan/UBSan **27/27 CTests PASS** (8.21 s). Qt-free contour extraction passed **796** direct assertions in Debug/Release/ASan; Qt offscreen implicit integration passed **33** direct assertions in Debug/Release. The **80** recorded provenance paths matched before/after testing; no GUI build compiler warnings were recorded. Manual GUI: PASS — developer-reported Issue #39 implicit-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. Marching squares has finite-grid and discontinuity limitations; full Qt sanitizers, Windows, Qt 5 and controlled performance improvement remain unverified. The Issue #25 benchmark is retained as historical evidence.
+**Current assessment — Issue #40:** Linux GCC 15.2.0 GUI-enabled Debug **45/45 CTests PASS** (15.39 s), Release **45/45 CTests PASS** (9.52 s), and core-only ASan/UBSan **28/28 CTests PASS** (8.29 s). Qt-independent intersection detection passed **155** direct assertions in Debug/Release/ASan; Qt offscreen intersection integration passed **16** direct assertions in Debug/Release. The **84** recorded provenance paths matched before/after testing; no GUI build compiler warnings were recorded. Manual GUI: PASS — developer-reported Issue #40 intersection-analysis desktop acceptance; not independently instrumented case by case or separately attested in Release. The implementation handles bounded pairwise explicit Cartesian curves only; tangency detection is heuristic and finite sampling may miss roots or report spurious ones near discontinuities. Qt sanitizers, native Windows, Qt 5 and controlled speedup claims remain unverified. Historical Issue #25 benchmark measurements remain unchanged.
+
+**Historical assessment — Issue #39:** Linux GCC 15.2.0 GUI-enabled Debug **43/43 CTests PASS** (14.16 s), Release **43/43 CTests PASS** (8.20 s), and core-only ASan/UBSan **27/27 CTests PASS** (8.21 s). Qt-free contour extraction passed **796** direct assertions in Debug/Release/ASan; Qt offscreen implicit integration passed **33** direct assertions in Debug/Release. The **80** recorded provenance paths matched before/after testing; no GUI build compiler warnings were recorded. Manual GUI: PASS — developer-reported Issue #39 implicit-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. Marching squares has finite-grid and discontinuity limitations; full Qt sanitizers, Windows, Qt 5 and controlled performance improvement remain unverified. The Issue #25 benchmark is retained as historical evidence.
 
 **Historical assessment — Issue #38:** Linux GCC 15.2.0 GUI-enabled Debug **41/41 CTests PASS** (13.33 s), Release **41/41 CTests PASS** (7.84 s), and core-only ASan/UBSan **26/26 CTests PASS** (8.02 s). Qt-free polar conversion passed **511** direct assertions in Debug, Release and ASan/UBSan; Qt offscreen polar integration passed **34** assertions in Debug and Release. **76** recorded provenance paths matched before/after automated testing; zero Debug/Release compiler warnings were recorded. Manual GUI: PASS — developer-reported Issue #38 polar-graphing desktop acceptance; not independently instrumented case by case or separately attested in Release. Full Qt sanitizer coverage, native Windows, Qt 5 and controlled performance improvements remain unverified. Issue #25 benchmark measurements are retained as historical evidence.
 
