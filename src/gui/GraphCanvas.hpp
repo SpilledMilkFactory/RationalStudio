@@ -116,9 +116,16 @@ public:
     [[nodiscard]] std::size_t geometryBuildCount() const noexcept {
         return geometryBuildCount_;
     }
+    // True only when every valid, enabled curve has a completed cached path.
+    // Unlike geometryBuildCount(), this identifies whether any startup,
+    // navigation, or deferred sampling work is still outstanding. Useful for
+    // reliable UI tests and future renderer diagnostics; does not paint.
+    [[nodiscard]] bool visibleGeometryReady() const noexcept;
     void setGridVisible(bool on) { showGrid_ = on; update(); }
     void setAxesVisible(bool on) { showAxes_ = on; update(); }
     std::function<void(const QString&)> onPointerInfo;
+    // Sent after accepted viewport navigation/size changes.
+    std::function<void()> onViewportChanged;
 
 protected:
     void paintEvent(QPaintEvent*) override;

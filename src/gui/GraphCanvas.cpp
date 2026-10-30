@@ -135,6 +135,18 @@ void GraphCanvas::requestNavigationRefresh() {
     update();
 }
 
+bool GraphCanvas::visibleGeometryReady() const noexcept {
+    if (refreshQueued_ || repaintScheduler_.navigationPending() ||
+        geometryCache_.size() != curves_.size()) return false;
+    for (std::size_t index = 0; index < curves_.size(); ++index) {
+        const auto& curve = curves_[index];
+        if (!curve.enabled || !curve.function || !curve.function->valid() ||
+            (curve.parametric() && !curve.yCoordinate->valid())) continue;
+        if (!geometryCache_.isReady(index)) return false;
+    }
+    return true;
+}
+
 void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     // The mathematical identity, not the curve index or display label,
     // determines whether the existing geometry remains valid.
@@ -256,6 +268,7 @@ void GraphCanvas::setView(double x, double y, double pixelsPerUnit) {
         oldScale == viewport_.pixelsPerUnit()) return;
     cancelScheduledWork();
     invalidateGeometry(true);
+    if (onViewportChanged) onViewportChanged();
     update();
 }
 QPointF GraphCanvas::worldToScreen(const QPointF& p) const {
@@ -655,6 +668,7 @@ void GraphCanvas::mouseMoveEvent(QMouseEvent* e) {
         if (viewport_.panPixels(delta.x(), delta.y()) &&
             (oldX != viewport_.centerX() || oldY != viewport_.centerY())) {
             requestNavigationRefresh();
+            if (onViewportChanged) onViewportChanged();
         }
         lastDrag_ = pointer_;
     }
@@ -695,6 +709,7 @@ void GraphCanvas::wheelEvent(QWheelEvent* e) {
         (oldX != viewport_.centerX() || oldY != viewport_.centerY() ||
          oldScale != viewport_.pixelsPerUnit())) {
         requestNavigationRefresh();
+        if (onViewportChanged) onViewportChanged();
     }
     e->accept();
 }
@@ -711,6 +726,7 @@ void GraphCanvas::resizeEvent(QResizeEvent* e) {
     cancelScheduledWork();
     invalidateGeometry(true);
     (void)viewport_.setDimensions(nextWidth, nextHeight);
+    if (onViewportChanged) onViewportChanged();
     update();
 }
 } // namespace rationalstudio

@@ -85,6 +85,8 @@ private:
     void loadGraph();
     void exportImage();
     void findGraphIntersections();
+    void findGraphFeatures();
+    void invalidateAnalysisReports();
     void setAngleMode(AngleMode mode);
     void graphScientificExpression();
 
@@ -107,6 +109,7 @@ private:
     QVBoxLayout* graphList_ = nullptr;
     QLabel* graphStatus_ = nullptr;
     QLabel* intersectionResults_ = nullptr;
+    QLabel* featureResults_ = nullptr;
     QTimer* graphDebounce_ = nullptr;
     std::vector<GraphRow*> graphRows_;
     AngleMode angleMode_ = AngleMode::Radians;

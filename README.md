@@ -41,7 +41,7 @@ Scientific calculations use IEEE-754 double-precision floating-point arithmetic;
 
 ### Graphing calculator
 
-The graphing workspace supports explicit Cartesian functions `y = f(x)`, finite-interval parametric `x(t), y(t)`, polar radius equations `r = f(θ)`, and bounded implicit zero contours such as `x²+y²=25` (M3-01–M3-03). Issue #40 adds a bounded, explicit Cartesian pairwise intersection search with visible-domain and numerical accuracy reporting.
+The graphing workspace supports explicit Cartesian functions `y = f(x)`, finite-interval parametric `x(t), y(t)`, polar radius equations `r = f(θ)`, and bounded implicit zero contours such as `x²+y²=25` (M3-01–M3-03). Issue #40 adds bounded Cartesian pairwise intersection search with visible-domain and numerical accuracy reporting. Issue #41 adds requested numerical roots, extrema and stationary-inflection inspection for valid visible Cartesian curves.
 
 - Editable expressions with individually configurable curve visibility and colors.
 - Mouse-driven panning, precision-aware cursor-anchored wheel zooming, validated navigation limits, and a dynamically spaced Cartesian grid.
@@ -128,6 +128,29 @@ y = floor(x)
 
 **Numerical intersection detection (Issue #40; Milestone 3).** The new Qt-independent `IntersectionDetection` service searches pairs of compiled explicit Cartesian functions `f(x)` and `g(x)` on a finite X-domain by bounded sign-change bracketing and refinement, with a local-minimum heuristic for sampled tangencies. Each candidate must satisfy a configurable absolute Y-residual tolerance; results record the approximate `(x,y)`, actual residual and final bracket width. Non-finite callback results are excluded; close functions, discontinuities, high-frequency zeros, and nonsampled tangencies can still defeat finite search. Coincident sampled functions are reported separately rather than producing arbitrary isolated roots. Searches are limited by sample count, total callback budget, result count, and—in the GUI—pair count. The graph toolbar's **Intersections** button searches visible, valid, explicit Cartesian rows over the current viewport X-domain and displays numerical tolerances, results and incompleteness warnings; it does not modify cached plot geometry or workspace persistence. **Parametric, polar, and implicit pair detection are not implemented by this action**, and complete root certification or guaranteed real-time latency is not claimed.
 
+<!-- ISSUE41_README_UPDATED -->
+
+**Graph roots, extrema and critical-point inspection (Issue #41; Milestone 3).**
+The graph toolbar's **Features** action inspects valid, visible explicit Cartesian
+rows in the current finite X viewport. The Qt-independent `GraphFeatureDetection`
+service reuses the Issue #40 numerical zero finder for isolated X-axis roots,
+then scans and refines sampled local minima, maxima (including supported
+nondifferentiable cusps) and stationary-inflection candidates. Reported entries
+include approximate `(x,y)` coordinates, numerical residual or slope estimate,
+search-bracket width, search-domain bounds and tolerances. Total callback
+counts, candidate/result limits, scanned-row limits and displayed-output caps
+are bounded. The action is explicitly requested and does not mutate plot
+geometry, create workspace objects or persist results; edits, scalar changes,
+angle-mode changes and viewport navigation mark previous reports stale.
+Derivative estimates use finite differences; the classifications are **heuristic**,
+not symbolic or certified. Finite sampling can miss narrow/oscillatory features,
+false candidates can occur at discontinuities, and an observed local extremum is
+not necessarily global. Endpoints are not classified as local extrema. Constant
+zero functions are identified as sampled X-axis coincidence rather than an
+arbitrary set of roots. Parametric, polar and implicit representations remain
+outside this action; advanced tracing is reserved for M3-08. The synchronous
+search bounds mathematical callback counts, not wall-clock latency.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
@@ -179,6 +202,7 @@ The `RationalCore` static library has **no Qt dependency**. Together with the he
 | `PolarExpression` | Qt-independent polar radius/angle normalization to paired Cartesian coordinate expressions, preserving degree/radian evaluation. |
 | `ImplicitContour` | Qt-independent normalization of F(x,y)=G(x,y) into a zero level set, bounded incremental marching squares, deterministic saddle disambiguation, and shared screen-space contour geometry. |
 | `IntersectionDetection` | Qt-independent, tolerance-aware finite-domain Cartesian pair intersection search, bounded callback accounting, heuristic tangency refinement, and incomplete/coincident result status. |
+| `GraphFeatureDetection` | Qt-independent bounded Cartesian roots, local extrema and stationary-inflection heuristics with numerical residuals and explicit incompleteness status. |
 | `ParametricSampler` | Qt-free adaptive parameter-interval sampling to shared screen-space geometry, with bounded work, invalid-point disconnection, and incremental jobs. |
 | `CurveSampler` | Adaptive approximation, domain and discontinuity checks, drawing-path separation, bounded terminal refinement for steep continuous curves, and evaluation limits. |
 | `CurveSamplingJob` | Incremental visible-geometry builds, bounded work per advance, retained probes, and completion reporting. |
@@ -226,6 +250,8 @@ RationalStudio/
 │   │   ├── ImplicitContour.cpp
 │   │   ├── IntersectionDetection.hpp
 │   │   ├── IntersectionDetection.cpp
+│   │   ├── GraphFeatureDetection.hpp
+│   │   ├── GraphFeatureDetection.cpp
 │   │   ├── ParametricSampler.hpp
 │   │   ├── ParametricSampler.cpp
 │   │   ├── CurveGeometryCache.hpp
@@ -293,6 +319,8 @@ RationalStudio/
     ├── ImplicitGraphTests.cpp
     ├── IntersectionDetectionTests.cpp
     ├── IntersectionGraphTests.cpp
+    ├── GraphFeatureDetectionTests.cpp
+    ├── GraphFeatureGraphTests.cpp
     ├── GraphCanvasCoverageTests.cpp
     └── test_issue26_gui_verification.py
 ```
@@ -374,7 +402,7 @@ ctest --test-dir build-core --output-on-failure
 
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest registers **45 tests from 44 executables**: twenty-eight Qt-independent tests and seventeen offscreen Qt invocations from sixteen widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-eight tests:
+With GUI and testing enabled, CTest registers **47 tests from 46 executables**: twenty-nine Qt-independent tests and eighteen offscreen Qt invocations from seventeen widget test executables. The coverage executable also runs separately at 2× display scale. Core-only builds register twenty-nine tests:
 
 | Executable | Focus |
 |---|---|
@@ -421,6 +449,8 @@ With GUI and testing enabled, CTest registers **45 tests from 44 executables**: 
 | `RationalImplicitGraphTests` | Offscreen Qt implicit row controls, shared renderer/cache isolation, version-3 mixed workspace round trips, rejected malformed equations, and real MainWindow recovery. |
 | `RationalIntersectionDetectionTests` | Qt-free bounded Cartesian pair intersections, analytical crossings/tangencies, domain validation, coincidence/discontinuity handling, explicit residuals, evaluation/result limits, and dynamic variable bindings. |
 | `RationalIntersectionGraphTests` | Offscreen Qt MainWindow toolbar search, analytical results, tolerance display, unsupported representation scope, invalid-row isolation, report invalidation and recovery. |
+| `RationalGraphFeatureDetectionTests` | Qt-free analytical Cartesian roots, local minima/maxima, stationary inflections, cusps, discontinuities, budgets, binding snapshots and invalid numerical inputs. |
+| `RationalGraphFeatureGraphTests` | Offscreen MainWindow Features action, numerical results, GUI report invalidation and recovery, and explicit representation limitations. |
 | `RationalGraphCanvasCoverageTests` | Rendered tangent-tail coverage, identical repeated repaints, retained previews through interrupted refreshes, toolbar zoom, resizing, and exhausted shared budgets. |
 | `RationalGraphCanvasCoverageHiDpiTests` | Second invocation of the coverage executable with `--dpi-smoke` and `QT_SCALE_FACTOR=2`. |
 

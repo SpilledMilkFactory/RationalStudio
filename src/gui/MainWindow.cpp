@@ -7,6 +7,7 @@
 #include "PolarExpression.hpp"
 #include "ImplicitContour.hpp"
 #include "IntersectionDetection.hpp"
+#include "GraphFeatureDetection.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -338,6 +339,7 @@ void MainWindow::calculateScientific() {
     if (history_->count() > 150) delete history_->takeItem(history_->count() - 1);
     lastAnswer_ = answer;
     if (graph_) graph_->setLastAnswer(answer);
+    invalidateAnalysisReports();
     scientificResult_->setText(result);
     scientificHint_->setText("Saved to history  ·  Use ans to reference this result.");
 }
@@ -364,6 +366,12 @@ QWidget* MainWindow::makeGraphPage() {
     intersections->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     tools->addWidget(intersections);
     connect(intersections, &QPushButton::clicked, this, [this] { findGraphIntersections(); });
+    auto* features = makeButton("Features");
+    features->setObjectName("graphFindFeatures");
+    features->setToolTip("Numerically inspect roots, local extrema, and stationary inflections of visible Cartesian curves");
+    features->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    tools->addWidget(features);
+    connect(features, &QPushButton::clicked, this, [this] { findGraphFeatures(); });
     addToolbarButton("Save", [this] { saveGraph(); });
     addToolbarButton("Open", [this] { loadGraph(); });
     addToolbarButton("PNG", [this] { exportImage(); });
@@ -495,6 +503,7 @@ QWidget* MainWindow::makeGraphPage() {
 
     graph_ = new GraphCanvas;
     graph_->onPointerInfo = [this](const QString& value) { if (graphStatus_) graphStatus_->setText(value); };
+    graph_->onViewportChanged = [this] { invalidateAnalysisReports(); };
     splitter->addWidget(graph_);
     splitter->setStretchFactor(0, 0);
     splitter->setStretchFactor(1, 1);
@@ -503,13 +512,47 @@ QWidget* MainWindow::makeGraphPage() {
     graphStatus_ = new QLabel("Ready");
     graphStatus_->setStyleSheet("color:#8eacc8; padding-left:8px;");
     outer->addWidget(graphStatus_);
-    intersectionResults_ = new QLabel(page);
+    // Issue #41: reserve a stable, scrollable results region. Previously,
+    // showing a hidden report QLabel added its preferred height to `outer`.
+    // That resized GraphCanvas and called onViewportChanged(), instantly
+    // marking the newly computed analysis stale and invalidating plot caches.
+    // Keep the outer layout height fixed as reports appear or grow.
+    auto* analysisPane = new QScrollArea(page);
+    analysisPane->setObjectName("graphAnalysisPane");
+    analysisPane->setWidgetResizable(true);
+    analysisPane->setFixedHeight(148);
+    analysisPane->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    analysisPane->setFrameShape(QFrame::NoFrame);
+    auto* analysisBody = new QWidget;
+    auto* analysisLayout = new QVBoxLayout(analysisBody);
+    analysisLayout->setContentsMargins(0, 0, 0, 0);
+    analysisLayout->setSpacing(0);
+    auto* analysisHint = new QLabel(
+        "Analysis · Use Intersections or Features to inspect visible Cartesian graphs.",
+        analysisBody);
+    analysisHint->setWordWrap(true);
+    analysisHint->setStyleSheet("color:#91a6be; padding:6px; background:#1b293b;");
+    analysisLayout->addWidget(analysisHint);
+
+    intersectionResults_ = new QLabel(analysisBody);
     intersectionResults_->setObjectName("graphIntersectionResults");
     intersectionResults_->setWordWrap(true);
     intersectionResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     intersectionResults_->setStyleSheet("color:#b5d4ee; padding:6px; background:#1b293b;");
+    analysisLayout->addWidget(intersectionResults_);
     intersectionResults_->hide();
-    outer->addWidget(intersectionResults_);
+
+    featureResults_ = new QLabel(analysisBody);
+    featureResults_->setObjectName("graphFeatureResults");
+    featureResults_->setWordWrap(true);
+    featureResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    featureResults_->setStyleSheet("color:#b5d4ee; padding:6px; background:#1b293b;");
+    analysisLayout->addWidget(featureResults_);
+    featureResults_->hide();
+
+    analysisLayout->addStretch();
+    analysisPane->setWidget(analysisBody);
+    outer->addWidget(analysisPane);
     return page;
 }
 
@@ -1005,6 +1048,7 @@ void MainWindow::onVariableDefinitionsChanged(
     const std::vector<std::string>& changed, bool scopeChanged) {
     if (!variableSliders_ || !graph_) return;
     graph_->setVariableBindings(variableSliders_->definitions().bindings(), changed);
+    invalidateAnalysisReports();
     if (scopeChanged) {
         const auto update = functionDefinitions_.setVariableScope(variableSliders_->definitions().scope());
         if (update.accepted && !update.recompiled.empty()) {
@@ -1206,10 +1250,107 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
         curves.push_back({row->color, function, row->visible->isChecked(), raw});
     }
     graph_->setCurves(std::move(curves));
-    if (intersectionResults_ && intersectionResults_->isVisible()) {
-        intersectionResults_->setText("Intersection results may be stale after graph edits; "
+    invalidateAnalysisReports();
+}
+
+void MainWindow::invalidateAnalysisReports() {
+    if (intersectionResults_ && !intersectionResults_->isHidden())
+        intersectionResults_->setText("Intersection results may be stale after edits or navigation; "
                                       "select Intersections to recompute.");
+    if (featureResults_ && !featureResults_->isHidden())
+        featureResults_->setText("Feature results may be stale after edits, variable changes or navigation; "
+                                 "select Features to recompute.");
+}
+
+void MainWindow::findGraphFeatures() {
+    if (!featureResults_ || !graph_ || !variableSliders_) return;
+    if (graphDebounce_ && graphDebounce_->isActive()) {
+        graphDebounce_->stop();
+        rebuildGraph();
     }
+    struct Candidate { std::size_t row; const Expression* expression; };
+    std::vector<Candidate> candidates;
+    for (std::size_t index=0; index<graphRows_.size(); ++index) {
+        const auto* row=graphRows_[index];
+        if (!row || row->parametric || row->polar || row->implicit ||
+            !row->visible->isChecked() || !row->parsedExpression ||
+            !row->parsedExpression->valid()) continue;
+        candidates.push_back({index+1,row->parsedExpression.get()});
+    }
+    if (candidates.empty()) {
+        featureResults_->setText("Features: no visible valid Cartesian rows to inspect. "
+                                 "Parametric, polar and implicit representations are not yet supported.");
+        if (intersectionResults_) intersectionResults_->hide();
+        featureResults_->show();
+        return;
+    }
+    const double halfWidth=static_cast<double>(graph_->width()) /
+                           (2.0*graph_->pixelsPerUnit());
+    const double minimum=graph_->centerX()-halfWidth;
+    const double maximum=graph_->centerX()+halfWidth;
+    GraphFeatureOptions options;
+    options.subdivisions=512;
+    options.maxEvaluations=8000;
+    options.maxResults=12;
+    options.xTolerance=1e-8;
+    options.residualTolerance=1e-8;
+    options.derivativeTolerance=1e-6;
+    const auto bindings=variableSliders_->definitions().bindings();
+    QStringList details;
+    const std::size_t maxRows=8;
+    const std::size_t maxLines=35;
+    std::size_t checked=0;
+    bool limited=candidates.size()>maxRows;
+    for (const auto& candidate:candidates) {
+        if (checked>=maxRows || details.size()>=static_cast<int>(maxLines)) {
+            limited=true;
+            break;
+        }
+        ++checked;
+        const auto result=inspectCartesianFeatures(*candidate.expression,minimum,maximum,
+                                                    angleMode_,bindings,lastAnswer_,options);
+        const auto row=QString("Row %1").arg(static_cast<qulonglong>(candidate.row));
+        if (result.status==GraphFeatureStatus::CoincidentWithAxis) {
+            details << row+": sampled X-axis coincidence or zero interval (not isolated roots)";
+        } else if (result.status==GraphFeatureStatus::InvalidInput) {
+            details << row+": invalid numerical inspection domain";
+        } else {
+            for (const auto& point:result.points) {
+                QString kind;
+                switch(point.kind) {
+                case GraphFeatureKind::Root: kind="root"; break;
+                case GraphFeatureKind::LocalMinimum: kind="local minimum"; break;
+                case GraphFeatureKind::LocalMaximum: kind="local maximum"; break;
+                case GraphFeatureKind::StationaryInflection: kind="stationary inflection candidate"; break;
+                }
+                details << QString("%1: %2 (%3, %4); %5 %6; bracket width %7")
+                    .arg(row).arg(kind)
+                    .arg(point.x,0,'g',11).arg(point.y,0,'g',11)
+                    .arg(point.kind==GraphFeatureKind::Root ? "|f(x)|" :
+                         point.kind==GraphFeatureKind::StationaryInflection ? "|slope|" : "local margin")
+                    .arg(point.residual,0,'g',3).arg(point.xBracketWidth,0,'g',3);
+                if(details.size()>=static_cast<int>(maxLines)) { limited=true; break; }
+            }
+            if(result.status!=GraphFeatureStatus::Complete) limited=true;
+        }
+    }
+    if(details.empty()) details << "No isolated roots, local extrema or stationary inflections detected.";
+    featureResults_->setText(
+        QString("Features (X ∈ [%1, %2], x tolerance %3, root residual %4, "
+                "stationary slope threshold %5; %6 rows scanned):\n")
+            .arg(minimum,0,'g',8).arg(maximum,0,'g',8)
+            .arg(options.xTolerance,0,'g',2)
+            .arg(options.residualTolerance,0,'g',2)
+            .arg(options.derivativeTolerance,0,'g',2)
+            .arg(static_cast<qulonglong>(checked))+
+        details.join("\n")+
+        (limited ? "\nPartial results: row, evaluation, result, or output cap reached." : QString())+
+        "\nFinite sampling can miss extrema, tangencies, non-smooth points and small features; "
+        "stationary inflections are heuristic. Extrema are not proven global and derivatives are "
+        "not symbolically certified. Endpoints are not classified as extrema. "
+        "Parametric, polar and implicit graphs are not searched.");
+    if (intersectionResults_) intersectionResults_->hide();
+    featureResults_->show();
 }
 
 void MainWindow::findGraphIntersections() {
@@ -1230,6 +1371,7 @@ void MainWindow::findGraphIntersections() {
     if (candidates.size() < 2) {
         intersectionResults_->setText("Intersections: select at least two visible, valid Cartesian rows. "
                                       "Parametric, polar and implicit pairs are not supported by this detector.");
+        if (featureResults_) featureResults_->hide();
         intersectionResults_->show();
         return;
     }
@@ -1287,6 +1429,7 @@ void MainWindow::findGraphIntersections() {
         (limited ? "\nPartial results: pair, evaluation, or output budget reached." : QString()) +
         "\nFinite sampling can miss tangencies, close crossings, and discontinuities; "
         "residuals do not certify completeness. Other graph types are not searched.");
+    if (featureResults_) featureResults_->hide();
     intersectionResults_->show();
 }
 
@@ -1300,6 +1443,7 @@ void MainWindow::setAngleMode(AngleMode mode) {
             graph_->setVariableBindings(variableSliders_->definitions().bindings(), update.changed);
     }
     if (graph_) graph_->setAngleMode(mode);
+    invalidateAnalysisReports();
     if (radiansButton_) radiansButton_->setChecked(mode == AngleMode::Radians);
     if (degreesButton_) degreesButton_->setChecked(mode == AngleMode::Degrees);
     updateScientificPreview();
