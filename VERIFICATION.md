@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE45_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE46_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #45 (M3-09), advanced graph numerical accuracy and performance qualification.** Linux GUI Debug **54/54 CTests PASS** (18.37 s), GUI Release **54/54 PASS** (12.18 s), core-only ASan/UBSan **33/33 PASS** (8.53 s). Analytical reference and resource matrix assertions PASS in each configuration; 6 Qt-free and 10 Qt-offscreen benchmark cases measured in Release (timings advisory). Matching 111 source provenance paths; zero GUI build warnings. **Manual GUI:** PASS — developer-reported Issue #45 cross-representation desktop inspection; not separately instrumented in Release. Native Windows, Qt 5 and GUI sanitizer testing remain unverified; benchmark timings are not cross-machine performance pass gates.
+**Current status:** **PASS — Issue #46 (M4-01), Qt-independent numerical differentiation.** GUI Debug **55/55 CTests PASS** (18.31 s), GUI Release **55/55 CTests PASS** (12.22 s), core-only ASan/UBSan **34/34 CTests PASS** (8.43 s); **338 NumericalDifferentiation assertions PASS** in each configuration. 118 matching source/documentation provenance paths, zero recorded GUI build warnings. **Manual GUI:** not required for core-only M4-01; no new GUI controls. Native Windows, Qt 5 and GUI sanitizer coverage remain unverified. Finite-difference estimates and smoothness checks are heuristic, not certified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,34 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #45 current advanced-graph qualification
+## Issue #46 current numerical differentiation qualification
+
+Issue #46 adds a Qt-independent adaptive finite-difference service with central Richardson extrapolation,
+optional one-sided three-point derivatives, explicit convergence/error/evaluation diagnostics, and bounded
+work. The one-sided result is not a claim that a two-sided derivative exists. Cusp/jump filtering is heuristic.
+No expression grammar, GUI widget, graph renderer or workspace schema changed.
+
+- Linux GUI Debug: **55/55 CTests PASS** — 18.31 s.
+- Linux GUI Release: **55/55 CTests PASS** — 12.22 s.
+- Qt-free ASan/UBSan: **34/34 CTests PASS** — 8.43 s.
+- Dedicated derivative suite: **338 assertions PASS** each in Debug, Release, and ASan/UBSan.
+- Provenance: **118 matching files**, manifest SHA-256 `9dcb97e8580d7e68b59f7cbeaf28d2cb43240e89d0832e0e0dfacdcb0daf359d`.
+- Manual GUI: not required for core-only M4-01; no new GUI controls.
+
+Regression coverage includes smooth analytic derivatives, representative finite-domain one-sided estimates,
+non-differentiable candidates, missing/nonfinite inputs, strict callback budgets, RAD/DEG semantics,
+variable binding snapshots, nested reusable functions, and a fixed-seed 240-case analytical matrix.
+
+**CTest log SHA-256:** Debug `91ccb65edd4bb74d96fe64e5fc3ce6d7a6ceaf1aa6ce0384d28a391220994a93`; Release `74336c48bfbc281fa29978e4f666d3e3fb19a1820e3e3dd73e7a321da4e5dbb8`;
+ASan `ea0efed39e9abd2441e895492fa9771a348bc10c4e7a82b12357816ee4fe52df`. **Dedicated test log SHA-256:** Debug
+`7019144c16c26e41de36076f1a5cadccc812381c7a2117a33cc8857af9f0b344`; Release `7019144c16c26e41de36076f1a5cadccc812381c7a2117a33cc8857af9f0b344`; ASan `7019144c16c26e41de36076f1a5cadccc812381c7a2117a33cc8857af9f0b344`.
+
+**Recorded toolchain:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0, cmake version 4.2.3, 1.13.2; pre-qualification base HEAD `529c7b9fc2a3aeaf85d69ef83570268b4ce0bdd5`.
+Passing finite numerical reference tests does not certify differentiation for arbitrary functions.
+
+Issue #45 and all earlier qualifications below remain historical.
+
+## Issue #45 historical advanced-graph qualification
 
 Issue #45 adds two deterministic CTests without modifying the mathematical grammar, rendering pipeline or workspace format. The reference matrix checks sampled Cartesian, parametric, signed-radius polar, implicit, vertical inequality, feature and trace results against explicit analytical oracles. Resource tests exercise callback ceilings, domain gaps and nonfinite inputs. The earlier GUI integration suites remain part of the complete 54-test Linux desktop matrix. These are finite reference cases, not a proof of mathematical completeness or certified topology.
 

@@ -21,6 +21,7 @@ add_library(RationalCore STATIC
     src/core/ImplicitContour.cpp
     src/core/IntersectionDetection.cpp
     src/core/GraphFeatureDetection.cpp
+    src/core/NumericalDifferentiation.cpp
     src/core/InequalityRegion.hpp
     src/core/InequalityRegion.cpp
     src/core/GraphTrace.cpp
@@ -78,6 +79,34 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # -----------------------------------------------------
+    # M4-01 / Issue #46 — Numerical Differentiation
+    # -----------------------------------------------------
+
+    add_executable(RationalNumericalDifferentiationTests
+        tests/NumericalDifferentiationTests.cpp
+    )
+
+    target_link_libraries(RationalNumericalDifferentiationTests
+        PRIVATE
+        RationalCore
+    )
+
+    target_compile_options(RationalNumericalDifferentiationTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
+    )
+
+    add_test(
+        NAME RationalNumericalDifferentiationTests
+        COMMAND RationalNumericalDifferentiationTests
+    )
+
+    set_tests_properties(
+        RationalNumericalDifferentiationTests
+        PROPERTIES
+        LABELS "core;calculus;differentiation;regression"
+    )
+
     # M3 / Issue #45 — cross-representation analytical and resource matrices.
     foreach(suite IN ITEMS AdvancedGraphAccuracyMatrix AdvancedGraphResourceMatrix)
         add_executable(Rational${suite}Tests tests/${suite}Tests.cpp)

@@ -167,6 +167,28 @@ search bounds mathematical callback counts, not wall-clock latency.
 
 **Advanced graph correctness and performance qualification (Issue #45; Milestone 3).** Two Qt-independent CTest matrices add analytical reference cases and bounded resource checks across Cartesian, parametric, polar, implicit, and vertical inequality representations, including signed polar radii, domain gaps, intersection and feature candidates, and sampled-geometry tracing. A fixed-seed reference sample supplements deterministic numerical oracles; tolerances are explicit and finite sampling is not a completeness proof. Two optional Release benchmark executables (`RationalAdvancedGraphBench` and `RationalAdvancedGraphCanvasBench`, enabled by `RATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS=ON`) report median, p95, and maximum observed timings for mathematical sampling/tracing and offscreen Qt cold-to-ready/warm-cache drawing. Benchmark measurements are advisory and are **not** CTest timing pass/fail gates; they do not represent display latency or guarantee throughput on other hardware. An opt-in `scripts/compare_issue45_benchmarks.py` helper compares CSV medians against a user-selected reference/threshold on comparable hardware, without imposing machine-independent latency limits. Existing per-representation GUI regressions remain required, with no application mathematical grammar, renderer, or workspace schema changes. See VERIFICATION.md for qualification evidence and measured benchmark output, if available.
 
+<!-- ISSUE46_README_UPDATED -->
+
+**Numerical differentiation (Issue #46; Milestone 4).** The Qt-independent
+`NumericalDifferentiation` service evaluates a compiled explicit `f(x)` or a
+finite-valued callback at a requested finite coordinate. It uses successively
+halved central finite differences with second-order Richardson extrapolation;
+when the domain excludes one side, an optional three-point one-sided stencil
+and extrapolation provide a **one-sided**, not a guaranteed two-sided,
+derivative estimate. `DerivativeResult` reports the method, approximate value,
+inter-level error estimate, final step, evaluation count, and explicit status.
+The configurable sample and evaluation limits prevent unbounded mathematical
+callback counts. A left/right secant comparison rejects some cusps, jumps, and
+non-smooth candidates, but **finite differences cannot prove differentiability**.
+The error estimate is a convergence heuristic, **not a certified error bound**;
+catastrophic cancellation, oscillatory functions, narrow discontinuities,
+non-finite domains, and pathological functions may yield inaccurate answers or
+non-convergence. The compiled-expression overload honors current scalar
+bindings, reusable function snapshots, `ans`, and RAD/DEG semantics. This
+issue adds a reusable **core API only**, not `derivative(...)` expression grammar,
+scientific-calculator buttons, graph overlays, new persistence fields, or
+symbolic/automatic differentiation. Those UI decisions are deferred to M4-08.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
