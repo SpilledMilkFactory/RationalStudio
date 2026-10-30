@@ -80,6 +80,18 @@ QPushButton* makeButton(const QString& name, const QString& property = {}) {
     if (!property.isEmpty()) button->setProperty("kind", property);
     return button;
 }
+// Uniform, read-only representation labels. Their object names let Qt tests
+// inspect the visible type without relying on layout coordinates or text color.
+void addRepresentationBadge(QVBoxLayout* layout, QWidget* parent,
+                            const QString& kind, const QString& syntax) {
+    auto* badge = new QLabel(kind + "  ·  " + syntax, parent);
+    badge->setObjectName("graphRepresentationBadge");
+    badge->setTextFormat(Qt::PlainText);
+    badge->setStyleSheet("color:#9cc7dc; font-size:11px; font-weight:600;");
+    badge->setAccessibleName(kind + " graph representation");
+    layout->addWidget(badge);
+}
+
 // The core parser owns syntax validity and byte locations. This presentation
 // helper maps normalized offsets back to readable Unicode character columns.
 bool isIncompleteEdit(const Expression& expression, const std::string& normalized) {
@@ -384,36 +396,77 @@ QWidget* MainWindow::makeGraphPage() {
     side->setMaximumWidth(470);
     auto* sv = new QVBoxLayout(side);
     sv->setContentsMargins(5, 6, 8, 4);
-    auto* inputHead = new QHBoxLayout;
-    auto* label = new QLabel("Expressions");
-    QFont labelFont = label->font(); labelFont.setPointSize(16); labelFont.setBold(true);
+    // Issue #43: a two-column representation chooser remains usable at the
+    // sidebar's 255px minimum width. Keep the established named buttons and
+    // their handlers intact for existing automation and keyboard workflows.
+    auto* inputHead = new QVBoxLayout;
+    auto* label = new QLabel("Add graph representation", side);
+    QFont labelFont = label->font();
+    labelFont.setPointSize(12);
+    labelFont.setBold(true);
     label->setFont(labelFont);
-    inputHead->addWidget(label, 1);
-    auto* add = makeButton("+ Add", "accent");
-    add->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    inputHead->addWidget(add);
-    connect(add, &QPushButton::clicked, this, [this] { addGraphRow(); });
-    auto* addParametric = makeButton("+ Parametric");
-    addParametric->setObjectName("addParametricGraphRow");
-    addParametric->setToolTip("Add X(t), Y(t) coordinate expressions and a parameter interval");
-    addParametric->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    connect(addParametric, &QPushButton::clicked, this, [this] { addParametricRow(); });
-    inputHead->addWidget(addParametric);
-    auto* addPolar = makeButton("+ Polar");
-    addPolar->setObjectName("addPolarGraphRow");
-    addPolar->setToolTip("Add r = f(θ) with an angle interval");
-    connect(addPolar, &QPushButton::clicked, this, [this] { addPolarRow(); });
-    inputHead->addWidget(addPolar);
-    auto* addImplicit = makeButton("+ Implicit");
-    addImplicit->setObjectName("addImplicitGraphRow");
-    addImplicit->setToolTip("Graph F(x,y)=G(x,y) using bounded marching squares");
-    connect(addImplicit, &QPushButton::clicked, this, [this] { addImplicitRow(); });
-    inputHead->addWidget(addImplicit);
-    auto* addInequality = makeButton("+ Inequality");
-    addInequality->setObjectName("addInequalityGraphRow");
-    addInequality->setToolTip("Add y > f(x), y >= f(x), y < f(x), or y <= f(x)");
-    connect(addInequality, &QPushButton::clicked, this, [this] { addInequalityRow(); });
-    inputHead->addWidget(addInequality);
+    inputHead->addWidget(label);
+    auto* addGrid = new QGridLayout;
+    addGrid->setHorizontalSpacing(5);
+    addGrid->setVerticalSpacing(5);
+    addGrid->setColumnStretch(0, 1);
+    addGrid->setColumnStretch(1, 1);
+    auto makeAddButton = [this, side, addGrid](const QString& caption,
+                                               const QString& name,
+                                               const QString& help,
+                                               int row, int column,
+                                               const std::function<void()>& action) {
+        auto* button = makeButton(caption);
+        button->setParent(side);
+        button->setObjectName(name);
+        button->setToolTip(help);
+        button->setAccessibleName("Add " + caption + " graph");
+        button->setMinimumWidth(0);
+        button->setMinimumHeight(32);
+        button->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+        addGrid->addWidget(button, row, column);
+        connect(button, &QPushButton::clicked, this, action);
+        return button;
+    };
+    makeAddButton("Cartesian", "addCartesianGraphRow",
+                  "Explicit y = f(x); e.g., y = sin(x)", 0, 0,
+                  [this] { addGraphRow(); if (activeGraphInput_) activeGraphInput_->setFocus(); });
+    makeAddButton("Parametric", "addParametricGraphRow",
+                  "Paired x(t), y(t) with finite t minimum and maximum", 0, 1,
+                  [this] { addParametricRow(); if (activeGraphInput_) activeGraphInput_->setFocus(); });
+    makeAddButton("Polar", "addPolarGraphRow",
+                  "Radius r = f(θ) with finite angular interval (RAD/DEG)", 1, 0,
+                  [this] { addPolarRow(); if (activeGraphInput_) activeGraphInput_->setFocus(); });
+    makeAddButton("Implicit", "addImplicitGraphRow",
+                  "Zero contours such as x² + y² = 25", 1, 1,
+                  [this] { addImplicitRow(); if (activeGraphInput_) activeGraphInput_->setFocus(); });
+    makeAddButton("Inequality", "addInequalityGraphRow",
+                  "Shaded vertical comparisons such as y > x²", 2, 0,
+                  [this] { addInequalityRow(); if (activeGraphInput_) activeGraphInput_->setFocus(); });
+    auto* typeHelp = new QToolButton(side);
+    typeHelp->setObjectName("graphRepresentationHelpButton");
+    typeHelp->setText("Type guide ▾");
+    typeHelp->setToolTip("Show/hide syntax examples for all supported graph representations");
+    typeHelp->setCheckable(true);
+    typeHelp->setChecked(false);
+    typeHelp->setAccessibleName("Toggle graph representation guide");
+    typeHelp->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    addGrid->addWidget(typeHelp, 2, 1);
+    inputHead->addLayout(addGrid);
+    auto* typeExamples = new QLabel(side);
+    typeExamples->setObjectName("graphRepresentationHelpText");
+    typeExamples->setTextFormat(Qt::PlainText);
+    typeExamples->setWordWrap(true);
+    typeExamples->setText("Cartesian: y = sin(x)\n"
+                          "Parametric: x(t) = cos(t), y(t) = sin(t)\n"
+                          "Polar: r = 2cos(θ) with θ interval\n"
+                          "Implicit: x² + y² = 25\n"
+                          "Inequality: y > x² (dashed), y ≤ x² (solid)\n"
+                          "Parametric/polar intervals respect the current angle mode.");
+    typeExamples->setStyleSheet("color:#9aadc5; font-size:11px;");
+    typeExamples->setVisible(false);
+    connect(typeHelp, &QToolButton::toggled, typeExamples, &QWidget::setVisible);
+    inputHead->addWidget(typeExamples);
     sv->addLayout(inputHead);
 
     // Issue #32: buttons insert genuine mathematical glyphs into the
@@ -574,9 +627,11 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     row->widget = new QWidget;
     auto* frame = new QVBoxLayout(row->widget);
     frame->setContentsMargins(3, 4, 3, 4);
+    addRepresentationBadge(frame, row->widget, "Cartesian", "y = f(x)");
     auto* controls = new QHBoxLayout;
     row->visible = new QToolButton;
     row->visible->setText("●");
+    row->visible->setAccessibleName("Toggle cartesian graph visibility");
     row->visible->setToolTip("Toggle curve visibility");
     row->visible->setCheckable(true);
     row->visible->setChecked(visible);
@@ -592,6 +647,7 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     controls->addWidget(row->input, 1);
     auto* remove = new QToolButton;
     remove->setText("×");
+    remove->setAccessibleName("Remove cartesian graph");
     remove->setToolTip("Remove expression");
     controls->addWidget(remove);
     frame->addLayout(controls);
@@ -655,6 +711,7 @@ void MainWindow::addParametricRow(const QString& x, const QString& y,
     auto* headingRow = new QHBoxLayout;
     row->visible = new QToolButton;
     row->visible->setText("●");
+    row->visible->setAccessibleName("Toggle parametric graph visibility");
     row->visible->setCheckable(true);
     row->visible->setChecked(visible);
     row->visible->setToolTip("Toggle parametric curve visibility");
@@ -664,6 +721,7 @@ void MainWindow::addParametricRow(const QString& x, const QString& y,
     headingRow->addWidget(label, 1);
     auto* remove = new QToolButton;
     remove->setText("×");
+    remove->setAccessibleName("Remove parametric graph");
     remove->setToolTip("Remove parametric curve");
     headingRow->addWidget(remove);
     frame->addLayout(headingRow);
@@ -681,21 +739,23 @@ void MainWindow::addParametricRow(const QString& x, const QString& y,
     row->yInput->setText(y);
     frame->addWidget(row->input);
     frame->addWidget(row->yInput);
-    auto* range = new QHBoxLayout;
-    range->addWidget(new QLabel("t min:"));
+    auto* range = new QGridLayout;
+    range->addWidget(new QLabel("t min:"), 0, 0);
     row->tMinimum = new QDoubleSpinBox;
     row->tMinimum->setObjectName("parametricMinimum");
+    row->tMinimum->setAccessibleName("Parametric interval minimum");
     row->tMinimum->setRange(-1e8, 1e8);
     row->tMinimum->setDecimals(12);
     row->tMinimum->setValue(minimum);
-    range->addWidget(row->tMinimum);
-    range->addWidget(new QLabel("t max:"));
+    range->addWidget(row->tMinimum, 0, 1);
+    range->addWidget(new QLabel("t max:"), 1, 0);
     row->tMaximum = new QDoubleSpinBox;
     row->tMaximum->setObjectName("parametricMaximum");
+    row->tMaximum->setAccessibleName("Parametric interval maximum");
     row->tMaximum->setRange(-1e8, 1e8);
     row->tMaximum->setDecimals(12);
     row->tMaximum->setValue(maximum);
-    range->addWidget(row->tMaximum);
+    range->addWidget(row->tMaximum, 1, 1);
     frame->addLayout(range);
     row->info = new QLabel("Parameter interval must satisfy min < max.");
     row->info->setTextFormat(Qt::PlainText);
@@ -759,6 +819,7 @@ void MainWindow::addPolarRow(const QString& expression, double minimum, double m
     auto* headingRow = new QHBoxLayout;
     row->visible = new QToolButton;
     row->visible->setText("●");
+    row->visible->setAccessibleName("Toggle polar graph visibility");
     row->visible->setCheckable(true);
     row->visible->setChecked(visible);
     row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
@@ -766,6 +827,7 @@ void MainWindow::addPolarRow(const QString& expression, double minimum, double m
     headingRow->addWidget(new QLabel("Polar r(θ)"), 1);
     auto* remove = new QToolButton;
     remove->setText("×");
+    remove->setAccessibleName("Remove polar graph");
     remove->setToolTip("Remove polar curve");
     headingRow->addWidget(remove);
     frame->addLayout(headingRow);
@@ -776,21 +838,23 @@ void MainWindow::addPolarRow(const QString& expression, double minimum, double m
     row->input->setMaxLength(2048);
     row->input->setText(expression);
     frame->addWidget(row->input);
-    auto* interval = new QHBoxLayout;
-    interval->addWidget(new QLabel("θ min:"));
+    auto* interval = new QGridLayout;
+    interval->addWidget(new QLabel("θ min:"), 0, 0);
     row->tMinimum = new QDoubleSpinBox;
     row->tMinimum->setObjectName("polarMinimum");
+    row->tMinimum->setAccessibleName("Polar interval minimum");
     row->tMinimum->setRange(-1e8, 1e8);
     row->tMinimum->setDecimals(12);
     row->tMinimum->setValue(minimum);
-    interval->addWidget(row->tMinimum);
-    interval->addWidget(new QLabel("θ max:"));
+    interval->addWidget(row->tMinimum, 0, 1);
+    interval->addWidget(new QLabel("θ max:"), 1, 0);
     row->tMaximum = new QDoubleSpinBox;
     row->tMaximum->setObjectName("polarMaximum");
+    row->tMaximum->setAccessibleName("Polar interval maximum");
     row->tMaximum->setRange(-1e8, 1e8);
     row->tMaximum->setDecimals(12);
     row->tMaximum->setValue(maximum);
-    interval->addWidget(row->tMaximum);
+    interval->addWidget(row->tMaximum, 1, 1);
     frame->addLayout(interval);
     row->info = new QLabel;
     row->info->setTextFormat(Qt::PlainText);
@@ -844,9 +908,11 @@ void MainWindow::addImplicitRow(const QString& equation, bool visible, QColor co
     row->widget = new QWidget;
     auto* frame = new QVBoxLayout(row->widget);
     frame->setContentsMargins(3, 4, 3, 4);
+    addRepresentationBadge(frame, row->widget, "Implicit", "F(x,y) = G(x,y)");
     auto* controls = new QHBoxLayout;
     row->visible = new QToolButton;
     row->visible->setText("●");
+    row->visible->setAccessibleName("Toggle implicit graph visibility");
     row->visible->setCheckable(true);
     row->visible->setChecked(visible);
     row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
@@ -860,6 +926,7 @@ void MainWindow::addImplicitRow(const QString& equation, bool visible, QColor co
     controls->addWidget(row->input, 1);
     auto* remove = new QToolButton;
     remove->setText("×");
+    remove->setAccessibleName("Remove implicit graph");
     remove->setToolTip("Remove implicit equation");
     controls->addWidget(remove);
     frame->addLayout(controls);
@@ -908,9 +975,11 @@ void MainWindow::addInequalityRow(const QString& expression, bool visible, QColo
     row->widget = new QWidget;
     auto* frame = new QVBoxLayout(row->widget);
     frame->setContentsMargins(3, 4, 3, 4);
+    addRepresentationBadge(frame, row->widget, "Inequality", "y ⋚ f(x)");
     auto* controls = new QHBoxLayout;
     row->visible = new QToolButton;
     row->visible->setText("●");
+    row->visible->setAccessibleName("Toggle inequality graph visibility");
     row->visible->setCheckable(true);
     row->visible->setChecked(visible);
     row->visible->setStyleSheet(QString("color:%1; font-size:18px;").arg(row->color.name()));
@@ -924,6 +993,7 @@ void MainWindow::addInequalityRow(const QString& expression, bool visible, QColo
     controls->addWidget(row->input, 1);
     auto* remove = new QToolButton;
     remove->setText("×");
+    remove->setAccessibleName("Remove inequality graph");
     remove->setToolTip("Remove inequality");
     controls->addWidget(remove);
     frame->addLayout(controls);
