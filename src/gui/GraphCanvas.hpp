@@ -8,6 +8,7 @@
 #include "GraphViewport.hpp"
 #include "CurveGeometryCache.hpp"
 #include "GraphRepaintScheduler.hpp"
+#include "GraphTrace.hpp"
 
 #include <QColor>
 #include <QImage>
@@ -18,6 +19,7 @@
 #include <QTimer>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 class QMouseEvent;
@@ -78,10 +80,20 @@ struct GraphCurve {
     [[nodiscard]] bool polar() const noexcept { return polarCurve; }
 };
 
+// Computed only when the Features action is explicitly invoked. These are
+// approximate numerical candidates, not symbolically certified coordinates.
+struct GraphSignificantPoint {
+    double x = 0.0;
+    double y = 0.0;
+    QString description;
+    QColor color;
+};
+
 class GraphCanvas final : public QWidget {
 public:
     explicit GraphCanvas(QWidget* parent = nullptr);
     void setCurves(std::vector<GraphCurve> curves);
+    void setSignificantPoints(std::vector<GraphSignificantPoint> points);
     // Set a complete binding snapshot. `changed` names are the only
     // definitions whose numeric/undefined values changed; their dependent
     // curves alone lose completed geometry and in-flight sampling jobs.
@@ -148,6 +160,14 @@ private:
     void drawInequalityRegions(QPainter& painter);
     void drawCurves(QPainter& painter);
     void drawTrace(QPainter& painter) const;
+    void drawSignificantPoints(QPainter& painter) const;
+    struct Inspection {
+        QPointF point;
+        QColor color;
+        QString text;
+        double distance = 0.0;
+    };
+    [[nodiscard]] std::optional<Inspection> nearestInspection() const;
     void updatePointerStatus() const;
     void requestNavigationRefresh();
     void cancelScheduledWork();
@@ -164,6 +184,9 @@ private:
     };
     std::vector<PendingGeometry> pendingGeometry_;
     std::vector<GraphCurve> curves_;
+    // Metadata from completed geometry only; never inspect an unfinished job.
+    std::vector<std::vector<CurveVertex>> traceVertices_;
+    std::vector<GraphSignificantPoint> significantPoints_;
     struct RegionRaster {
         QImage finished;
         QImage building;

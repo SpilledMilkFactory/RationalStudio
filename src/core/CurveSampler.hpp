@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <limits>
 #include <vector>
 
 namespace rationalstudio {
@@ -16,6 +17,9 @@ struct CurveVertex {
     double screenX = 0.0;
     double screenY = 0.0;
     bool moveTo = false;
+    // Optional originating parameter for parametric/polar tracing. Ordinary
+    // Cartesian and implicit geometry leave this non-finite.
+    double parameter = std::numeric_limits<double>::quiet_NaN();
 };
 
 struct CurveSamplingOptions {

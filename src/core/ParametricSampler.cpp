@@ -62,10 +62,10 @@ struct ParametricSamplingJob::Impl {
     void append(const Probe& p) {
         if (!p.valid) { disconnect(); return; }
         if (!connected) {
-            output.vertices.push_back({p.x, p.y, true});
+            output.vertices.push_back({p.x, p.y, true, p.t});
             connected = true;
         } else if (p.x != previousX || p.y != previousY) {
-            output.vertices.push_back({p.x, p.y, false});
+            output.vertices.push_back({p.x, p.y, false, p.t});
         }
         previousX = p.x; previousY = p.y;
     }

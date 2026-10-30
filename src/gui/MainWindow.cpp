@@ -1453,6 +1453,7 @@ void MainWindow::rebuildGraph(const std::vector<std::string>& changedScope) {
 }
 
 void MainWindow::invalidateAnalysisReports() {
+    if (graph_) graph_->setSignificantPoints({});
     if (intersectionResults_ && !intersectionResults_->isHidden())
         intersectionResults_->setText("Intersection results may be stale after edits or navigation; "
                                       "select Intersections to recompute.");
@@ -1496,6 +1497,7 @@ void MainWindow::findGraphFeatures() {
     options.derivativeTolerance=1e-6;
     const auto bindings=variableSliders_->definitions().bindings();
     QStringList details;
+    std::vector<GraphSignificantPoint> significant;
     const std::size_t maxRows=8;
     const std::size_t maxLines=35;
     std::size_t checked=0;
@@ -1521,6 +1523,10 @@ void MainWindow::findGraphFeatures() {
                 case GraphFeatureKind::LocalMinimum: kind="local minimum"; break;
                 case GraphFeatureKind::LocalMaximum: kind="local maximum"; break;
                 case GraphFeatureKind::StationaryInflection: kind="stationary inflection candidate"; break;
+                }
+                if (significant.size() < 48) {
+                    significant.push_back({point.x, point.y,
+                        row + ": " + kind, graphRows_[candidate.row - 1]->color});
                 }
                 details << QString("%1: %2 (%3, %4); %5 %6; bracket width %7")
                     .arg(row).arg(kind)
@@ -1548,6 +1554,7 @@ void MainWindow::findGraphFeatures() {
         "stationary inflections are heuristic. Extrema are not proven global and derivatives are "
         "not symbolically certified. Endpoints are not classified as extrema. "
         "Parametric, polar and implicit graphs are not searched.");
+    if (graph_) graph_->setSignificantPoints(std::move(significant));
     if (intersectionResults_) intersectionResults_->hide();
     featureResults_->show();
 }

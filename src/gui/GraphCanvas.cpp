@@ -114,6 +114,7 @@ void GraphCanvas::invalidateGeometry(bool retainPreview) {
         }
     }
     geometryCache_.invalidateAll();
+    for (auto& vertices : traceVertices_) vertices.clear();
     for (auto& shade : inequalityRasters_) shade = {};
 }
 
@@ -200,6 +201,28 @@ void GraphCanvas::setCurves(std::vector<GraphCurve> curves) {
     deferredTimer_.stop();
     repaintScheduler_.cancelDeferred();
     geometryCache_.synchronize(keys);
+    // Preserve samples across presentation-only edits and reorderings. Match
+    // expression identity and parameter bounds, never just row index.
+    auto previousTraces = std::move(traceVertices_);
+    std::vector<std::vector<CurveVertex>> nextTraces(curves.size());
+    std::vector<bool> traceClaimed(curves_.size(), false);
+    for (std::size_t i = 0; i < curves.size(); ++i) {
+        const auto& next = curves[i];
+        for (std::size_t j = 0; j < curves_.size(); ++j) {
+            const auto& old = curves_[j];
+            if (traceClaimed[j] || old.function != next.function ||
+                old.yCoordinate != next.yCoordinate ||
+                old.implicitCurve != next.implicitCurve ||
+                old.polarCurve != next.polarCurve ||
+                old.inequalityCurve != next.inequalityCurve ||
+                old.tMin != next.tMin || old.tMax != next.tMax) continue;
+            if (j < previousTraces.size())
+                nextTraces[i] = std::move(previousTraces[j]);
+            traceClaimed[j] = true;
+            break;
+        }
+    }
+    traceVertices_ = std::move(nextTraces);
     // Retain completed shade images only for identical mathematical inputs,
     // styling and row visibility. Reordering rows is safe.
     auto previousRasters = std::move(inequalityRasters_);
@@ -240,6 +263,7 @@ void GraphCanvas::setVariableBindings(VariableBindings bindings,
              (!curves_[i].yCoordinate ||
               !graphCurveDependsOnAny(*curves_[i].yCoordinate, changed)))) continue;
         geometryCache_.invalidate(i);
+        if (i < traceVertices_.size()) traceVertices_[i].clear();
         if (i < inequalityRasters_.size()) inequalityRasters_[i] = {};
         auto& pending = pendingGeometry_[i];
         pending.job.reset();
@@ -337,6 +361,7 @@ void GraphCanvas::paintEvent(QPaintEvent*) {
             if (repaintScheduler_.scheduleDeferred()) deferredTimer_.start();
         }
     }
+    drawSignificantPoints(p);
     if (pointerInside_ && !dragging_) drawTrace(p);
     p.setPen(QColor("#8395aa"));
     p.setFont(QFont("Sans Serif", 9));
@@ -676,12 +701,19 @@ void GraphCanvas::drawCurves(QPainter& p) {
                     ? pending.implicitJob->samples()
                     : (pending.parametricJob ? pending.parametricJob->samples()
                                              : pending.job->samples());
+                std::vector<CurveVertex> trace;
+                trace.reserve(samples.vertices.size());
                 for (const CurveVertex& point : samples.vertices) {
-                    const QPointF position(point.screenX - pending.samplingOffset.x(),
-                                           point.screenY - pending.samplingOffset.y());
+                    CurveVertex adjusted = point;
+                    adjusted.screenX -= pending.samplingOffset.x();
+                    adjusted.screenY -= pending.samplingOffset.y();
+                    trace.push_back(adjusted);
+                    const QPointF position(adjusted.screenX, adjusted.screenY);
                     if (point.moveTo) result.moveTo(position);
                     else result.lineTo(position);
                 }
+                if (index < traceVertices_.size())
+                    traceVertices_[index] = std::move(trace);
                 ++geometryBuildCount_;
                 return result;
             });
@@ -717,30 +749,118 @@ void GraphCanvas::drawCurves(QPainter& p) {
     }
 }
 
-void GraphCanvas::drawTrace(QPainter& p) const {
-    const QPointF world = screenToWorld(pointer_);
-    if (!std::isfinite(world.x()) || !std::isfinite(world.y())) return;
-    const GraphCurve* nearest = nullptr;
-    double nearestY = 0;
-    double distance = 24;
-    for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric() || curve.implicit()) continue;
-        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
-        if (!std::isfinite(y)) continue;
-        const double screenY = worldToScreen({world.x(), y}).y();
-        const double dy = std::abs(screenY - pointer_.y());
-        if (dy < distance) { distance = dy; nearest = &curve; nearestY = y; }
+void GraphCanvas::setSignificantPoints(std::vector<GraphSignificantPoint> points) {
+    // The owning MainWindow explicitly invalidates these when mathematical
+    // state changes; never infer a certified root/extremum from the pixels.
+    significantPoints_ = std::move(points);
+    update();
+}
+
+std::optional<GraphCanvas::Inspection> GraphCanvas::nearestInspection() const {
+    // During navigation preview, cached vertices belong to another viewport.
+    // Trace only settled, actually completed geometry for the current view.
+    if (refreshQueued_ || repaintScheduler_.navigationPending() ||
+        !viewport_.isValid()) return std::nullopt;
+    std::optional<Inspection> nearest;
+    double best = 20.0;
+    for (const auto& feature : significantPoints_) {
+        const QPointF point = worldToScreen({feature.x, feature.y});
+        if (!std::isfinite(point.x()) || !std::isfinite(point.y())) continue;
+        const double dist = std::hypot(point.x() - pointer_.x(),
+                                       point.y() - pointer_.y());
+        if (dist < std::min(best, 12.0)) {
+            best = dist;
+            nearest = Inspection{point, feature.color,
+                feature.description + QString("  (%1, %2) · approximate")
+                    .arg(numberLabel(feature.x), numberLabel(feature.y)), dist};
+        }
     }
-    if (!nearest) return;
-    const QPointF point = worldToScreen({world.x(), nearestY});
-    p.setPen(QPen(nearest->color, 2));
+    for (std::size_t i = 0; i < curves_.size(); ++i) {
+        const auto& curve = curves_[i];
+        if (!curve.enabled || !curve.function || !curve.function->valid() ||
+            (curve.parametric() && (!curve.yCoordinate || !curve.yCoordinate->valid())) ||
+            !geometryCache_.isReady(i) || i >= traceVertices_.size()) continue;
+        const auto hit = nearestGraphTrace(traceVertices_[i], pointer_.x(), pointer_.y(), best);
+        if (!hit) continue;
+        const QPointF screen(hit->screenX, hit->screenY);
+        const QPointF world = screenToWorld(screen);
+        if (!std::isfinite(world.x()) || !std::isfinite(world.y())) continue;
+        QString type, details;
+        if (curve.parametric()) {
+            if (!hit->hasParameter) continue;
+            const double t = hit->parameter;
+            auto bindings = bindings_;
+            (void)bindings.set("t", t);
+            const double x = curve.function->evaluate(0, lastAnswer_, angleMode_, bindings);
+            const double y = curve.yCoordinate->evaluate(0, lastAnswer_, angleMode_, bindings);
+            if (!std::isfinite(x) || !std::isfinite(y)) continue;
+            if (curve.polar()) {
+                const double radians = angleMode_ == AngleMode::Degrees
+                    ? t * (3.1415926535897932384626433832795 / 180.0) : t;
+                const double r = x * std::cos(radians) + y * std::sin(radians);
+                if (!std::isfinite(r)) continue;
+                type = "Polar";
+                details = QString("θ=%1 %2, r=%3, (x,y)=(%4,%5)")
+                    .arg(numberLabel(t), angleMode_ == AngleMode::Degrees ? "deg" : "rad")
+                    .arg(numberLabel(r)).arg(numberLabel(x), numberLabel(y));
+            } else {
+                type = "Parametric";
+                details = QString("t=%1, (x,y)=(%2,%3)")
+                    .arg(numberLabel(t)).arg(numberLabel(x), numberLabel(y));
+            }
+        } else if (curve.implicit()) {
+            auto bindings = bindings_;
+            (void)bindings.set("y", world.y());
+            const double residual = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings);
+            if (!std::isfinite(residual)) continue;
+            type = "Implicit";
+            details = QString("(x,y)≈(%1,%2), |F-G|≈%3")
+                .arg(numberLabel(world.x()), numberLabel(world.y()), numberLabel(std::abs(residual)));
+        } else {
+            type = curve.inequalityCurve ? "Inequality boundary" : "Cartesian";
+            // Preserve the projected location (not an arbitrary cursor Y).
+            const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
+            if (!std::isfinite(y)) continue;
+            details = QString("(x,y)≈(%1,%2)").arg(numberLabel(world.x()), numberLabel(y));
+            if (curve.inequalityCurve)
+                details += curve.inequalityInclusive ? " · inclusive" : " · strict (excluded)";
+        }
+        nearest = Inspection{screen, curve.color, type + " · " + details,
+                             hit->distancePixels};
+        best = hit->distancePixels;
+    }
+    return nearest;
+}
+
+void GraphCanvas::drawSignificantPoints(QPainter& p) const {
+    // Only results explicitly requested through Features are shown. The
+    // MainWindow discards them when an expression or viewport becomes stale.
+    for (const auto& feature : significantPoints_) {
+        const QPointF point = worldToScreen({feature.x, feature.y});
+        if (!std::isfinite(point.x()) || !std::isfinite(point.y()) ||
+            point.x() < 0 || point.y() < 0 ||
+            point.x() >= width() || point.y() >= height()) continue;
+        p.setPen(QPen(feature.color, 2));
+        p.setBrush(QColor("#101722"));
+        p.drawEllipse(point, 4, 4);
+    }
+}
+
+void GraphCanvas::drawTrace(QPainter& p) const {
+    const auto selected = nearestInspection();
+    if (!selected) return;
+    p.setPen(QPen(selected->color, 2));
     p.setBrush(QColor("#101722"));
-    p.drawEllipse(point, 5, 5);
-    const QString tip = QString("(%1, %2)").arg(numberLabel(world.x()), numberLabel(nearestY));
+    p.drawEllipse(selected->point, 5, 5);
     const QFontMetrics fm(p.font());
-    const int boxWidth = fm.horizontalAdvance(tip) + 20;
-    const double left = std::clamp(point.x() + 12, 2.0, double(std::max(2, width() - boxWidth - 2)));
-    const double top = std::clamp(point.y() - 34, 2.0, double(std::max(2, height() - 30)));
+    // Never expand a tooltip beyond the actual widget, including narrow views.
+    const int boxWidth = std::min(width() - 4, fm.horizontalAdvance(selected->text) + 20);
+    if (boxWidth <= 8) return;
+    const QString tip = fm.elidedText(selected->text, Qt::ElideRight, boxWidth - 14);
+    const double left = std::clamp(selected->point.x() + 12, 2.0,
+        double(std::max(2, width() - boxWidth - 2)));
+    const double top = std::clamp(selected->point.y() - 34, 2.0,
+        double(std::max(2, height() - 30)));
     p.setPen(Qt::NoPen);
     p.setBrush(QColor("#263649"));
     p.drawRoundedRect(QRectF(left, top, boxWidth, 27), 5, 5);
@@ -750,27 +870,17 @@ void GraphCanvas::drawTrace(QPainter& p) const {
 
 void GraphCanvas::updatePointerStatus() const {
     if (!onPointerInfo) return;
+    if (const auto selected = nearestInspection()) {
+        onPointerInfo(selected->text);
+        return;
+    }
     const QPointF world = screenToWorld(pointer_);
     if (!std::isfinite(world.x()) || !std::isfinite(world.y())) {
         onPointerInfo("Outside representable viewport range");
-        return;
-    }
-    const GraphCurve* nearest = nullptr;
-    double nearestY = 0;
-    double bestDistance = 24;
-    for (const auto& curve : curves_) {
-        if (!curve.enabled || !curve.function || !curve.function->valid() || curve.parametric() || curve.implicit()) continue;
-        const double y = curve.function->evaluate(world.x(), lastAnswer_, angleMode_, bindings_);
-        if (!std::isfinite(y)) continue;
-        const double dy = std::abs(worldToScreen({world.x(), y}).y() - pointer_.y());
-        if (dy < bestDistance) { bestDistance = dy; nearest = &curve; nearestY = y; }
-    }
-    if (nearest)
-        onPointerInfo(nearest->label + QString("  (%1, %2)")
-            .arg(numberLabel(world.x()), numberLabel(nearestY)));
-    else
+    } else {
         onPointerInfo(QString("x = %1,  y = %2")
             .arg(numberLabel(world.x()), numberLabel(world.y())));
+    }
 }
 
 void GraphCanvas::mousePressEvent(QMouseEvent* e) {
