@@ -1,6 +1,25 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE64_TECHNICAL_VERIFICATION_BEGIN -->
+<!-- ISSUE63_VERIFICATION_BEGIN -->
+
+**Issue #63 (M5-09) — Automated GUI smoke testing: PASS (developer-attested hosted result).**
+
+- Linux GUI Debug **73/73 CTests PASS**, including both new desktop smoke cases.
+- Linux GUI Release **73/73 CTests PASS**, including both new desktop smoke cases.
+- Qt-independent ASan/UBSan **43/43 CTests PASS** (unchanged core inventory).
+- Scientific keyboard evaluation/recovery, Graphing creation/Save/Open/inspection,
+  Exact Fractions and Advanced Math workflows, and clean GUI shutdown: PASS.
+- A separately launched real `RationalStudio` process remains alive through
+  startup and is terminated by the smoke harness: PASS.
+- No recorded compiler warnings; source provenance matches before/after.
+- Hosted Ubuntu 24.04 offscreen and Xvfb/XCB smoke: developer-verified
+  successful GitHub Actions run https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/41251459463.
+- Limitations: offscreen/Xvfb automation is not a physical-display, Windows,
+  screen-reader, high-DPI-completeness, or full end-user acceptance certificate.
+  Issue #64's Qt/legal release review remains pending and unchanged.
+
+<!-- ISSUE64_TECHNICAL_VERIFICATION_HISTORICAL_BEGIN -->
+
 
 **Issue #64 (M5-10) — Technical licensing audit: PASS; distribution legal
 sign-off remains PENDING.**
