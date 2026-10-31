@@ -295,6 +295,30 @@ conditioning can still affect precision. This core-only issue adds no
 statistical expression grammar, GUI controls, graph overlays, or workspace
 changes; user-facing access is planned for Issue #53.
 
+<!-- ISSUE52_README_UPDATED -->
+
+**Statistical regression (Issue #52; Milestone 4).** The Qt-independent
+`StatisticalRegression` service fits finite real X/Y pairs using column-pivoted
+Householder QR instead of potentially unstable normal equations. It supports
+simple linear regression and polynomial least squares of degrees 2–4, including
+an intercept. The model stores coefficients in the **centered/scaled** variable
+`t = (x - xOffset) / xScale` so that evaluation stays better conditioned for
+large X offsets; `linearRegressionCoefficients` additionally exposes a
+conventional linear slope and intercept where representable. Regression
+results report sample count, squared residual sum (SSE), root mean square
+error (RMSE), R-squared, adjusted R-squared when defined, Pearson correlation
+for a nonconstant linear dataset, and an **R-diagonal-ratio heuristic**.
+Rank deficiency, excessive heuristic conditioning, mismatched datasets,
+nonfinite values, unsupported degrees, and resource/representation failures
+have explicit statuses. Constant dependent data leaves Pearson correlation
+and adjusted R-squared undefined; residual diagnostics and model outputs
+remain approximate `double` values. A bounded QR workspace accepts up to
+100,000 points and degree <= 4; an R-diagonal ratio is **not a certified
+condition number**, and R-squared is a goodness-of-fit statistic rather than
+a causal or out-of-sample guarantee. User-facing graph fitting, statistical
+expression syntax and GUI controls remain outside this core-only issue and
+are planned for Issue #53.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
