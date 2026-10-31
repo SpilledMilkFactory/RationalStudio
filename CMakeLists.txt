@@ -32,6 +32,7 @@ add_library(RationalCore STATIC
     src/core/MatrixMath.cpp
     src/core/DescriptiveStatistics.cpp
     src/core/StatisticalRegression.cpp
+    src/core/AdvancedMathInput.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -85,6 +86,14 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-08 / Issue #53: typed advanced-input parsing (Qt-independent).
+    add_executable(RationalAdvancedMathInputTests tests/AdvancedMathInputTests.cpp)
+    target_link_libraries(RationalAdvancedMathInputTests PRIVATE RationalCore)
+    target_compile_options(RationalAdvancedMathInputTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalAdvancedMathInputTests COMMAND RationalAdvancedMathInputTests)
+    set_tests_properties(RationalAdvancedMathInputTests PROPERTIES
+        LABELS "core;advanced-math;regression")
     # M4-07 / Issue #52 — bounded real polynomial/linear least-squares regression.
     add_executable(RationalStatisticalRegressionTests tests/StatisticalRegressionTests.cpp)
     target_link_libraries(RationalStatisticalRegressionTests PRIVATE RationalCore)
@@ -348,7 +357,7 @@ if(BUILD_TESTING)
         tests/CurveEvaluationBudgetTests.cpp
     )
 
-    target_link_libraries(RationalCurveEvaluationBudgetTests PRIVATE 
+    target_link_libraries(RationalCurveEvaluationBudgetTests PRIVATE
         RationalCore
     )
 
@@ -444,7 +453,7 @@ if(BUILD_TESTING)
     )
 
     add_executable(RationalCurveSamplingJobTests tests/CurveSamplingJobTests.cpp)
-    
+
     target_link_libraries(RationalCurveSamplingJobTests PRIVATE
         RationalCore
     )
@@ -462,16 +471,16 @@ if(BUILD_TESTING)
 
     add_executable(RationalNamedVariableTests
         tests/NamedVariableTests.cpp
-    )   
+    )
 
     target_link_libraries(RationalNamedVariableTests PRIVATE
         RationalCore
-    )   
+    )
 
     add_test(
         NAME RationalNamedVariableTests
         COMMAND RationalNamedVariableTests
-    )   
+    )
 
     set_tests_properties(RationalNamedVariableTests PROPERTIES
         LABELS "core;regression;variables"
@@ -483,16 +492,16 @@ if(BUILD_TESTING)
 
     add_executable(RationalVariableDefinitionsTests
         tests/VariableDefinitionsTests.cpp
-    )   
+    )
 
     target_link_libraries(RationalVariableDefinitionsTests PRIVATE
         RationalCore
-    )   
+    )
 
     add_test(
         NAME RationalVariableDefinitionsTests
         COMMAND RationalVariableDefinitionsTests
-    )   
+    )
 
     set_tests_properties(
         RationalVariableDefinitionsTests
@@ -654,7 +663,7 @@ if(BUILD_TESTING)
 
     foreach(test_target IN ITEMS
         # Milestone 1:
-        RationalCoreTests 
+        RationalCoreTests
         RationalViewportTests
         RationalCurveSamplerTests
         RationalCurveDomainTests
@@ -697,7 +706,7 @@ endif()
 #################################################### BENCHMARK #####################################################
 
 # ---------------------------------------------------------
-# Qt-independent benchmark 
+# Qt-independent benchmark
 # ---------------------------------------------------------
 
 option(RATIONALSTUDIO_BUILD_BENCHMARKS
@@ -715,7 +724,7 @@ if(RATIONALSTUDIO_BUILD_BENCHMARKS)
     )
 
     target_link_libraries(RationalGraphSamplingBench PRIVATE RationalCore)
-    
+
     target_compile_options(RationalGraphSamplingBench PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
     )
@@ -771,6 +780,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
 
         src/gui/MainWindow.hpp
         src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
 
         src/gui/GraphCanvas.hpp
         src/gui/GraphCanvas.cpp
@@ -781,7 +791,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         src/gui/MathExpressionEdit.cpp
         src/gui/VariableSliderPanel.hpp
         src/gui/VariableSliderPanel.cpp
-    )   
+    )
 
     target_include_directories(RationalStudio PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
@@ -801,9 +811,30 @@ if(RATIONALSTUDIO_BUILD_GUI)
         MACOSX_BUNDLE ON
     )
 
-    
+
 
     if(BUILD_TESTING)
+        # M4-08 / Issue #53 — offscreen advanced mathematics interface and
+        # MainWindow tab integration. One GUI CTest; existing GUI tests retained.
+        add_executable(RationalAdvancedMathGuiTests
+            tests/AdvancedMathGuiTests.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
+            src/gui/GraphWorkspacePersistence.hpp)
+        target_include_directories(RationalAdvancedMathGuiTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalAdvancedMathGuiTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalAdvancedMathGuiTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalAdvancedMathGuiTests COMMAND RationalAdvancedMathGuiTests)
+        set_tests_properties(RationalAdvancedMathGuiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;advanced-math;regression;qt;offscreen"
+            TIMEOUT 120)
 
     # ---------------------------------------------------------
     # Issue #20 — GraphCanvas Geometry Cache
@@ -829,31 +860,31 @@ if(RATIONALSTUDIO_BUILD_GUI)
             tests/GraphCanvasCacheTests.cpp
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
-        )   
+        )
 
         target_include_directories(RationalGraphCanvasCacheTests PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/src/gui"
-        )   
+        )
 
         target_link_libraries(RationalGraphCanvasCacheTests PRIVATE
             RationalCore
             Qt${QT_VERSION_MAJOR}::Widgets
-        )   
+        )
 
         target_compile_options(RationalGraphCanvasCacheTests PRIVATE
             $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>
-        )   
+        )
 
         add_test(
             NAME RationalGraphCanvasCacheTests
             COMMAND RationalGraphCanvasCacheTests
-        )   
+        )
 
         set_tests_properties(
             RationalGraphCanvasCacheTests
             PROPERTIES
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-        )   
+        )
     # ---------------------------------------------------------
     # Issue #21 — bounded GraphCanvas sampling work per repaint
     # ---------------------------------------------------------
@@ -984,13 +1015,14 @@ if(RATIONALSTUDIO_BUILD_GUI)
     # Issue #30 — interactive variable sliders
     # ---------------------------------------------------------
         add_executable(RationalVariableSliderPanelTests
-            tests/VariableSliderPanelTests.cpp      
+            tests/VariableSliderPanelTests.cpp
 
             src/gui/VariableSliderPanel.hpp
-            src/gui/VariableSliderPanel.cpp     
+            src/gui/VariableSliderPanel.cpp
 
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/MathExpressionEdit.hpp
             src/gui/MathExpressionEdit.cpp
 
@@ -1025,6 +1057,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             src/gui/MathExpressionEdit.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
             src/gui/VariableSliderPanel.hpp
@@ -1063,6 +1096,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             src/gui/MathExpressionEdit.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
             src/gui/VariableSliderPanel.hpp
@@ -1092,6 +1126,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             src/gui/MathExpressionEdit.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
             src/gui/VariableSliderPanel.hpp
@@ -1122,6 +1157,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             src/gui/MathExpressionEdit.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp
             src/gui/GraphCanvas.cpp
             src/gui/VariableSliderPanel.hpp
@@ -1150,6 +1186,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
             tests/GraphWorkspacePersistenceTests.cpp
             src/gui/MainWindow.hpp
             src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/MathExpressionEdit.hpp
             src/gui/MathExpressionEdit.cpp
             src/gui/GraphCanvas.hpp
@@ -1180,6 +1217,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalParametricGraphTests
             tests/ParametricGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1202,6 +1240,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalPolarGraphTests
             tests/PolarGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1224,6 +1263,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalImplicitGraphTests
             tests/ImplicitGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1246,6 +1286,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalIntersectionGraphTests
             tests/IntersectionGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1266,6 +1307,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalInequalityGraphTests
             tests/InequalityGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1302,6 +1344,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalGraphRepresentationControlsTests
             tests/GraphRepresentationControlsTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp
@@ -1323,6 +1366,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
         add_executable(RationalGraphFeatureGraphTests
             tests/GraphFeatureGraphTests.cpp
             src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
             src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
             src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
             src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp

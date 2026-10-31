@@ -1,4 +1,5 @@
 #include "MainWindow.hpp"
+#include "AdvancedMathPage.hpp"
 #include "Rational.hpp"
 #include "VariableSliderPanel.hpp"
 #include "MathExpressionEdit.hpp"
@@ -173,6 +174,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     tabs_->addTab(makeScientificPage(), "Scientific");
     tabs_->addTab(makeGraphPage(), "Graphing");
     tabs_->addTab(makeRationalPage(), "Exact Fractions");
+    tabs_->addTab(new AdvancedMathPage([this] { return angleMode_; }, tabs_), "Advanced Math");
     setCentralWidget(tabs_);
     graphDebounce_ = new QTimer(this);
     graphDebounce_->setSingleShot(true);
