@@ -28,6 +28,7 @@ add_library(RationalCore STATIC
     src/core/InequalityRegion.cpp
     src/core/GraphTrace.cpp
     src/core/VariableSliderScale.cpp
+    src/core/ComplexMath.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -81,6 +82,16 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-04 / Issue #49 — Implement complex-number arithmetic
+    add_executable(RationalComplexMathTests tests/ComplexMathTests.cpp)
+    target_link_libraries(RationalComplexMathTests PRIVATE RationalCore)
+    target_compile_options(RationalComplexMathTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalComplexMathTests COMMAND RationalComplexMathTests)
+    set_tests_properties(RationalComplexMathTests PROPERTIES
+        LABELS "core;complex;regression")
+
+
     # M4-03 / Issue #48 — Qt-independent numerical equation/root solving.
     add_executable(RationalNumericalRootFindingTests
         tests/NumericalRootFindingTests.cpp)

@@ -230,6 +230,29 @@ numerical acceptance criterion, not a continuity or existence certificate.
 This core-only feature does not add `solve(...)` syntax, GUI controls, or
 persistence fields; user-facing access remains planned for M4-08.
 
+<!-- ISSUE49_README_UPDATED -->
+
+**Complex-number arithmetic (Issue #49; Milestone 4).** RationalCore adds a
+Qt-independent `ComplexMath` service with an explicitly complex-valued result
+(`std::complex<double>`, `ComplexResult`, and an explicit status) and a separately
+compiled `ComplexExpression`. The complex grammar supports `i` (for example,
+`3+2i`), complex input `z`, complex `ans`, `+ - * / ^`, parentheses, limited
+implicit multiplication, and principal-branch trigonometric, hyperbolic,
+exponential, logarithmic, square-root and projection functions (`abs`, `arg`,
+`conj`, `real`, `imag`, `norm`). `formatComplex` produces rectangular text.
+RAD/DEG affects angular trigonometric inputs, inverse-trigonometric results,
+and `arg`. Declared ambient variables and existing compiled user-function
+snapshots remain **real-valued**; a real user function receiving a complex
+argument is explicitly rejected. `evaluateComplex` promotes a finite result
+of the existing scalar `Expression` evaluator without changing its real-domain
+rules. The original `Expression::evaluate(double)` interface, graph rendering,
+workspace persistence, and scientific GUI remain unchanged. The complex parser
+is a separate, documented subset of the scalar syntax, **not** a silent
+replacement or a fully shared AST. Principal branches and IEEE-754 double
+precision remain subject to branch cuts, overflow, and rounding. Matrix values,
+complex user-function definitions, GUI controls and generalized mathematical
+result variants are future work (M4-05/M4-08).
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator

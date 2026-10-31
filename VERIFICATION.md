@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE48_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE49_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #48 (M4-03), numerical equation/root solving.** GUI Debug **57/57 CTests PASS** (18.83 s), GUI Release **57/57 PASS** (12.33 s), core-only ASan/UBSan **36/36 PASS** (8.69 s); **512 NumericalRootFinding assertions PASS** in each configuration. 129 matching provenance paths; zero recorded GUI compiler warnings. Manual GUI not required (core-only issue). Numerical residuals and finite sampling are not mathematical existence or completeness guarantees; native Windows and full Qt sanitizer validation remain unverified.
+**Current status:** **PASS — Issue #49 (M4-04), complex-number arithmetic.** Linux GUI Debug **58/58 CTests PASS** (18.68 s), GUI Release **58/58 CTests PASS** (12.21 s), core-only ASan/UBSan **37/37 CTests PASS** (8.65 s); **539 ComplexMath assertions PASS** in each configuration. 135 unchanged provenance entries; zero recorded GUI compiler warnings. Manual GUI not required (core-only API); complex expression grammar and real-expression promotion remain separate. Native Windows, Qt 5, and full Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,39 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #48 current numerical equation and root-finding qualification
+## Issue #49 current complex-number arithmetic qualification
+
+Issue #49 adds a Qt-independent `ComplexMath` service, a separately compiled
+`ComplexExpression` with imaginary literals and typed complex results, and a
+real-to-complex compatibility bridge. Supported principal-branch arithmetic,
+functions, formatting, and RAD/DEG behavior are validated without modifying
+existing `Expression::evaluate(double)`, Qt graph rendering or persistence.
+Complex-valued reusable user functions and full scalar/complex AST unification
+remain outside this initial core-only feature.
+
+- Linux GUI Debug: **58/58 CTests PASS** — 18.68 s.
+- Linux GUI Release: **58/58 CTests PASS** — 12.21 s.
+- Core-only ASan/UBSan: **37/37 CTests PASS** — 8.65 s.
+- Dedicated ComplexMath: **539 assertions PASS** in each configuration.
+- Provenance: **135 matching paths**; manifest SHA-256 `6c1d70b9f76173c376cd6bac3858e5243302a7e973c6f7cbbe1e4716c7f25125`.
+- GUI compiler warnings: zero recorded.
+- Manual GUI verification: not required (core-only feature).
+
+The regression exercises arithmetic and principal branches, complex argument
+and conjugation, trigonometric degree/radian semantics, rectangular formatting,
+explicit nonfinite/domain failures, scalar binding snapshots, compiled real
+function compatibility, real-expression promotion and 120 fixed-seed pairs of
+exact integer-based arithmetic oracles.
+
+**CTest log SHA-256:** Debug `2bdba662ea3e7d4ea477c0334ac8edf71f92cf9abd403bef3d6b7fbb2bcbbcd6`; Release
+`a1a388a4a342387d411d695acd0f7a8713fc150c65e24a04fc6e7951ca6f39e8`; ASan `22d681ddc95bee6ea90dfc89ec0d1ce7c35337d79281e80b89e9463871fb8f07`.
+
+**Recorded environment:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `b3d3fb1118752750ba3e10baff08d485deab1329`;
+qualification timestamp `2026-10-30T20:34:29-04:00`.
+
+Issue #48 and earlier qualifications below remain historical.
+
+## Issue #48 historical numerical equation and root-finding qualification
 
 Issue #48 adds a Qt-independent bracket-preserving secant/bisection root solver,
 a finite-domain sign-change scanner, and overloads for compiled expressions and
