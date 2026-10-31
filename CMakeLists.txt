@@ -31,6 +31,7 @@ add_library(RationalCore STATIC
     src/core/ComplexMath.cpp
     src/core/MatrixMath.cpp
     src/core/DescriptiveStatistics.cpp
+    src/core/StatisticalRegression.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -84,6 +85,15 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-07 / Issue #52 — bounded real polynomial/linear least-squares regression.
+    add_executable(RationalStatisticalRegressionTests tests/StatisticalRegressionTests.cpp)
+    target_link_libraries(RationalStatisticalRegressionTests PRIVATE RationalCore)
+    target_compile_options(RationalStatisticalRegressionTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalStatisticalRegressionTests COMMAND RationalStatisticalRegressionTests)
+    set_tests_properties(RationalStatisticalRegressionTests PROPERTIES
+        LABELS "core;statistics;regression;least-squares")
+
     # M4-06 / Issue #51 — finite real descriptive statistics.
     add_executable(RationalDescriptiveStatisticsTests tests/DescriptiveStatisticsTests.cpp)
     target_link_libraries(RationalDescriptiveStatisticsTests PRIVATE RationalCore)

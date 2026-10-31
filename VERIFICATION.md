@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE51_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE52_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #51 (M4-06), descriptive statistics.** Linux GUI Debug **60/60 CTests PASS** (18.50 s), GUI Release **60/60 CTests PASS** (12.36 s), core-only ASan/UBSan **39/39 CTests PASS** (8.78 s); **1326 DescriptiveStatistics assertions PASS** in each configuration. 147 matching provenance paths; zero GUI compiler warnings. Manual GUI not required (core-only API). Statistical values use floating-point approximations; Windows, Qt 5, and Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #52 (M4-07), statistical regression.** Linux GUI Debug **61/61 CTests PASS** (18.30 s), GUI Release **61/61 CTests PASS** (12.13 s), core-only ASan/UBSan **40/40 CTests PASS** (8.95 s); **2330 StatisticalRegression assertions PASS** in each configuration. 153 matching provenance paths; zero GUI compiler warnings. Manual GUI not required (core-only API). QR rank/conditioning checks and fit diagnostics are numerical, not certified guarantees; Windows, Qt 5 and Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,40 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #51 current descriptive statistics qualification
+## Issue #52 current statistical regression qualification
+
+Issue #52 introduces a Qt-independent `StatisticalRegression` least-squares
+service for finite X/Y pairs. Linear and degree-2–4 polynomial models use
+column-pivoted Householder QR and a centered/scaled predictor variable, with
+bounded dimensions, explicit rank/conditioning statuses, predictions and
+conventional slope/intercept extraction for linear fits. SSE, RMSE, R-squared,
+adjusted R-squared and supported Pearson correlation are numerical metrics.
+The R diagonal ratio is a heuristic, not a certified condition estimate.
+No GUI, expression grammar, rendering or persistence changes were introduced.
+
+- Linux GUI Debug: **61/61 CTests PASS** — 18.30 s.
+- Linux GUI Release: **61/61 CTests PASS** — 12.13 s.
+- Core-only ASan/UBSan: **40/40 CTests PASS** — 8.95 s.
+- `RationalStatisticalRegressionTests`: **2330 assertions PASS** in each configuration.
+- Source/documentation provenance: **153 matching paths**; SHA-256 `214ee0110150f6cb4bb04340d5021e19cbd6b6d22ffd2b404fa15bb9be366a06`.
+- GUI compiler warnings: zero recorded in Debug/Release.
+- Manual GUI: not required for core-only M4-07.
+
+Coverage includes analytic linear/quadratic/cubic/quartic models, noisy data,
+constant dependent data, two-point fits, undefined adjusted R-squared and
+correlation, rank-deficient predictors, configurable conditioning, nonfinite
+inputs, model prediction, large-X offsets and 160 fixed-seed polynomial oracle
+cases with shuffled observation order.
+
+**CTest log SHA-256:** Debug `ab0532bdb258490715d497f326c92ac3021c9c0f6830a70a57d7b4ff02ac306a`;
+Release `cecdfb00f146e12e3f22fa73bdec0b352be04541b78132ac4518ce37e67eed0c`; ASan `b211fe295f2dddef2502617f00cb0ebe57e9fbbd34437287204ebac70e1ff886`.
+
+**Recorded environment:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; HEAD `5609b8cd4a63c8fd190defc3da5cd75f9b085348`;
+qualification timestamp `2026-10-30T21:24:06-04:00`.
+
+Issue #51 and earlier qualifications remain historical below.
+
+## Issue #51 historical descriptive statistics qualification
 
 Issue #51 adds a Qt-independent finite-data `DescriptiveStatistics` API with
 extended-precision Welford moments, compensated sum, population/sample variance
