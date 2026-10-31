@@ -253,6 +253,29 @@ precision remain subject to branch cuts, overflow, and rounding. Matrix values,
 complex user-function definitions, GUI controls and generalized mathematical
 result variants are future work (M4-05/M4-08).
 
+<!-- ISSUE50_README_UPDATED -->
+
+**Matrix and vector operations (Issue #50; Milestone 4).** RationalCore now
+exposes a Qt-independent `MatrixMath` service with explicit real-valued
+`Matrix` (row-major) and `MathVector` operands, structured statuses, and
+bounded sizes (maximum 128 rows/columns and 16,384 matrix entries). Supported
+operations include validated construction, matrix/vector addition and
+subtraction, scalar multiplication, matrix-matrix and matrix-vector products,
+transpose, dot product, Euclidean vector norm, and determinant. A square
+linear-system solver (up to 64 variables) uses LU factorization with partial
+pivoting, an infinity-norm reciprocal condition estimate obtained from the LU
+factorization, configurable condition and backward-residual thresholds, and
+bounded iterative refinement. Singular, poorly conditioned, invalid-dimension,
+nonfinite-input, overflow, and unresolved-residual cases produce explicit
+failure statuses rather than a published solution. Intermediate accumulation
+uses `long double`, but results remain IEEE-754 double precision; residual
+and conditioning checks are numerical diagnostics, not verified error bounds.
+Matrices currently contain **real** values; matrix-valued expression syntax,
+complex matrices, GUI editing, and a shared scalar/complex/matrix result AST
+are not introduced here. The legacy `Expression::evaluate(double)` and
+`ComplexExpression` remain unchanged, and user-facing matrix controls are
+reserved for M4-08 / Issue #53.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
