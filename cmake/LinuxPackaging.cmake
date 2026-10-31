@@ -32,6 +32,18 @@ install(FILES "${PROJECT_SOURCE_DIR}/LICENSE.MD"
 install(FILES "${PROJECT_SOURCE_DIR}/README.md"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rationalstudio" COMPONENT Runtime)
 
+# M5 / Issue #64 — install notices and unmodified upstream license texts.
+# These are first-party package metadata, not bundled Qt shared libraries.
+install(FILES "${PROJECT_SOURCE_DIR}/packaging/linux/THIRD_PARTY_NOTICES.txt"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rationalstudio"
+    COMPONENT Runtime)
+install(FILES
+    "${PROJECT_SOURCE_DIR}/packaging/licenses/LGPL-3.0.txt"
+    "${PROJECT_SOURCE_DIR}/packaging/licenses/GPL-3.0.txt"
+    "${PROJECT_SOURCE_DIR}/packaging/licenses/BSL-1.0.txt"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rationalstudio/licenses"
+    COMPONENT Runtime)
+
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "rationalstudio")
 set(CPACK_PACKAGE_VENDOR "Rational Studio")

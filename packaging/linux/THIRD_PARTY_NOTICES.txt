@@ -1,0 +1,60 @@
+Rational Studio — Third-Party Software Notices
+================================================
+
+Rational Studio itself is distributed under the MIT License. The verbatim
+project license is installed at /usr/share/doc/rationalstudio/copyright.
+
+Qt 6 (QtCore, QtGui, QtWidgets; dynamically linked)
+---------------------------------------------------
+Rational Studio uses Qt 6 from the operating system. Copyright belongs to
+The Qt Company and the respective Qt Project contributors and rights holders.
+Qt's available open-source licensing options include GNU LGPL version 3 and
+GNU GPL version 3; this distribution is intended to use the LGPLv3 option
+for QtCore, QtGui and QtWidgets. See the distributor-specific Qt package
+notices for exact versions and any separately licensed components.
+
+The GNU LGPLv3 and GPLv3 license texts accompany this package:
+  /usr/share/doc/rationalstudio/licenses/LGPL-3.0.txt
+  /usr/share/doc/rationalstudio/licenses/GPL-3.0.txt
+
+The installed Qt libraries and platform plugins are not shipped in this
+Rational Studio .deb. They are installed from operating-system packages.
+You retain the rights granted by Qt's applicable license, including the
+ability to replace the LGPL-licensed shared libraries with compatible
+modified versions, subject to the library and platform interfaces.
+
+Qt's source code is available from the respective distribution's source
+packages and the Qt Project. The distributor of this application must
+independently verify its source-availability or written-offer arrangements,
+including the exact linked Qt version and LGPL obligations. An upstream
+source URL alone may not satisfy all obligations.
+
+Qt information and licensing:
+  https://www.qt.io/faq/qt-open-source-licensing
+  https://doc.qt.io/qt-6/licensing.html
+  https://code.qt.io/
+
+Boost.Multiprecision (header-based C++ templates)
+-------------------------------------------------
+RationalCore uses boost/multiprecision/cpp_int.hpp, supplied by the Boost
+headers used to compile the program. Boost Software License 1.0 applies.
+The complete license text is installed at:
+  /usr/share/doc/rationalstudio/licenses/BSL-1.0.txt
+https://www.boost.org/LICENSE_1_0.txt
+
+System libraries, compiler runtime and Qt dependencies
+------------------------------------------------------
+The package depends on operating-system-provided shared libraries (for
+example libc6, libstdc++6, libgcc-s1, and Qt6 runtime libraries) rather
+than copying them into its payload. Their package-level licenses and
+copyright notices are distributed by the operating-system maintainers,
+usually under /usr/share/doc/<package>/copyright on Debian/Ubuntu.
+GNU libstdc++ and libgcc use the applicable GCC Runtime Library Exception
+where stated by the library's own licensing notices.
+
+Release review
+--------------
+This notice is not a substitute for reviewing the exact deployed package's
+ELF dependencies, Qt plugins, and any newly bundled assets. If new binary
+libraries, icons, fonts, plugins, or other third-party content are shipped,
+update this notice and the audit before release.

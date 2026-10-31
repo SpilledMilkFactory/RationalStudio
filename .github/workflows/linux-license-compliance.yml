@@ -1,0 +1,55 @@
+name: Linux Licensing / Dependency Audit
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ubuntu24-license-audit:
+    name: Ubuntu 24.04 Qt6 license and .deb audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check committed audit dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in scripts/verify_issue64.sh scripts/compliance/audit_licenses.py \
+            scripts/compliance/test_audit_licenses.py cmake/LinuxPackaging.cmake \
+            packaging/linux/THIRD_PARTY_NOTICES.txt \
+            packaging/licenses/LGPL-3.0.txt packaging/licenses/GPL-3.0.txt \
+            packaging/licenses/BSL-1.0.txt scripts/packaging/check_deb.py \
+            scripts/packaging/launch_smoke.py scripts/ci/source_manifest.py \
+            LICENSE.MD README.md; do
+            test -f "$p" || { echo "ERROR: missing tracked source: $p"; exit 1; }
+          done
+      - name: Install native build and audit dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config python3 dpkg-dev \
+            binutils libboost-dev qt6-base-dev qt6-base-dev-tools \
+            libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libxcb-cursor0
+      - name: License, package, and CTest qualification
+        shell: bash
+        env:
+          RATIONALSTUDIO_JOBS: '2'
+        run: bash scripts/verify_issue64.sh
+      - name: Archive license and package evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rationalstudio-issue64-licenses-ubuntu2404
+          path: |
+            issue64-evidence/**
+          if-no-files-found: warn
+          retention-days: 30

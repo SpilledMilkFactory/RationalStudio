@@ -1,6 +1,24 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE61_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE64_TECHNICAL_VERIFICATION_BEGIN -->
+
+**Issue #64 (M5-10) — Technical licensing audit: PASS; distribution legal
+sign-off remains PENDING.**
+
+- Source inventory: MIT first-party, Qt6 Core/Gui/Widgets system shared
+  dependencies, Boost.Multiprecision header dependency, Qt platform plugins.
+- Debian payload: third-party notices and intact LGPLv3/GPLv3/BSL-1.0 terms.
+- Package ELF audit: dynamic Qt6 linkage, no packaged Qt shared libraries
+  or unreviewed asset/library payloads.
+- Release GUI CTests: **71/71 PASS**, package inspection and extracted GUI
+  smoke: **PASS**, source manifest before/after: matching, no warnings recorded.
+- Hosted workflow: developer-verified run https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/41245282245.
+- **Outstanding non-automated release gate:** verify exact deployed Qt package
+  versions/copyright, sufficient Qt corresponding-source availability or
+  written-offer arrangement, user relinking rights and a human license review.
+  Automated tests are not legal certification. Windows is unverified.
+
+<!-- ISSUE61_VERIFICATION_HISTORICAL_BEGIN -->
 
 **Current status: PASS — Issue #61 (M5-07), Linux Debian application packaging.**
 Linux GUI Release **71/71 CTests PASS**; CPack Debian package generation,
