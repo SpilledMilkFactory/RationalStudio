@@ -8,6 +8,8 @@
 #include "DescriptiveStatistics.hpp"
 #include "StatisticalRegression.hpp"
 
+#include <QAccessible>
+#include <QAccessibleValueChangeEvent>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QFrame>
@@ -81,6 +83,8 @@ AdvancedMathPage::AdvancedMathPage(std::function<AngleMode()> mode, QWidget* par
     outer->addWidget(help);
     modes_ = new QTabWidget(this);
     modes_->setObjectName("advancedMathTabs");
+    modes_->setAccessibleName("Advanced mathematics operation groups");
+    modes_->setAccessibleDescription("Six groups: Complex, Calculus, Matrices, Vectors, Statistics, Regression");
     outer->addWidget(modes_, 1);
     setupComplex();
     setupCalculus();
@@ -108,6 +112,7 @@ AdvancedMathPage::Panel AdvancedMathPage::createPanel(const QString& title,
     layout->addWidget(hint);
     // Inputs are direct children of the page; sections remain readable in narrow windows.
     panel.run = new QPushButton("Calculate", panel.page);
+    panel.run->setAccessibleName("Calculate " + title.toLower() + " operation");
     panel.run->setMinimumHeight(42);
     panel.run->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     panel.output = new QPlainTextEdit(panel.page);
@@ -116,6 +121,7 @@ AdvancedMathPage::Panel AdvancedMathPage::createPanel(const QString& title,
     panel.output->setPlainText("Choose an operation and select Calculate.");
     panel.output->setMinimumHeight(155);
     panel.output->setAccessibleName(title + " calculation result");
+    panel.output->setAccessibleDescription("Read-only result and numerical diagnostics; focus to review or copy");
     scroll->setWidget(panel.page);
     modes_->addTab(scroll, title);
     return panel;
@@ -125,6 +131,9 @@ QLineEdit* AdvancedMathPage::addInput(Panel& panel, const QString& label,
                                      const QString& initial, const QString& name) {
     auto* text = new QLabel(label, panel.page);
     auto* input = line(name, initial);
+    text->setBuddy(input);
+    input->setAccessibleName(label);
+    input->setAccessibleDescription("Enter " + label.toLower() + " for the selected advanced operation");
     auto* layout = static_cast<QVBoxLayout*>(panel.page->layout());
     layout->addWidget(text);
     layout->addWidget(input);
@@ -134,8 +143,10 @@ QLineEdit* AdvancedMathPage::addInput(Panel& panel, const QString& label,
 QComboBox* AdvancedMathPage::addChoice(Panel& panel, const QString& label,
                                       const QStringList& options, const QString& name) {
     auto* layout = static_cast<QVBoxLayout*>(panel.page->layout());
-    layout->addWidget(new QLabel(label));
+    auto* text = new QLabel(label, panel.page);
+    layout->addWidget(text);
     auto* choice = new QComboBox(panel.page);
+    text->setBuddy(choice);
     choice->setObjectName(name);
     choice->setAccessibleName(label);
     choice->addItems(options);
@@ -148,6 +159,9 @@ void AdvancedMathPage::publish(Panel& panel, bool success, const QString& summar
     panel.output->setPlainText((success ? "Result: " : "Error: ") + summary +
                                 (details.isEmpty() ? QString() : "\n\n" + details));
     panel.output->setProperty("calculationSuccess", success);
+    // Notify accessibility clients of committed results without moving focus.
+    QAccessibleValueChangeEvent change(panel.output, panel.output->toPlainText());
+    QAccessible::updateAccessibility(&change);
 }
 
 void AdvancedMathPage::setupComplex() {
