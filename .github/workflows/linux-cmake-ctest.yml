@@ -48,12 +48,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build pkg-config python3
+            build-essential cmake ninja-build pkg-config python3 libboost-dev
           if [[ '${{ matrix.mode }}' == 'gui' ]]; then
             sudo apt-get install -y --no-install-recommends \
               qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev \
               libxkbcommon-x11-0 libxcb-cursor0
           fi
+
+      - name: Verify Boost.Multiprecision headers
+        shell: bash
+        run: |
+          test -r /usr/include/boost/multiprecision/cpp_int.hpp || {
+            echo 'ERROR: Boost.Multiprecision headers missing after dependency installation' >&2
+            exit 1
+          }
+          echo 'Boost.Multiprecision headers available'
 
       - name: Qualify full CMake and CTest configuration
         shell: bash
