@@ -30,6 +30,7 @@ add_library(RationalCore STATIC
     src/core/VariableSliderScale.cpp
     src/core/ComplexMath.cpp
     src/core/MatrixMath.cpp
+    src/core/DescriptiveStatistics.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -83,6 +84,15 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-06 / Issue #51 — finite real descriptive statistics.
+    add_executable(RationalDescriptiveStatisticsTests tests/DescriptiveStatisticsTests.cpp)
+    target_link_libraries(RationalDescriptiveStatisticsTests PRIVATE RationalCore)
+    target_compile_options(RationalDescriptiveStatisticsTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalDescriptiveStatisticsTests COMMAND RationalDescriptiveStatisticsTests)
+    set_tests_properties(RationalDescriptiveStatisticsTests PROPERTIES
+        LABELS "core;statistics;descriptive;regression")
+
     # M4-05 / Issue #50 — bounded real matrix and vector operations.
     add_executable(RationalMatrixMathTests tests/MatrixMathTests.cpp)
     target_link_libraries(RationalMatrixMathTests PRIVATE RationalCore)

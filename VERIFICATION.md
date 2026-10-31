@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE50_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE51_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #50 (M4-05), matrix and vector operations.** Linux GUI Debug **59/59 CTests PASS** (18.37 s), GUI Release **59/59 PASS** (12.37 s), core-only ASan/UBSan **38/38 PASS** (9.11 s); **692 MatrixMath assertions PASS** in each configuration. 141 matching source/documentation provenance entries; zero GUI compiler warnings. Manual GUI not required (core-only API). Matrix solves reject singular and poorly conditioned systems using numerical diagnostics, not certified bounds. Native Windows, Qt 5, and Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #51 (M4-06), descriptive statistics.** Linux GUI Debug **60/60 CTests PASS** (18.50 s), GUI Release **60/60 CTests PASS** (12.36 s), core-only ASan/UBSan **39/39 CTests PASS** (8.78 s); **1326 DescriptiveStatistics assertions PASS** in each configuration. 147 matching provenance paths; zero GUI compiler warnings. Manual GUI not required (core-only API). Statistical values use floating-point approximations; Windows, Qt 5, and Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,37 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #50 current matrix and vector operations qualification
+## Issue #51 current descriptive statistics qualification
+
+Issue #51 adds a Qt-independent finite-data `DescriptiveStatistics` API with
+extended-precision Welford moments, compensated sum, population/sample variance
+and standard deviation, extrema, median, and sorted type-7 percentiles. Empty,
+nonfinite, oversized and unrepresentable data produce explicit failure statuses.
+A singleton has defined population statistics but undefined sample variance.
+No expression grammar, Qt GUI, graph rendering, or persistence changes occur.
+
+- Linux GUI Debug: **60/60 CTests PASS** — 18.50 s.
+- Linux GUI Release: **60/60 CTests PASS** — 12.36 s.
+- Core-only ASan/UBSan: **39/39 CTests PASS** — 8.78 s.
+- `RationalDescriptiveStatisticsTests`: **1326 assertions PASS** in each configuration.
+- Source/documentation provenance: **147 matching paths**; SHA-256 `82a6e2c64574d617d5d472942c098a6714423d39c3aee6a57d21103ab04ec7a8`.
+- GUI compiler warnings: zero recorded in Debug/Release.
+- Manual GUI verification: not required for core-only M4-06.
+
+Coverage includes analytical reference statistics, sample/population distinction,
+median/percentile interpolation, finite-domain validation, resource ceilings,
+large-offset stability, cancellation, overflow and 160 fixed-seed datasets
+checked against independently computed references.
+
+**CTest log SHA-256:** Debug `4d80e4fc27311562b1f65b56e9e21468ebfa56fb65fd868a26bb184e1ffa8480`;
+Release `6fff778b1b50c991c15315a8b43a4c6027114c91db7406e727c7e2fc094cf672`; ASan `2c0d304ab830ef07a78fc8c9518b078d1884ef220bc90d2fb075426ae8513214`.
+
+**Recorded environment:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; HEAD `e9004471cde3368c3cb9d50922f956b19fc31965`;
+qualification timestamp `2026-10-30T21:09:32-04:00`.
+
+Issue #50 and all earlier results are retained below as historical evidence.
+
+## Issue #50 historical matrix and vector operations qualification
 
 Issue #50 adds a real-valued, Qt-independent `MatrixMath` service with bounded
 matrix/vector construction, arithmetic, multiplication, transpose, determinant,
