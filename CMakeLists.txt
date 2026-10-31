@@ -862,6 +862,27 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;persistence;settings;regression;qt" TIMEOUT 120)
 
+        # M5-02 / Issue #56: window-level navigation and shortcut ownership.
+        add_executable(RationalKeyboardNavigationGuiTests
+            tests/KeyboardNavigationGuiTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/ApplicationSettings.hpp src/gui/ApplicationSettings.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp)
+        target_include_directories(RationalKeyboardNavigationGuiTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalKeyboardNavigationGuiTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalKeyboardNavigationGuiTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalKeyboardNavigationGuiTests
+            COMMAND RationalKeyboardNavigationGuiTests)
+        set_tests_properties(RationalKeyboardNavigationGuiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;keyboard;navigation;regression;qt" TIMEOUT 120)
+
         add_executable(RationalAdvancedMathGuiTests
             tests/AdvancedMathGuiTests.cpp
             src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp

@@ -50,6 +50,9 @@ private:
     void applyAppearance();
     void savePreferences();
     void createPreferencesMenu();
+    void createKeyboardNavigationMenus();
+    void focusPrimaryInput();
+    void focusGraphInput();
     struct GraphRow {
         QWidget* widget = nullptr;
         MathExpressionEdit* input = nullptr;

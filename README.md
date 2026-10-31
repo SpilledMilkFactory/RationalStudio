@@ -371,6 +371,27 @@ the full GUI Debug/Release matrix. No production numerical algorithms, parser
 grammar, GUI behavior or workspace schema change in this issue. Linux evidence
 and remaining platform limitations are recorded in VERIFICATION.md.
 
+<!-- ISSUE56_README_UPDATED -->
+
+**Keyboard navigation and shortcuts (Issue #56; Milestone 5).** The desktop
+Navigation, Graph and Help menus expose keyboard accelerators. `Ctrl+1` through
+`Ctrl+4` switch directly among Scientific, Graphing, Exact Fractions and Advanced
+Math; `Ctrl+Tab` and `Ctrl+Shift+Tab` cycle top-level tabs. `Ctrl+L` focuses the
+primary input in the active workspace, and `Ctrl+Shift+L` focuses the last
+active Graphing expression. `Ctrl+Alt+PgDown`/`Ctrl+Alt+PgUp` switch among the
+six Advanced Math panels. When Graphing is selected, `Ctrl+N` adds a Cartesian
+row, `Ctrl+S`/`Ctrl+O` save/open a graph workspace, `Ctrl+Shift+E` exports PNG,
+`Ctrl+0` resets the viewport, and `Ctrl+Shift+I`/`Ctrl+Shift+F` request
+intersection/feature analysis. `F1` opens a nonblocking keyboard-reference
+dialog. Existing local math-expression `Alt+...` shortcuts, `Alt+↑/↓` graph-row
+navigation, and `Ctrl+Enter` graph-row creation remain unchanged. Native Tab
+and Shift+Tab focus movement, Enter/Space activation and clipboard editing are
+retained; operating-system/window-manager bindings can override shortcuts.
+The new GUI regression verifies registration, uniqueness, action focus targets,
+workspace scoping and editor compatibility; keyboard-only manual desktop
+acceptance is required. This is a GUI-only change, with no settings schema,
+graph workspace format, mathematical algorithm or numerical behavior change.
+
 <!-- ISSUE55_README_UPDATED -->
 
 **Persistent application settings (Issue #55; Milestone 5).** Rational Studio
