@@ -1,0 +1,66 @@
+name: Linux Debian Package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rationalstudio-deb-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deb-package:
+    name: Ubuntu 24.04 Qt6 DEB package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      RATIONALSTUDIO_JOBS: '2'
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install build, Qt6 runtime and Debian package tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config python3 \
+            dpkg-dev libboost-dev qt6-base-dev qt6-base-dev-tools \
+            qt6-qpa-plugins libgl1-mesa-dev libxkbcommon-x11-0 \
+            libxcb-cursor0
+
+      - name: Verify package source completeness
+        shell: bash
+        run: |
+          test -s LICENSE.MD || { echo 'ERROR: Restore original LICENSE.MD to Git before packaging' >&2; exit 1; }
+          test -f cmake/LinuxPackaging.cmake
+          test -f packaging/linux/rationalstudio.desktop
+          test -f scripts/packaging/check_deb.py
+          test -f scripts/packaging/launch_smoke.py
+          test -f scripts/verify_issue61.sh
+
+      - name: Build, test, package and smoke-test
+        shell: bash
+        run: bash scripts/verify_issue61.sh
+
+      - name: Upload Debian package and qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rationalstudio-issue61-ubuntu2404-deb
+          path: |
+            issue61-evidence/packages/*.deb
+            issue61-evidence/*.log
+            issue61-evidence/*.txt
+            issue61-evidence/*.sha256
+            issue61-evidence/*.xml
+          if-no-files-found: warn
+          retention-days: 14

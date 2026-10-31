@@ -4,8 +4,8 @@ import argparse
 import hashlib
 from pathlib import Path
 
-SOURCE_DIRS = ('src', 'tests', 'benchmarks', 'scripts', '.github/workflows')
-SOURCE_FILES = ('CMakeLists.txt', 'README.md', 'VERIFICATION.md')
+SOURCE_DIRS = ('src', 'tests', 'benchmarks', 'scripts', '.github/workflows', 'cmake', 'packaging')
+SOURCE_FILES = ('CMakeLists.txt', 'README.md', 'VERIFICATION.md', 'LICENSE.MD', '.gitignore')
 
 def manifest(root: Path) -> str:
     paths = []

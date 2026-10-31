@@ -1513,3 +1513,11 @@ if(RATIONALSTUDIO_BUILD_GUI)
     endif()
 
 endif()
+
+# M5-07 / Issue #61 — Opt-in system-Qt Debian application packaging.
+# Kept separate from ordinary builds/CTest and from Windows packaging.
+option(RATIONALSTUDIO_ENABLE_LINUX_PACKAGING
+    "Enable native Linux .deb packaging of the desktop application" OFF)
+if(RATIONALSTUDIO_ENABLE_LINUX_PACKAGING)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LinuxPackaging.cmake")
+endif()

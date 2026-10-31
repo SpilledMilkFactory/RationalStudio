@@ -25,12 +25,16 @@ Thumbs.db
 # For GitHub Actions
 !/scripts/ci/qualify.sh
 !/scripts/ci/source_manifest.py
-!scripts/verify_issue59.sh
-!scripts/update_readme_issue59.py
-!scripts/update_verification_issue59.py
+!scripts/verify_issue61.sh
+!scripts/packaging/check_deb.py
+!scripts/packaging/launch_smoke.py
 
 /docs*
 
 # ctest verifications
 /verification-results/*
 /issue*
+
+#packaging
+/_CPack_Packages*
+*.deb

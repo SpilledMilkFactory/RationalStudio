@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Rational Studio
+GenericName=Scientific and Graphing Calculator
+Comment=Scientific, graphing, and exact rational calculator
+Exec=RationalStudio
+TryExec=RationalStudio
+Icon=accessories-calculator
+Terminal=false
+Categories=Education;Science;Math;
+StartupNotify=true
