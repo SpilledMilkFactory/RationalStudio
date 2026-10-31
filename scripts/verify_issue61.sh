@@ -36,7 +36,7 @@ if grep -E -i '(^|[[:space:]])warning:' "$evidence/build.log" > "$evidence/compi
 fi
 : > "$evidence/compiler-warnings.txt"
 actual="$(ctest --test-dir "$build" -N | sed -n 's/^Total Tests: \([0-9][0-9]*\)$/\1/p')"
-[[ "$actual" == 71 ]] || { echo "ERROR: expected 71 tests, got ${actual:-none}" >&2; exit 1; }
+[[ "$actual" == 73 ]] || { echo "ERROR: expected 73 tests, got ${actual:-none}" >&2; exit 1; }
 ctest --test-dir "$build" --output-on-failure --parallel "$RATIONALSTUDIO_JOBS" \
     --output-junit "$evidence/ctest-junit.xml" 2>&1 | tee "$evidence/ctest.log"
 mkdir -p "$evidence/packages"
@@ -57,6 +57,6 @@ cmp -s "$evidence/source-before.sha256" "$evidence/source-after.sha256" || {
     echo 'ERROR: source manifest changed during packaging' >&2; exit 1;
 }
 sha256sum "${packages[0]}" > "$evidence/package.sha256"
-{ echo 'PASS: Linux Qt6 Release 71/71 CTests; Debian package metadata/payload PASS; extracted GUI smoke PASS; source unchanged.'
+{ echo 'PASS: Linux Qt6 Release 73/73 CTests; Debian package metadata/payload PASS; extracted GUI smoke PASS; source unchanged.'
   echo 'NOTE: Real clean-system dependency installation + desktop-launch test still required before sign-off.';
 } | tee "$evidence/result.txt"

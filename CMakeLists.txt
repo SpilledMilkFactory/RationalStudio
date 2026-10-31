@@ -903,6 +903,36 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;accessibility;assistive;regression;qt" TIMEOUT 120)
 
+        # M5-09 / Issue #63: a real desktop child-process startup and a
+        # representative end-to-end interaction smoke across all four workspaces.
+        # This is deliberately independent of QtTest and does not add Q_OBJECT
+        # to production classes or change their existing CMake linkage.
+        add_executable(RationalDesktopGuiSmokeTests
+            tests/DesktopGuiSmokeTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/ApplicationSettings.hpp src/gui/ApplicationSettings.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp)
+        target_include_directories(RationalDesktopGuiSmokeTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalDesktopGuiSmokeTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalDesktopGuiSmokeTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_dependencies(RationalDesktopGuiSmokeTests RationalStudio)
+        add_test(NAME RationalDesktopGuiInteractionSmokeTests
+            COMMAND RationalDesktopGuiSmokeTests --interactions)
+        set_tests_properties(RationalDesktopGuiInteractionSmokeTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;smoke;interaction;regression;qt" TIMEOUT 120)
+        add_test(NAME RationalDesktopStartupSmokeTests
+            COMMAND RationalDesktopGuiSmokeTests --startup "$<TARGET_FILE:RationalStudio>")
+        set_tests_properties(RationalDesktopStartupSmokeTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;smoke;startup;regression;qt" TIMEOUT 30)
+
         # M5-04 / Issue #58: compact-window and device-pixel-ratio qualification.
         add_executable(RationalResponsiveDisplayGuiTests
             tests/ResponsiveDisplayGuiTests.cpp
