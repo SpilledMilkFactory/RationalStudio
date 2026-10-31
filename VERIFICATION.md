@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE49_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE50_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #49 (M4-04), complex-number arithmetic.** Linux GUI Debug **58/58 CTests PASS** (18.68 s), GUI Release **58/58 CTests PASS** (12.21 s), core-only ASan/UBSan **37/37 CTests PASS** (8.65 s); **539 ComplexMath assertions PASS** in each configuration. 135 unchanged provenance entries; zero recorded GUI compiler warnings. Manual GUI not required (core-only API); complex expression grammar and real-expression promotion remain separate. Native Windows, Qt 5, and full Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #50 (M4-05), matrix and vector operations.** Linux GUI Debug **59/59 CTests PASS** (18.37 s), GUI Release **59/59 PASS** (12.37 s), core-only ASan/UBSan **38/38 PASS** (9.11 s); **692 MatrixMath assertions PASS** in each configuration. 141 matching source/documentation provenance entries; zero GUI compiler warnings. Manual GUI not required (core-only API). Matrix solves reject singular and poorly conditioned systems using numerical diagnostics, not certified bounds. Native Windows, Qt 5, and Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,36 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #49 current complex-number arithmetic qualification
+## Issue #50 current matrix and vector operations qualification
+
+Issue #50 adds a real-valued, Qt-independent `MatrixMath` service with bounded
+matrix/vector construction, arithmetic, multiplication, transpose, determinant,
+and a partially pivoted LU solver. The solver reports a reciprocal-condition
+estimate and checks backward residual before publishing a finite solution.
+Matrices, vectors, and complex scalars remain separate mathematical types;
+this issue adds no GUI, general expression syntax, or persistence changes.
+
+- GUI-enabled Linux Debug: **59/59 CTests PASS** — 18.37 s.
+- GUI-enabled Linux Release: **59/59 CTests PASS** — 12.37 s.
+- Core-only ASan/UBSan: **38/38 CTests PASS** — 9.11 s.
+- Dedicated `RationalMatrixMathTests`: **692 assertions PASS** in each configuration.
+- Recorded provenance: **141 matching paths**, manifest SHA-256 `975b2623638cc3d31b8ff63e7a78783a3fc4c75452ede4f3664868fc0c7477e3`.
+- Recorded GUI compiler warnings: **zero**.
+- Manual GUI inspection: not required for core-only M4-05.
+
+Coverage includes dimension and overflow rejection, rectangular matrix products,
+vector dot/norm operations, transpose, determinants, pivoted systems, singular
+and ill-conditioned inputs, and 160 deterministic reference systems.
+
+**CTest evidence SHA-256:** Debug `f2b923a70bfddc8b916fbc37f60fabfbd95cca948aca88d82530ea6d8f7f6865`; Release
+`0318f640610460358b1a3667ba040d37de96390d070574bc9096e2283e392e6e`; ASan `23e368de6a18efdb720198a06d38207535f525d5737b21d68ad50ed3743722dc`.
+
+**Recorded toolchain:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `a4c5101f7423a5bcd2eae4a7ad5d21f73aa1a529`;
+qualification timestamp `2026-10-30T20:53:52-04:00`.
+
+All prior Issue #49 and older qualifications remain historical below.
+
+## Issue #49 historical complex-number arithmetic qualification
 
 Issue #49 adds a Qt-independent `ComplexMath` service, a separately compiled
 `ComplexExpression` with imaginary literals and typed complex results, and a

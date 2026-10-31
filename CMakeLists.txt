@@ -29,6 +29,7 @@ add_library(RationalCore STATIC
     src/core/GraphTrace.cpp
     src/core/VariableSliderScale.cpp
     src/core/ComplexMath.cpp
+    src/core/MatrixMath.cpp
 )
 
 target_include_directories(RationalCore PUBLIC
@@ -82,6 +83,15 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-05 / Issue #50 — bounded real matrix and vector operations.
+    add_executable(RationalMatrixMathTests tests/MatrixMathTests.cpp)
+    target_link_libraries(RationalMatrixMathTests PRIVATE RationalCore)
+    target_compile_options(RationalMatrixMathTests PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+    add_test(NAME RationalMatrixMathTests COMMAND RationalMatrixMathTests)
+    set_tests_properties(RationalMatrixMathTests PROPERTIES
+        LABELS "core;matrix;vector;linear-algebra;regression")
+
     # M4-04 / Issue #49 — Implement complex-number arithmetic
     add_executable(RationalComplexMathTests tests/ComplexMathTests.cpp)
     target_link_libraries(RationalComplexMathTests PRIVATE RationalCore)
