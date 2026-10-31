@@ -1,6 +1,29 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE59_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE61_VERIFICATION_CURRENT_BEGIN -->
+
+**Current status: PASS — Issue #61 (M5-07), Linux Debian application packaging.**
+Linux GUI Release **71/71 CTests PASS**; CPack Debian package generation,
+`dpkg-deb` payload/dependency validation, an extracted offscreen GUI launch,
+zero recorded compiler warnings, and stable source provenance: **PASS**.
+
+**Package:** `rationalstudio_0.1.0-1_amd64.deb`. The package installs the desktop launcher,
+RationalStudio, RationalCLI, README and original MIT copyright text, and uses
+system Qt6 with a runtime `qt6-qpa-plugins` dependency.
+
+**Manual acceptance:** clean Ubuntu 24.04 GUI installation, launch, graph/save,
+and package-manager removal: **PASS — developer-attested**. This is distinct
+from the same-host offscreen smoke test. An independently replayed clean VM
+attestation or automated container installation is not claimed.
+
+**Distribution limitations:** not AppImage/Flatpak/portable; architecture,
+libc++/Qt and distro compatibility depend on the build environment. Native
+Windows (#60) remains deferred, and full third-party licensing review (#64)
+is a separate release gate. No binary-reproducibility or Qt-bundling claim.
+
+<!-- ISSUE59_VERIFICATION_HISTORICAL_BEGIN -->
+
+
 
 **Current status: PASS — Issue #59 (M5-05), automated CMake/CTest workflows.**
 GitHub-hosted Linux CI: Qt6 Debug **71/71 CTests PASS**, Qt6 Release
