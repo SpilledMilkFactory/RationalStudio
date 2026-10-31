@@ -349,6 +349,28 @@ are not added. Results from the advanced tab are not inserted into the
 basic scientific history or its real `ans`. No GUI persistence for advanced
 panel inputs is introduced in this issue.
 
+<!-- ISSUE54_README_UPDATED -->
+
+**Advanced numerical accuracy/domain qualification (Issue #54; Milestone 4).**
+Two Qt-independent CTest executables (`RationalNumericalAccuracyMatrixTests`
+and `RationalNumericalDomainMatrixTests`) provide additive cross-service
+reference and domain tests for numerical differentiation, adaptive definite
+integration, bracketed roots, complex principal branches, matrix/vector
+arithmetic and linear solving, descriptive statistics, QR regression and typed
+advanced GUI input parsing. The accuracy suite includes 80 fixed-seed affine
+cases with independently known derivative, integral and root results, plus
+compiled-expression, angular-mode, matrix, statistics and regression oracles.
+The domain suite tests rejected undefined operations, discontinuities, singular
+and ill-conditioned linear systems, regression rank failures, malformed inputs,
+and numerical evaluation ceilings. Expected mathematical accuracy is expressed
+with bounded absolute/relative tolerances, not exact equality or guarantees
+for arbitrary functions. These tests are deterministic CTest gates, not
+performance benchmarks. Existing offscreen AdvancedMathGui and scientific,
+graphing, persistence and exact-fraction suites remain required as part of
+the full GUI Debug/Release matrix. No production numerical algorithms, parser
+grammar, GUI behavior or workspace schema change in this issue. Linux evidence
+and remaining platform limitations are recorded in VERIFICATION.md.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator

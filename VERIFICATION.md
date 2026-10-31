@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE53_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE54_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #53 (M4-08), advanced scientific interface.** Linux GUI Debug **63/63 CTests PASS** (18.61 s), GUI Release **63/63 CTests PASS** (12.64 s), core-only ASan/UBSan **41/41 CTests PASS** (8.64 s). **26 AdvancedMathInput assertions PASS** in each configuration; offscreen AdvancedMathGui tests PASS in Debug and Release. 162 matching provenance paths; zero GUI compiler warnings. Manual desktop GUI: **PASS — developer-reported**. Windows, Qt 5 and Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #54 (M4-09), numerical accuracy and domain regressions.** Linux GUI Debug **65/65 CTests PASS** (18.69 s), GUI Release **65/65 CTests PASS** (12.49 s), core-only ASan/UBSan **43/43 CTests PASS** (8.81 s). NumericalAccuracyMatrix **781 assertions PASS**, NumericalDomainMatrix **136 assertions PASS** in all configurations; **167 matching provenance paths**; zero recorded GUI compiler warnings. Existing advanced GUI regression retained; manual GUI recheck not separately asserted for test-only M4-09. Windows, Qt 5, and Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,38 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #53 current advanced scientific interface qualification
+## Issue #54 current numerical accuracy and domain qualification
+
+Issue #54 adds two deterministic Qt-independent numerical test matrices, with no
+production mathematical, GUI, grammar, rendering or persistence changes. The
+accuracy suite checks analytic derivative, quadrature and root references, real
+and complex expression evaluation, matrix and vector identities, stable moments,
+QR regression prediction and typed input handling. The domain suite checks
+undefined and unrepresentable inputs, bracket discontinuities, strict resource
+limits, ill-conditioned or singular linear systems, insufficient regression
+data and invalid GUI input. Fixed-seed cases are repeatable, not a mathematical
+proof of completeness or platform-independent numerical precision guarantee.
+
+- Linux GUI Debug: **65/65 CTests PASS** — 18.69 s.
+- Linux GUI Release: **65/65 CTests PASS** — 12.49 s.
+- Core-only ASan/UBSan: **43/43 CTests PASS** — 8.81 s.
+- NumericalAccuracyMatrix: **781 assertions PASS** per configuration.
+- NumericalDomainMatrix: **136 assertions PASS** per configuration.
+- Existing AdvancedMathGui offscreen Qt CTest retained in GUI matrices.
+- GUI compiler warnings: **zero recorded** in Debug and Release.
+- Source/documentation provenance: **167 matching paths**;
+  manifest SHA-256 `1ab252a154cdf9a402a1133142bc492d613695e56325217d419eae00416884e0`.
+- New manual GUI qualification: **not claimed** for this tests-only issue;
+  Issue #53 developer-reported manual GUI PASS remains historical.
+- Toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `5be0a9ac8ca2f471bdc7b0a517d2ccb9328c8379`;
+  recorded qualification timestamp `2026-10-30T22:11:40-04:00`.
+
+**CTest evidence SHA-256:** Debug `afd5ddf9b8c169ec06d224703aa829c5c58cd542e2aade934812f9a10e0a5c03`;
+Release `4ae2114849c0228324eac38bff860d452115dac73373f9d37b05ee17f91e52c1`; ASan `587920717f20ce1e28fe94ab26a9c11ba90b74fbc898c25c8a18d9a19e47c7ca`.
+
+The Issue #53 and earlier evidence remains historical below.
+
+## Issue #53 historical advanced scientific interface qualification
 
 Issue #53 introduces a fourth **Advanced Math** Qt tab with six separate
 Complex, Calculus, Matrices, Vectors, Statistics and Regression workspaces. Typed
