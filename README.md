@@ -276,6 +276,25 @@ are not introduced here. The legacy `Expression::evaluate(double)` and
 `ComplexExpression` remain unchanged, and user-facing matrix controls are
 reserved for M4-08 / Issue #53.
 
+<!-- ISSUE51_README_UPDATED -->
+
+**Descriptive statistics (Issue #51; Milestone 4).** The Qt-independent
+`DescriptiveStatistics` service summarizes finite real datasets (up to
+1,000,000 values) with count, compensated sum, mean, minimum, maximum, range,
+median, population variance and standard deviation, and sample variance and
+standard deviation. Moments use extended-precision Welford updates to reduce
+cancellation; values are published as `double` only if required results are
+finite and representable. Singleton inputs have valid population statistics,
+while sample variance and sample standard deviation remain undefined (`NaN`).
+The separate `calculatePercentile` API uses sorted type-7 linear interpolation
+for percentiles in the inclusive range [0,100]. Empty/nonfinite inputs,
+unsupported sample counts, invalid percentile requests, and unrepresentable
+outputs produce explicit statuses and do not publish a successful result.
+Results remain IEEE-754 approximations, not exact/certified moments; extreme
+conditioning can still affect precision. This core-only issue adds no
+statistical expression grammar, GUI controls, graph overlays, or workspace
+changes; user-facing access is planned for Issue #53.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator
