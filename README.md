@@ -765,9 +765,38 @@ ctest --test-dir build-core --output-on-failure
 
 ## Testing
 
+<!-- ISSUE63_README_UPDATED -->
+
+### Automated desktop GUI smoke testing (Issue #63; M5-09)
+
+Two additional CTests run a real Qt Widgets smoke path. The
+`RationalDesktopGuiInteractionSmokeTests` case exercises Scientific keyboard
+calculation and error recovery, Cartesian graph-row creation and rendered
+canvas, graph workspace JSON Save/Open, feature inspection, exact-fraction
+arithmetic, Advanced Math calculation and validation, and normal window close.
+`RationalDesktopStartupSmokeTests` launches the actual `RationalStudio`
+executable in a separate process, rejects an early exit, and cleans up the
+child. Tests use isolated application settings and temporary workspaces.
+
+Linux CI also repeats both smoke modes under Xvfb/XCB on Ubuntu 24.04,
+complementing the offscreen CTests and the existing packaging smoke. These
+checks are representative **smoke tests**, not exhaustive UI automation,
+physical-monitor/high-DPI certification, screen-reader verification, or
+Windows runtime qualification. They add no mathematical behavior and do not
+modify application persistence or graph rendering. The current full GUI
+CTest count is **73**, while the Qt-independent sanitizer count remains **43**.
+
+Run the smoke cases directly:
+
+```bash
+ctest --test-dir build -R '^RationalDesktop(GuiInteraction|Startup)SmokeTests$' \
+    --output-on-failure
+```
+
+
 **Cross-subsystem regression coverage (Issue #24).** Dedicated Qt-independent and offscreen Qt matrices exercise viewport transformations and cursor-anchored zoom together with sampled curve accuracy, undefined domains, finite jumps and shifted poles, and explicit callback evaluation ceilings. The matrices complement rather than replace the existing targeted regression suites. They verify bounded numerical behavior and widget integration, not every mathematically possible function, pixel-identical images, or a guaranteed frame rate.
 
-With GUI and testing enabled, CTest currently registers **71 tests** (including 1×/2× offscreen rendering cases). Qt-independent builds register **43 tests**. These counts are the verified Issue #58 baseline and the initial Issue #59 CI acceptance targets:
+With GUI and testing enabled, CTest currently registers **73 tests** (including 1×/2× offscreen rendering cases). Qt-independent builds register **43 tests**. These are current Issue #63 CTest targets; earlier 71-GUI-test milestones retain their historical results:
 
 | Executable | Focus |
 |---|---|

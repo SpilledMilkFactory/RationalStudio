@@ -32,7 +32,7 @@ if grep -Ei '(^|[[:space:]])warning:' "$evidence/build.log" > "$evidence/compile
 fi
 : > "$evidence/compiler-warnings.txt"
 actual="$(ctest --test-dir "$build" -N | sed -n 's/^Total Tests: \([0-9][0-9]*\)$/\1/p')"
-[[ "$actual" == '71' ]] || { echo "ERROR: expected 71 CTests; got ${actual:-none}" >&2; exit 1; }
+[[ "$actual" == '73' ]] || { echo "ERROR: expected 73 CTests; got ${actual:-none}" >&2; exit 1; }
 ctest --test-dir "$build" --output-on-failure --parallel "$RATIONALSTUDIO_JOBS" \
     --output-junit "$evidence/ctest-junit.xml" 2>&1 | tee "$evidence/ctest.log"
 mkdir -p "$evidence/packages"
@@ -52,5 +52,5 @@ cmp -s "$evidence/source-before.sha256" "$evidence/source-after.sha256" || {
     echo 'ERROR: source changed during qualification' >&2; exit 1;
 }
 sha256sum "${packages[0]}" > "$evidence/package.sha256"
-printf 'PASS: Issue #64 source/package notice technical audit; 71/71 CTests; clean provenance; extracted GUI smoke.\nLEGAL REVIEW: still required for Qt source/relinking conditions and release approval.\n' \
+printf 'PASS: Issue #64 source/package notice technical audit; 73/73 CTests; clean provenance; extracted GUI smoke.\nLEGAL REVIEW: still required for Qt source/relinking conditions and release approval.\n' \
     | tee "$evidence/result.txt"

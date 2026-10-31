@@ -77,7 +77,7 @@ if grep -E -i '(^|[[:space:]])warning:' "$evidence/build.log" > "$evidence/compi
 fi
 : > "$evidence/compiler-warnings.txt"
 expected=43
-[[ "$mode" == gui ]] && expected=71
+[[ "$mode" == gui ]] && expected=73
 actual="$(ctest --test-dir "$build" -N | sed -n 's/^Total Tests: \([0-9][0-9]*\)$/\1/p')"
 if [[ "$actual" != "$expected" ]]; then
     echo "Expected $expected CTests; CMake registered ${actual:-none}." >&2

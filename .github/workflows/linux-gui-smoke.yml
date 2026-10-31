@@ -1,0 +1,87 @@
+name: Linux GUI Smoke
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-2404-smoke:
+    name: Ubuntu 24.04 Qt6 desktop smoke (offscreen + Xvfb)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tracked project sources
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install clean-runner build and display dependencies
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config python3 \
+            libboost-dev qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev \
+            libxkbcommon-x11-0 libxcb-cursor0 xvfb xauth
+          test -f /usr/include/boost/multiprecision/cpp_int.hpp
+          test -f tests/DesktopGuiSmokeTests.cpp
+          test -f CMakeLists.txt
+
+      - name: Configure and build desktop smoke target and application
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p smoke-evidence
+          cmake -S . -B build-gui-smoke -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+            -DRATIONALSTUDIO_BUILD_GUI=ON -DRATIONALSTUDIO_BUILD_CLI=ON \
+            -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF \
+            -DRATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS=OFF \
+            2>&1 | tee smoke-evidence/configure.log
+          cmake --build build-gui-smoke --target RationalDesktopGuiSmokeTests \
+            --parallel 2 2>&1 | tee smoke-evidence/build.log
+          if grep -Ei '(^|[[:space:]])warning:' smoke-evidence/build.log; then
+            echo 'ERROR: compiler warnings in smoke build' >&2
+            exit 1
+          fi
+
+      - name: Run both registered offscreen CTests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p smoke-evidence/xdg-config smoke-evidence/xdg-cache
+          export XDG_CONFIG_HOME="$PWD/smoke-evidence/xdg-config"
+          export XDG_CACHE_HOME="$PWD/smoke-evidence/xdg-cache"
+          QT_QPA_PLATFORM=offscreen ctest --test-dir build-gui-smoke \
+            -R '^RationalDesktop(GuiInteraction|Startup)SmokeTests$' \
+            --output-on-failure --output-junit "$PWD/smoke-evidence/offscreen.xml" \
+            2>&1 | tee smoke-evidence/offscreen.log
+
+      - name: Repeat actual GUI interactions and startup under Xvfb/XCB
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export XDG_CONFIG_HOME="$PWD/smoke-evidence/xdg-config"
+          export XDG_CACHE_HOME="$PWD/smoke-evidence/xdg-cache"
+          xvfb-run -a -s '-screen 0 1280x800x24' \
+            env QT_QPA_PLATFORM=xcb bash -c '
+              set -Eeuo pipefail
+              ./build-gui-smoke/RationalDesktopGuiSmokeTests --interactions
+              ./build-gui-smoke/RationalDesktopGuiSmokeTests --startup "$PWD/build-gui-smoke/RationalStudio"
+            ' 2>&1 | tee smoke-evidence/xvfb.log
+
+      - name: Retain smoke diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rationalstudio-linux-gui-smoke
+          path: smoke-evidence/
+          retention-days: 14
+          if-no-files-found: warn
