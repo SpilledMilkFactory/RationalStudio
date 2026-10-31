@@ -17,8 +17,18 @@ Thumbs.db
 /benchmarks/*
 /benchmark-results/*
 
+!/benchmarks/BenchmarkMetrics.hpp
+
+
 # scripts / docs
 /scripts*
+# For GitHub Actions
+!/scripts/ci/qualify.sh
+!/scripts/ci/source_manifest.py
+!scripts/verify_issue59.sh
+!scripts/update_readme_issue59.py
+!scripts/update_verification_issue59.py
+
 /docs*
 
 # ctest verifications
