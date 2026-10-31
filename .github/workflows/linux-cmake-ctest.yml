@@ -1,0 +1,82 @@
+name: Linux CMake / CTest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rationalstudio-linux-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux Qt6 Debug
+            mode: gui
+            config: Debug
+            artifact: gui-debug
+          - label: Linux Qt6 Release
+            mode: gui
+            config: Release
+            artifact: gui-release
+          - label: Linux core ASan UBSan
+            mode: core
+            config: Sanitize
+            artifact: core-sanitize
+    env:
+      CI_JOBS: '2'
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install compiler and Qt dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config python3 libboost-dev
+          if [[ '${{ matrix.mode }}' == 'gui' ]]; then
+            sudo apt-get install -y --no-install-recommends \
+              qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev \
+              libxkbcommon-x11-0 libxcb-cursor0
+          fi
+
+      - name: Verify Boost.Multiprecision headers
+        shell: bash
+        run: |
+          test -r /usr/include/boost/multiprecision/cpp_int.hpp || {
+            echo 'ERROR: Boost.Multiprecision headers missing after dependency installation' >&2
+            exit 1
+          }
+          echo 'Boost.Multiprecision headers available'
+
+      - name: Qualify full CMake and CTest configuration
+        shell: bash
+        env:
+          CI_EVIDENCE_DIR: ${{ runner.temp }}/issue59-${{ matrix.artifact }}
+        run: bash scripts/ci/qualify.sh '${{ matrix.mode }}' '${{ matrix.config }}'
+
+      - name: Upload diagnostics and test results (even on failure)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rationalstudio-issue59-${{ matrix.artifact }}
+          path: |
+            ${{ runner.temp }}/issue59-${{ matrix.artifact }}/
+            build-issue59-${{ matrix.mode }}-*/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+          retention-days: 14
