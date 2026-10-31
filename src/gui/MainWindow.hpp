@@ -3,6 +3,7 @@
 #include "Expression.hpp"
 #include "FunctionDefinitions.hpp"
 #include "GraphCanvas.hpp"
+#include "ApplicationSettings.hpp"
 
 #include <QMainWindow>
 #include <QColor>
@@ -12,6 +13,9 @@
 #include <vector>
 
 class QButtonGroup;
+class QCloseEvent;
+class QSettings;
+class QTemporaryDir;
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
@@ -31,14 +35,21 @@ class MathExpressionEdit;
 
 class MainWindow final : public QMainWindow {
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr, const QString& settingsFile = {});
+    ~MainWindow() override;
     // File-based entry points for deterministic GUI integration tests and
     // Save/Open actions. No modal dialogs on failure.
     bool saveWorkspace(const QString& path, QString* error = nullptr) const;
     bool loadWorkspace(const QString& path, QString* error = nullptr);
     bool defineWorkspaceFunction(const QString& statement, QString* error = nullptr);
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+
 private:
+    void applyAppearance();
+    void savePreferences();
+    void createPreferencesMenu();
     struct GraphRow {
         QWidget* widget = nullptr;
         MathExpressionEdit* input = nullptr;
@@ -93,6 +104,9 @@ private:
     void setAngleMode(AngleMode mode);
     void graphScientificExpression();
 
+    std::unique_ptr<QTemporaryDir> temporarySettingsDir_;
+    std::unique_ptr<QSettings> applicationSettings_;
+    ApplicationSettings preferences_;
     QTabWidget* tabs_ = nullptr;
     QPushButton* radiansButton_ = nullptr;
     QPushButton* degreesButton_ = nullptr;

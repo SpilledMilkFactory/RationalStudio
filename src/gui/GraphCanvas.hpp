@@ -138,6 +138,10 @@ public:
     // reliable UI tests and future renderer diagnostics; does not paint.
     [[nodiscard]] bool visibleGeometryReady() const noexcept;
     [[nodiscard]] bool visibleInequalityReady() const noexcept;
+    void setLightAppearance(bool light) { lightAppearance_ = light; update(); }
+    [[nodiscard]] bool lightAppearance() const noexcept { return lightAppearance_; }
+    [[nodiscard]] bool gridVisible() const noexcept { return showGrid_; }
+    [[nodiscard]] bool axesVisible() const noexcept { return showAxes_; }
     void setGridVisible(bool on) { showGrid_ = on; update(); }
     void setAxesVisible(bool on) { showAxes_ = on; update(); }
     std::function<void(const QString&)> onPointerInfo;
@@ -208,6 +212,7 @@ private:
     VariableBindings bindings_;
     GraphViewport viewport_;
     CurveGeometryCache<QPainterPath> geometryCache_;
+    bool lightAppearance_ = false;
     std::size_t geometryBuildCount_ = 0;
     GraphSamplingLimits samplingLimits_;
     GraphSamplingDiagnostics samplingDiagnostics_;

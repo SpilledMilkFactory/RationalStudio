@@ -12,6 +12,13 @@
 #include "InequalityRegion.hpp"
 
 #include <QAction>
+#include <QActionGroup>
+#include <QCloseEvent>
+#include <QMenuBar>
+#include <QMenu>
+#include <QSettings>
+#include <QTemporaryDir>
+#include <QRegularExpression>
 #include <QApplication>
 #include <QComboBox>
 #include <QFile>
@@ -50,6 +57,7 @@
 #include <cmath>
 #include <exception>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace rationalstudio {
@@ -144,7 +152,23 @@ QString normalizedGraphInput(QString input) {
 }
 } // namespace
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent, const QString& settingsFile) : QMainWindow(parent) {
+    if (!settingsFile.isEmpty()) {
+        applicationSettings_ = std::make_unique<QSettings>(settingsFile, QSettings::IniFormat);
+    } else if (qEnvironmentVariable("QT_QPA_PLATFORM") == QStringLiteral("offscreen")) {
+        // All pre-existing Qt CTests run offscreen. Never let those tests load
+        // or overwrite the developer's actual desktop preferences.
+        temporarySettingsDir_ = std::make_unique<QTemporaryDir>();
+        if (!temporarySettingsDir_->isValid())
+            throw std::runtime_error("Cannot create isolated offscreen settings directory");
+        applicationSettings_ = std::make_unique<QSettings>(
+            temporarySettingsDir_->filePath("rationalstudio.ini"), QSettings::IniFormat);
+    }
+    if (!applicationSettings_) {
+        applicationSettings_ = std::make_unique<QSettings>(QSettings::NativeFormat,
+            QSettings::UserScope, "SpilledMilkFactory", "RationalStudio");
+    }
+    preferences_ = readApplicationSettings(*applicationSettings_);
     setWindowTitle("Rational Studio — Scientific & Graphing Calculator");
     setMinimumSize(1000, 650);
     resize(1250, 790);
@@ -176,6 +200,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     tabs_->addTab(makeRationalPage(), "Exact Fractions");
     tabs_->addTab(new AdvancedMathPage([this] { return angleMode_; }, tabs_), "Advanced Math");
     setCentralWidget(tabs_);
+    createPreferencesMenu();
     graphDebounce_ = new QTimer(this);
     graphDebounce_->setSingleShot(true);
     graphDebounce_->setInterval(130);
@@ -183,7 +208,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     addGraphRow("y = sin(x)");
     addGraphRow("y = x^2 / 4 - 2");
     statusBar()->showMessage("Rational Studio  •  Mathematical results use double precision; fractions use exact integers.");
+    applyAppearance();
+    setAngleMode(preferences_.angleMode);
+    if (graph_) {
+        graph_->setGridVisible(preferences_.showGraphGrid);
+        graph_->setAxesVisible(preferences_.showGraphAxes);
+    }
+    if (preferences_.rememberLastTab) tabs_->setCurrentIndex(preferences_.lastTab);
+    if (!preferences_.windowGeometry.isEmpty())
+        restoreGeometry(preferences_.windowGeometry);
 }
+
+MainWindow::~MainWindow() = default;
 
 QWidget* MainWindow::makeScientificPage() {
     auto* page = new QWidget;
@@ -1867,6 +1903,147 @@ void MainWindow::calculateFraction() {
         fractionResult_->setText("Invalid fraction");
         fractionDecimal_->setText(QString::fromUtf8(e.what()));
     }
+}
+
+// M5-01 / Issue #55: preferences apply to the application, not a graph workspace.
+// Restoring is intentionally sequenced after the four tabs and graph owner
+// exist, so all angle consumers receive the same mode.
+void MainWindow::createPreferencesMenu() {
+    QMenu* menu = menuBar()->addMenu("Preferences");
+    menu->setObjectName("applicationPreferencesMenu");
+    QMenu* themeMenu = menu->addMenu("Appearance");
+    QActionGroup* themes = new QActionGroup(this);
+    themes->setExclusive(true);
+    QAction* dark = themeMenu->addAction("Dark");
+    dark->setObjectName("preferenceDark");
+    dark->setCheckable(true);
+    themes->addAction(dark);
+    QAction* light = themeMenu->addAction("Light");
+    light->setObjectName("preferenceLight");
+    light->setCheckable(true);
+    themes->addAction(light);
+    (preferences_.appearance == AppearanceMode::Light ? light : dark)->setChecked(true);
+    connect(dark, &QAction::triggered, this, [this] {
+        preferences_.appearance = AppearanceMode::Dark;
+        applyAppearance();
+    });
+    connect(light, &QAction::triggered, this, [this] {
+        preferences_.appearance = AppearanceMode::Light;
+        applyAppearance();
+    });
+    menu->addSeparator();
+    QAction* grid = menu->addAction("Show graph grid");
+    grid->setObjectName("preferenceGraphGrid");
+    grid->setCheckable(true);
+    grid->setChecked(preferences_.showGraphGrid);
+    connect(grid, &QAction::toggled, this, [this](bool checked) {
+        preferences_.showGraphGrid = checked;
+        if (graph_) graph_->setGridVisible(checked);
+    });
+    QAction* axes = menu->addAction("Show graph axes");
+    axes->setObjectName("preferenceGraphAxes");
+    axes->setCheckable(true);
+    axes->setChecked(preferences_.showGraphAxes);
+    connect(axes, &QAction::toggled, this, [this](bool checked) {
+        preferences_.showGraphAxes = checked;
+        if (graph_) graph_->setAxesVisible(checked);
+    });
+    menu->addSeparator();
+    QAction* remember = menu->addAction("Restore last active tab on launch");
+    remember->setObjectName("preferenceRememberTab");
+    remember->setCheckable(true);
+    remember->setChecked(preferences_.rememberLastTab);
+    connect(remember, &QAction::toggled, this, [this](bool checked) {
+        preferences_.rememberLastTab = checked;
+    });
+}
+
+void MainWindow::applyAppearance() {
+    const bool light = preferences_.appearance == AppearanceMode::Light;
+    // Dark palette is the original Issue #53 palette. The light palette
+    // overrides only presentation colors; mathematical curve values and
+    // existing graph geometry/caching remain untouched.
+    const QString dark = R"(
+        QMainWindow, QWidget { background:#121c2a; color:#e8eff9; font-family:"Noto Sans","DejaVu Sans",sans-serif; font-size:13px; }
+        QMenuBar, QMenu { background:#1b2839; color:#e8eff9; }
+        QMenu::item:selected { background:#34587a; }
+        QTabWidget::pane { border:none; }
+        QTabBar::tab { background:#1b2839; border-radius:8px; padding:12px 24px; margin:5px 5px 10px 0; color:#a3b6cc; }
+        QTabBar::tab:selected { background:#34587a; color:white; }
+        QLineEdit, QComboBox, QListWidget, QPlainTextEdit { background:#0e1723; border:1px solid #34475e; border-radius:8px; padding:10px; selection-background-color:#426e94; }
+        QLineEdit:focus { border:1px solid #60b5eb; }
+        QLineEdit[syntaxState="invalid"] { border:2px solid #f07d86; }
+        QLineEdit[syntaxState="incomplete"] { border:1px solid #d7ad63; }
+        QPushButton, QToolButton { background:#25364a; color:#edf4fc; border:1px solid #32465c; border-radius:8px; padding:8px; }
+        QPushButton:hover, QToolButton:hover { background:#354f69; }
+        QPushButton:pressed, QToolButton:pressed { background:#486e91; }
+        QPushButton[kind="accent"] { background:#357cb2; font-weight:bold; }
+        QPushButton[kind="accent"]:hover { background:#4593c8; }
+        QPushButton[kind="operator"] { background:#2b465f; color:#8ed7ff; }
+        QToolButton:checked { background:#416a86; }
+        QScrollArea { border:0; }
+        QScrollBar:vertical { width:10px; background:#182535; }
+        QScrollBar::handle:vertical { background:#435974; border-radius:5px; }
+        QSplitter::handle { background:#24354a; width:3px; }
+    )";
+    const QString bright = R"(
+        QMainWindow, QWidget { background:#f3f6fb; color:#16283b; font-family:"Noto Sans","DejaVu Sans",sans-serif; font-size:13px; }
+        QMenuBar, QMenu { background:#e4eaf2; color:#16283b; }
+        QMenu::item:selected { background:#cbdceb; }
+        QTabWidget::pane { border:none; }
+        QTabBar::tab { background:#e3eaf3; border-radius:8px; padding:12px 24px; margin:5px 5px 10px 0; color:#233a56; }
+        QTabBar::tab:selected { background:#c5dcef; color:#10263c; }
+        QLineEdit, QComboBox, QListWidget, QPlainTextEdit { background:white; color:#15263a; border:1px solid #a5b5c8; border-radius:8px; padding:10px; selection-background-color:#bad9f4; }
+        QLineEdit:focus { border:1px solid #246eab; }
+        QLineEdit[syntaxState="invalid"] { border:2px solid #ad2533; }
+        QLineEdit[syntaxState="incomplete"] { border:1px solid #996018; }
+        QPushButton, QToolButton { background:#e0e9f3; color:#142c45; border:1px solid #b4c5d7; border-radius:8px; padding:8px; }
+        QPushButton:hover, QToolButton:hover { background:#cbdeed; }
+        QPushButton:pressed, QToolButton:pressed { background:#b5d1e8; }
+        QPushButton[kind="accent"] { background:#b2d8f4; font-weight:bold; }
+        QPushButton[kind="operator"] { background:#cbdfef; color:#154d77; }
+        QToolButton:checked { background:#b8d6eb; }
+        QScrollArea { border:0; }
+        QScrollBar:vertical { width:10px; background:#edf2f8; }
+        QScrollBar::handle:vertical { background:#a9b9c9; border-radius:5px; }
+        QSplitter::handle { background:#c1cedc; width:3px; }
+    )";
+    setStyleSheet(light ? bright : dark);
+    if (graph_) graph_->setLightAppearance(light);
+    // Existing local result/hint QLabel colors are authored for the dark
+    // palette. Convert only low-contrast text colors for light appearance.
+    const auto labels = findChildren<QLabel*>();
+    for (QLabel* label : labels) {
+        if (!label->property("issue55OriginalStyle").isValid())
+            label->setProperty("issue55OriginalStyle", label->styleSheet());
+        QString style = label->property("issue55OriginalStyle").toString();
+        if (light) {
+            static const QRegularExpression colors("color\\s*:\\s*(#[A-Fa-f0-9]{6})");
+            auto match = colors.globalMatch(style);
+            while (match.hasNext()) {
+                const auto m = match.next();
+                const QColor original(m.captured(1));
+                if (original.lightness() > 125) {
+                    const QColor replacement = QColor::fromHsl(original.hslHue() < 0 ? 210 : original.hslHue(),
+                        std::min(original.hslSaturation(), 155), 65);
+                    style.replace(m.captured(1), replacement.name());
+                }
+            }
+        }
+        label->setStyleSheet(style);
+    }
+}
+
+void MainWindow::savePreferences() {
+    preferences_.angleMode = angleMode_;
+    preferences_.lastTab = tabs_ ? tabs_->currentIndex() : 0;
+    preferences_.windowGeometry = saveGeometry();
+    writeApplicationSettings(*applicationSettings_, preferences_);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    savePreferences();
+    QMainWindow::closeEvent(event);
 }
 
 } // namespace rationalstudio

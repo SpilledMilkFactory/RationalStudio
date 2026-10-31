@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE54_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE55_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #54 (M4-09), numerical accuracy and domain regressions.** Linux GUI Debug **65/65 CTests PASS** (18.69 s), GUI Release **65/65 CTests PASS** (12.49 s), core-only ASan/UBSan **43/43 CTests PASS** (8.81 s). NumericalAccuracyMatrix **781 assertions PASS**, NumericalDomainMatrix **136 assertions PASS** in all configurations; **167 matching provenance paths**; zero recorded GUI compiler warnings. Existing advanced GUI regression retained; manual GUI recheck not separately asserted for test-only M4-09. Windows, Qt 5, and Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #55 (M5-01), persistent application settings.** Linux GUI Debug **67/67 CTests PASS** (19.20 s); GUI Release **67/67 PASS** (13.56 s); core-only ASan/UBSan **43/43 PASS** (8.68 s). ApplicationSettings and ApplicationSettingsGui offscreen tests PASS; 174 matching provenance paths; no GUI warnings. Manual desktop settings restart/restore: **PASS — developer-reported**. Windows and Qt 5 persistence behavior remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,29 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #54 current numerical accuracy and domain qualification
+## Issue #55 current application settings qualification
+
+Issue #55 stores user-scoped angle mode, appearance, graph grid/axes,
+window geometry and optional startup-tab selection through QSettings.
+Malformed values return safe defaults; normal window close persists preferences.
+Offscreen tests are isolated and cannot mutate real desktop preferences.
+Graph workspaces still use their own JSON format and are not overwritten.
+
+- Linux GUI Debug: **67/67 CTests PASS** — 19.20 s.
+- Linux GUI Release: **67/67 CTests PASS** — 13.56 s.
+- Core-only ASan/UBSan: **43/43 CTests PASS** — 8.68 s.
+- Dedicated ApplicationSettings and ApplicationSettingsGui: **PASS** in GUI Debug and Release.
+- Source/documentation provenance: **174 matching paths**, manifest SHA-256 `f380dd1a29e7393e034a781cb92880c5623bcbc0e158ac5dd580d19257522877`.
+- Recorded GUI compiler warnings: **zero**.
+- Manual persistence and appearance verification: **PASS — developer-reported**.
+- Toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `eceb3411492ad76160b511cabe8c1e5bd9c6372a`; timestamp `2026-10-30T22:39:57-04:00`.
+
+**CTest log SHA-256:** Debug `5e91f17564225e1ffeb8c74271423bd151da2aeb698f50aeed2839fa490b8197`; Release `bb4677c8c99e920e8e8f69f70b3c1d043d6853aac57fdc8b47dff8a4ff2b934e`;
+ASan/UBSan `69194b1627eec5c801ef69ad913b135f5d3526d2c637008c7683cf4eaa159e0d`.
+
+Issue #54 and earlier qualifications remain historical below.
+
+## Issue #54 historical numerical accuracy and domain qualification
 
 Issue #54 adds two deterministic Qt-independent numerical test matrices, with no
 production mathematical, GUI, grammar, rendering or persistence changes. The
