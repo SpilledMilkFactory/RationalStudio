@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE55_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE56_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #55 (M5-01), persistent application settings.** Linux GUI Debug **67/67 CTests PASS** (19.20 s); GUI Release **67/67 PASS** (13.56 s); core-only ASan/UBSan **43/43 PASS** (8.68 s). ApplicationSettings and ApplicationSettingsGui offscreen tests PASS; 174 matching provenance paths; no GUI warnings. Manual desktop settings restart/restore: **PASS — developer-reported**. Windows and Qt 5 persistence behavior remain unverified.
+**Current status:** **PASS — Issue #56 (M5-02), comprehensive keyboard navigation.** Linux GUI Debug **68/68 CTests PASS** (20.39 s); GUI Release **68/68 PASS** (13.74 s); core-only ASan/UBSan **43/43 PASS** (8.95 s). KeyboardNavigationGui **119 assertions PASS** in Debug and Release. 178 matching provenance paths; zero recorded GUI warnings. Manual keyboard-only desktop acceptance: **PASS — developer-reported**. Native Windows and Qt 5 keyboard behavior remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,31 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #55 current application settings qualification
+## Issue #56 current keyboard navigation qualification
+
+Issue #56 introduces discoverable Navigation, Graph and Help shortcuts with
+window-scoped nonrepeating actions, preserved existing local MathExpressionEdit
+Alt-key and graph-row bindings, direct top-level/advanced-tab navigation,
+current-input focus restoration and workspace-scoped graph actions. Its help
+window is nonblocking. No mathematical core, graph geometry, JSON workspace
+schema, user settings schema, or calculation semantics are changed.
+
+- Linux GUI Debug: **68/68 CTests PASS** — 20.39 s.
+- Linux GUI Release: **68/68 CTests PASS** — 13.74 s.
+- Core-only ASan/UBSan: **43/43 CTests PASS** — 8.95 s.
+- Dedicated KeyboardNavigationGui: **119 assertions PASS** in Debug and Release.
+- Existing mathematical-editor and settings CTests remain in GUI qualification.
+- Source/documentation provenance: **178 matching paths**; manifest SHA-256 `55ed31f676cc6eb24ba79c432e017aa2b2c64134d650ca49f4f208ab49363bde`.
+- Recorded GUI compiler warnings: **zero**.
+- Manual keyboard-only desktop acceptance: **PASS — developer-reported**; native desktop focus behavior is not established solely by offscreen events.
+- Recorded toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; base HEAD `2c0c9db343af5f5a4b60cf4e11870b7a730ca2a1`; qualification timestamp `2026-10-30T22:59:06-04:00`.
+
+**CTest log SHA-256:** Debug `12c40dd77a7a2bc2dfe9ef422672e72d696d8dede1535f6f2edc806a9412eb04`;
+Release `cb6d57e4c196fd5053dda03e2fb3f12112c99e5ec877b946bbc0abfe771d6f6f`; ASan/UBSan `5b70d9c4a3381e9cd620fdce4082fa70f5680f7eb16aa382a96d3cc09c488f3f`.
+
+Issue #55 and all earlier qualifications remain historical below.
+
+## Issue #55 historical application settings qualification
 
 Issue #55 stores user-scoped angle mode, appearance, graph grid/axes,
 window geometry and optional startup-tab selection through QSettings.

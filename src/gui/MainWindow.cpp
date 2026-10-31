@@ -13,6 +13,9 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QTextBrowser>
 #include <QCloseEvent>
 #include <QMenuBar>
 #include <QMenu>
@@ -201,6 +204,7 @@ MainWindow::MainWindow(QWidget* parent, const QString& settingsFile) : QMainWind
     tabs_->addTab(new AdvancedMathPage([this] { return angleMode_; }, tabs_), "Advanced Math");
     setCentralWidget(tabs_);
     createPreferencesMenu();
+    createKeyboardNavigationMenus();
     graphDebounce_ = new QTimer(this);
     graphDebounce_->setSingleShot(true);
     graphDebounce_->setInterval(130);
@@ -1903,6 +1907,151 @@ void MainWindow::calculateFraction() {
         fractionResult_->setText("Invalid fraction");
         fractionDecimal_->setText(QString::fromUtf8(e.what()));
     }
+}
+
+// M5-02 / Issue #56: one discoverable owner for window-level shortcuts.
+// MathExpressionEdit retains its local Alt+letter, Alt+Up/Down and
+// Ctrl+Enter bindings; none of those sequences is registered here.
+void MainWindow::focusGraphInput() {
+    if (!tabs_) return;
+    tabs_->setCurrentIndex(1);
+    MathExpressionEdit* target = activeGraphInput_;
+    if (!target && !graphRows_.empty()) target = graphRows_.front()->input;
+    if (target) target->setFocus(Qt::ShortcutFocusReason);
+}
+
+void MainWindow::focusPrimaryInput() {
+    if (!tabs_) return;
+    QWidget* target = nullptr;
+    switch (tabs_->currentIndex()) {
+    case 0: target = scientificInput_; break;
+    case 1:
+        target = activeGraphInput_;
+        if (!target && !graphRows_.empty()) target = graphRows_.front()->input;
+        break;
+    case 2: target = fractionA_; break;
+    case 3: {
+        auto* advanced = tabs_->widget(3);
+        auto* innerTabs = advanced ? advanced->findChild<QTabWidget*>("advancedMathTabs") : nullptr;
+        auto* panel = innerTabs ? innerTabs->currentWidget() : nullptr;
+        if (panel) {
+            const auto inputs = panel->findChildren<QLineEdit*>();
+            if (!inputs.isEmpty()) target = inputs.front();
+            if (!target) {
+                const auto choices = panel->findChildren<QComboBox*>();
+                if (!choices.isEmpty()) target = choices.front();
+            }
+        }
+        break;
+    }
+    default: break;
+    }
+    if (target) target->setFocus(Qt::ShortcutFocusReason);
+}
+
+void MainWindow::createKeyboardNavigationMenus() {
+    auto* navigation = menuBar()->addMenu("Navigation");
+    navigation->setObjectName("keyboardNavigationMenu");
+    auto* graphMenu = menuBar()->addMenu("Graph");
+    graphMenu->setObjectName("keyboardGraphMenu");
+    auto* helpMenu = menuBar()->addMenu("Help");
+    helpMenu->setObjectName("keyboardHelpMenu");
+    const auto command = [this](QMenu* menu, const QString& title,
+                                const char* name, const QKeySequence& sequence,
+                                const std::function<void()>& invoke) {
+        auto* action = menu->addAction(title);
+        action->setObjectName(QString::fromLatin1(name));
+        action->setShortcut(sequence);
+        action->setShortcutContext(Qt::WindowShortcut);
+        action->setAutoRepeat(false);
+        connect(action, &QAction::triggered, this, [invoke] { invoke(); });
+        return action;
+    };
+    for (int i = 0; i < 4; ++i) {
+        const QStringList names = {"Scientific", "Graphing", "Exact Fractions", "Advanced Math"};
+        const QString actionName = QString("keyboardTab%1").arg(i + 1);
+        command(navigation, "Switch to " + names.at(i),
+                actionName.toLatin1().constData(), QKeySequence(QString("Ctrl+%1").arg(i + 1)),
+                [this, i] { tabs_->setCurrentIndex(i); focusPrimaryInput(); });
+    }
+    navigation->addSeparator();
+    command(navigation, "Next calculator tab", "keyboardNextTab", QKeySequence("Ctrl+Tab"),
+            [this] { tabs_->setCurrentIndex((tabs_->currentIndex() + 1) % tabs_->count());
+                     focusPrimaryInput(); });
+    command(navigation, "Previous calculator tab", "keyboardPreviousTab", QKeySequence("Ctrl+Shift+Tab"),
+            [this] { tabs_->setCurrentIndex((tabs_->currentIndex() + tabs_->count() - 1) % tabs_->count());
+                     focusPrimaryInput(); });
+    command(navigation, "Focus current mathematical input", "keyboardFocusInput", QKeySequence("Ctrl+L"),
+            [this] { focusPrimaryInput(); });
+    command(navigation, "Focus graph expression", "keyboardFocusGraph", QKeySequence("Ctrl+Shift+L"),
+            [this] { focusGraphInput(); });
+    navigation->addSeparator();
+    const auto advancedStep = [this](int step) {
+        tabs_->setCurrentIndex(3);
+        auto* innerTabs = tabs_->widget(3)->findChild<QTabWidget*>("advancedMathTabs");
+        if (!innerTabs || innerTabs->count() == 0) return;
+        innerTabs->setCurrentIndex((innerTabs->currentIndex() + innerTabs->count() + step) % innerTabs->count());
+        focusPrimaryInput();
+    };
+    command(navigation, "Next advanced math panel", "keyboardNextAdvanced",
+            QKeySequence("Ctrl+Alt+PgDown"), [advancedStep] { advancedStep(1); });
+    command(navigation, "Previous advanced math panel", "keyboardPreviousAdvanced",
+            QKeySequence("Ctrl+Alt+PgUp"), [advancedStep] { advancedStep(-1); });
+
+    command(graphMenu, "Add Cartesian expression", "keyboardGraphAdd", QKeySequence("Ctrl+N"),
+            [this] { if (tabs_->currentIndex() != 1) return;
+                     if (graphRows_.size() >= 40) return;
+                     addGraphRow(); focusGraphInput(); });
+    command(graphMenu, "Save graph workspace...", "keyboardGraphSave", QKeySequence("Ctrl+S"),
+            [this] { if (tabs_->currentIndex() == 1) saveGraph(); });
+    command(graphMenu, "Open graph workspace...", "keyboardGraphOpen", QKeySequence("Ctrl+O"),
+            [this] { if (tabs_->currentIndex() == 1) loadGraph(); });
+    command(graphMenu, "Export graph as PNG...", "keyboardGraphExport", QKeySequence("Ctrl+Shift+E"),
+            [this] { if (tabs_->currentIndex() == 1) exportImage(); });
+    command(graphMenu, "Reset graph viewport", "keyboardGraphHome", QKeySequence("Ctrl+0"),
+            [this] { if (tabs_->currentIndex() == 1 && graph_) graph_->resetView(); });
+    command(graphMenu, "Inspect graph intersections", "keyboardGraphIntersections",
+            QKeySequence("Ctrl+Shift+I"),
+            [this] { if (tabs_->currentIndex() == 1) findGraphIntersections(); });
+    command(graphMenu, "Inspect graph features", "keyboardGraphFeatures",
+            QKeySequence("Ctrl+Shift+F"),
+            [this] { if (tabs_->currentIndex() == 1) findGraphFeatures(); });
+
+    command(helpMenu, "Keyboard shortcuts...", "keyboardShortcutsHelp", QKeySequence("F1"),
+            [this] {
+                auto* dialog = new QDialog(this);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
+                dialog->setObjectName("keyboardShortcutsDialog");
+                dialog->setWindowTitle("Rational Studio — Keyboard shortcuts");
+                dialog->setMinimumSize(550, 400);
+                auto* layout = new QVBoxLayout(dialog);
+                auto* text = new QTextBrowser(dialog);
+                text->setObjectName("keyboardShortcutsReference");
+                text->setHtml(R"HTML(
+<h3>Navigation</h3>
+<p>Ctrl+1/2/3/4: Scientific / Graphing / Exact Fractions / Advanced Math.<br>
+Ctrl+Tab / Ctrl+Shift+Tab: next / previous calculator tab.<br>
+Ctrl+L: focus the current mathematical input.<br>
+Ctrl+Shift+L: focus the last active graph expression.<br>
+Ctrl+Alt+PgDown / Ctrl+Alt+PgUp: navigate advanced math panels.</p>
+<h3>Graphing (while Graphing is selected)</h3>
+<p>Ctrl+N: add Cartesian expression; Ctrl+S: save workspace; Ctrl+O: open workspace;<br>
+Ctrl+Shift+E: export PNG; Ctrl+0: reset viewport;<br>
+Ctrl+Shift+I: intersections; Ctrl+Shift+F: features.</p>
+<h3>Mathematical expression editors</h3>
+<p>Alt+P: π; Alt+R: √; Alt+2/3: powers; Alt+M/D: × / ÷;<br>
+Alt+S/C/T: sin/cos/tan; Alt+Up/Down: graph rows;<br>
+Ctrl+Enter: append a graph row; Enter: evaluate Scientific input.</p>
+<p>Tab and Shift+Tab move focus between controls. Space activates focused buttons;
+standard copy/paste/undo keys continue to work in editors. Some shortcuts may
+be reserved by your window manager.</p>
+)HTML");
+                layout->addWidget(text);
+                auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
+                connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::close);
+                layout->addWidget(buttons);
+                dialog->show();
+            });
 }
 
 // M5-01 / Issue #55: preferences apply to the application, not a graph workspace.
