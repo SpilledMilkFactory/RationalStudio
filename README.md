@@ -12,7 +12,7 @@ The project emphasizes modular architecture, numerical reliability, and independ
 | **Language** | C++20 |
 | **License** | MIT |
 
-> **Status:** The application builds and runs on Linux. Native Windows builds, packaging, and runtime behavior have not yet been independently verified. See [VERIFICATION.md](VERIFICATION.md) for the current test record.
+> **Status:** The application builds and runs on Linux. Native Windows builds and packaging remain unverified; Linux .deb packaging is described below. See [VERIFICATION.md](VERIFICATION.md) for the current test record.
 
 ## Features
 
@@ -371,6 +371,36 @@ the full GUI Debug/Release matrix. No production numerical algorithms, parser
 grammar, GUI behavior or workspace schema change in this issue. Linux evidence
 and remaining platform limitations are recorded in VERIFICATION.md.
 
+<!-- ISSUE61_README_UPDATED -->
+
+**Linux .deb packaging (Issue #61; Milestone 5).** Rational Studio provides
+opt-in Debian/Ubuntu Qt6 system-library packaging through CPack. Packages
+install the desktop GUI, optional CLI, a freedesktop launcher using the system
+`accessories-calculator` icon, and the project README/MIT license. Debian
+`dpkg-shlibdeps` discovers linked shared-library dependencies; the additional
+`qt6-qpa-plugins` dependency covers dynamically loaded Qt platform plugins.
+This is **not** a portable AppImage, bundled-Qt tarball, Snap, or Flatpak:
+install with a package manager to resolve runtime dependencies. A package
+built on newer Linux/Qt releases is not guaranteed to run on older versions.
+Ubuntu 24.04 + Qt6 is the initial supported package-build target.
+
+```bash
+RATIONALSTUDIO_JOBS=4 bash scripts/verify_issue61.sh
+# Inspect issue61-evidence/packages/*.deb and the generated audit logs.
+# On a clean Ubuntu 24.04 desktop with the appropriate package repositories:
+sudo apt install ./rationalstudio_0.1.0-1_amd64.deb
+RationalStudio
+sudo apt remove rationalstudio
+```
+
+Only install the real, successfully verified artifact (adjust architecture and
+file name). Local offscreen smoke testing is not a substitute for an isolated
+clean-system installation and desktop launch. The actual tracked `LICENSE.MD`
+file is required at configure time; no substitute license is generated.
+Third-party redistribution/license qualification remains part of Issue #64.
+The existing 71/71 GUI and 43/43 core sanitizer regressions remain in force;
+this packaging issue adds no mathematical or Qt GUI CTests.
+
 <!-- ISSUE59_README_UPDATED -->
 
 **Automated Linux CMake/CTest workflows (Issue #59; Milestone 5).**
@@ -395,9 +425,9 @@ RATIONALSTUDIO_JOBS=2 bash scripts/verify_issue59.sh
 
 **Scope:** GitHub-hosted Linux results must be confirmed in the Actions UI
 before Issue #59 is accepted; local runs alone do not establish hosted CI.
-Native Windows and Qt 5 builds remain outside this initial CI matrix (Issue
-#60). Packaging, clean-machine installation, and release reproducibility are
-addressed by later Milestone 5 issues. Hosted runner versions and package
+Native Windows and Qt 5 remain outside this initial CI matrix (Issue
+#60). Linux .deb packaging and clean-machine installation are covered
+by Issue #61; Windows packaging and release reproducibility are later tasks. Hosted runner versions and package
 updates can affect results even when the project revision is unchanged.
 
 <!-- ISSUE58_README_UPDATED -->
