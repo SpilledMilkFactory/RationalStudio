@@ -76,7 +76,7 @@ GraphCanvas::GraphCanvas(QWidget* parent) : QWidget(parent) {
     setAccessibleDescription("Graph curves are visual. Use keyboard expression editing and the "
                              "Intersections and Features commands for textual analysis; "
                              "toolbar Zoom and Home buttons control the viewport.");
-    setMinimumSize(350, 300);
+    setMinimumSize(260, 210);
     setCursor(Qt::CrossCursor);
     setAttribute(Qt::WA_OpaquePaintEvent);
     (void)viewport_.setDimensions(std::max(1, width()), std::max(1, height()));
@@ -467,6 +467,10 @@ void GraphCanvas::drawInequalityRegions(QPainter& p) {
     // An incomplete raster is never published as a finished result.
     if (inequalityRasters_.size() != curves_.size())
         inequalityRasters_.resize(curves_.size());
+    // Region rasters, like the finished curve rasters, have physical pixels
+    // scaled by the painter device DPR while evaluation remains per logical
+    // column. A DPI change invalidates only the presentation raster.
+    const double deviceRatio = p.device()->devicePixelRatioF();
     const auto preview = repaintScheduler_.navigationPending()
         ? graphScreenPreview(geometryViewport_, viewport_) : std::nullopt;
     if (repaintScheduler_.navigationPending()) {
@@ -477,7 +481,8 @@ void GraphCanvas::drawInequalityRegions(QPainter& p) {
                                   preview->tx, preview->ty), true);
         for (std::size_t i = 0; i < curves_.size(); ++i) {
             if (curves_[i].inequalityCurve && curves_[i].enabled &&
-                i < inequalityRasters_.size() && !inequalityRasters_[i].finished.isNull())
+                i < inequalityRasters_.size() &&
+                rasterMatches(inequalityRasters_[i].finished, size(), deviceRatio))
                 p.drawImage(QPointF(0, 0), inequalityRasters_[i].finished);
         }
         p.restore();
@@ -494,14 +499,17 @@ void GraphCanvas::drawInequalityRegions(QPainter& p) {
         if (!curve.inequalityCurve || !curve.enabled || !curve.function ||
             !curve.function->valid()) continue;
         auto& item = inequalityRasters_[i];
-        if (item.finished.size() != size()) item.finished = {};
+        if (!rasterMatches(item.finished, size(), deviceRatio)) item.finished = {};
         if (!item.finished.isNull()) {
             p.drawImage(QPointF(0, 0), item.finished);
             continue;
         }
-        if (!item.active || item.building.size() != size()) {
-            item.building = QImage(size(), QImage::Format_ARGB32_Premultiplied);
+        if (!item.active || !rasterMatches(item.building, size(), deviceRatio)) {
+            item.building = QImage(
+                QSize(qCeil(width() * deviceRatio), qCeil(height() * deviceRatio)),
+                QImage::Format_ARGB32_Premultiplied);
             if (item.building.isNull()) continue;
+            item.building.setDevicePixelRatio(deviceRatio);
             item.building.fill(Qt::transparent);
             item.nextColumn = 0;
             item.active = true;

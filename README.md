@@ -371,6 +371,24 @@ the full GUI Debug/Release matrix. No production numerical algorithms, parser
 grammar, GUI behavior or workspace schema change in this issue. Linux evidence
 and remaining platform limitations are recorded in VERIFICATION.md.
 
+<!-- ISSUE58_README_UPDATED -->
+
+**Responsive layouts and high-DPI displays (Issue #58; Milestone 5).**
+The desktop window supports a smaller 760×540 logical-pixel minimum. Scientific
+content scrolls vertically rather than losing access to keypad/history controls;
+Graphing arranges its toolbar into two compact action rows, permits a narrower
+sidebar and plot, and allows the analysis report area to contract without
+changing mathematical viewport semantics. Advanced Math operation tabs retain
+Qt-provided tab-bar overflow navigation at narrow widths. Curve path and
+preview rasters remain device-scale-aware; inequality-region shading now also
+uses physical raster dimensions and Qt device-pixel-ratio metadata while
+sampling a bounded number of **logical** columns. DPI changes invalidate stale
+shade rasters without altering curve equations, workspace JSON, settings keys,
+or numerical geometry caches. The same offscreen GUI regression runs at normal
+and 2× Qt display scaling. Offscreen scaling and screenshots are **not** proof of
+physical-monitor, fractional-scale, Windows, or every font/platform configuration;
+manual checks on actual displays remain required.
+
 <!-- ISSUE57_README_UPDATED -->
 
 **Accessibility and assistive technology support (Issue #57; Milestone 5).**

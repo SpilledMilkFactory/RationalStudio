@@ -903,6 +903,32 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;accessibility;assistive;regression;qt" TIMEOUT 120)
 
+        # M5-04 / Issue #58: compact-window and device-pixel-ratio qualification.
+        add_executable(RationalResponsiveDisplayGuiTests
+            tests/ResponsiveDisplayGuiTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/ApplicationSettings.hpp src/gui/ApplicationSettings.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp)
+        target_include_directories(RationalResponsiveDisplayGuiTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalResponsiveDisplayGuiTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalResponsiveDisplayGuiTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalResponsiveDisplayGuiTests
+            COMMAND RationalResponsiveDisplayGuiTests)
+        set_tests_properties(RationalResponsiveDisplayGuiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+            LABELS "gui;responsive;dpi;regression;qt" TIMEOUT 120)
+        add_test(NAME RationalResponsiveDisplayHiDpiTests
+            COMMAND RationalResponsiveDisplayGuiTests)
+        set_tests_properties(RationalResponsiveDisplayHiDpiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=2"
+            LABELS "gui;responsive;hidpi;regression;qt" TIMEOUT 120)
+
         add_executable(RationalAdvancedMathGuiTests
             tests/AdvancedMathGuiTests.cpp
             src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp

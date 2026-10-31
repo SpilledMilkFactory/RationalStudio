@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QTabWidget>
+#include <QTabBar>
 #include <QVBoxLayout>
 #include <QStringList>
 #include <QSizePolicy>
@@ -83,6 +84,7 @@ AdvancedMathPage::AdvancedMathPage(std::function<AngleMode()> mode, QWidget* par
     outer->addWidget(help);
     modes_ = new QTabWidget(this);
     modes_->setObjectName("advancedMathTabs");
+    modes_->tabBar()->setUsesScrollButtons(true);
     modes_->setAccessibleName("Advanced mathematics operation groups");
     modes_->setAccessibleDescription("Six groups: Complex, Calculus, Matrices, Vectors, Statistics, Regression");
     outer->addWidget(modes_, 1);

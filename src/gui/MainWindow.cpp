@@ -182,7 +182,7 @@ MainWindow::MainWindow(QWidget* parent, const QString& settingsFile) : QMainWind
     }
     preferences_ = readApplicationSettings(*applicationSettings_);
     setWindowTitle("Rational Studio — Scientific & Graphing Calculator");
-    setMinimumSize(1000, 650);
+    setMinimumSize(760, 540);
     resize(1250, 790);
     setStyleSheet(R"(
         QMainWindow, QWidget { background:#121c2a; color:#e8eff9; font-family:"Noto Sans","DejaVu Sans",sans-serif; font-size:13px; }
@@ -347,7 +347,14 @@ QWidget* MainWindow::makeScientificPage() {
     right->addWidget(clearHistory);
     outer->addWidget(calculator, 3);
     outer->addWidget(sidebar, 1);
-    return page;
+    // M5-04: keep the keypad and history reachable when available vertical
+    // space is reduced. The viewport resizes normally; only overflow scrolls.
+    auto* scroll = new QScrollArea;
+    scroll->setObjectName("scientificPageScroll");
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidget(page);
+    return scroll;
 }
 
 void MainWindow::appendScientificText(const QString& text) {
@@ -428,13 +435,23 @@ QWidget* MainWindow::makeGraphPage() {
     auto* page = new QWidget;
     auto* outer = new QVBoxLayout(page);
     outer->setContentsMargins(12, 4, 12, 10);
-    auto* tools = new QHBoxLayout;
+    // Two rows of four actions avoid clipping the graph toolbar in smaller
+    // windows; the heading occupies its own row. Logical sizes remain DPI-safe.
+    auto* tools = new QGridLayout;
+    tools->setHorizontalSpacing(6);
+    tools->setVerticalSpacing(4);
     auto* title = heading("Graphing workspace", "Multiple functions · instant editing · drag to pan · scroll to zoom");
-    tools->addWidget(title, 1);
-    auto addToolbarButton = [this, tools](const QString& text, const std::function<void()>& action) {
+    tools->addWidget(title, 0, 0, 1, 4);
+    int actionIndex = 0;
+    auto placeGraphAction = [tools, &actionIndex](QPushButton* button) {
+        button->setMinimumWidth(0);
+        button->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+        tools->addWidget(button, 1 + actionIndex / 4, actionIndex % 4);
+        ++actionIndex;
+    };
+    auto addToolbarButton = [this, &placeGraphAction](const QString& text, const std::function<void()>& action) {
         auto* button = makeButton(text);
-        button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        tools->addWidget(button);
+        placeGraphAction(button);
         connect(button, &QPushButton::clicked, this, action);
     };
     addToolbarButton("+ Zoom", [this] { graph_->setView(graph_->centerX(), graph_->centerY(), graph_->pixelsPerUnit() * 1.25); });
@@ -443,14 +460,12 @@ QWidget* MainWindow::makeGraphPage() {
     auto* intersections = makeButton("Intersections");
     intersections->setObjectName("graphFindIntersections");
     intersections->setToolTip("Numerically find intersections of visible Cartesian curves in the current X view");
-    intersections->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    tools->addWidget(intersections);
+    placeGraphAction(intersections);
     connect(intersections, &QPushButton::clicked, this, [this] { findGraphIntersections(); });
     auto* features = makeButton("Features");
     features->setObjectName("graphFindFeatures");
     features->setToolTip("Numerically inspect roots, local extrema, and stationary inflections of visible Cartesian curves");
-    features->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    tools->addWidget(features);
+    placeGraphAction(features);
     connect(features, &QPushButton::clicked, this, [this] { findGraphFeatures(); });
     addToolbarButton("Save", [this] { saveGraph(); });
     addToolbarButton("Open", [this] { loadGraph(); });
@@ -459,7 +474,7 @@ QWidget* MainWindow::makeGraphPage() {
 
     auto* splitter = new QSplitter(Qt::Horizontal);
     auto* side = new QWidget;
-    side->setMinimumWidth(255);
+    side->setMinimumWidth(220);
     side->setMaximumWidth(470);
     auto* sv = new QVBoxLayout(side);
     sv->setContentsMargins(5, 6, 8, 4);
@@ -648,7 +663,9 @@ QWidget* MainWindow::makeGraphPage() {
     auto* analysisPane = new QScrollArea(page);
     analysisPane->setObjectName("graphAnalysisPane");
     analysisPane->setWidgetResizable(true);
-    analysisPane->setFixedHeight(148);
+    analysisPane->setMinimumHeight(82);
+    analysisPane->setMaximumHeight(148);
+    analysisPane->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     analysisPane->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     analysisPane->setFrameShape(QFrame::NoFrame);
     auto* analysisBody = new QWidget;
