@@ -371,6 +371,26 @@ the full GUI Debug/Release matrix. No production numerical algorithms, parser
 grammar, GUI behavior or workspace schema change in this issue. Linux evidence
 and remaining platform limitations are recorded in VERIFICATION.md.
 
+<!-- ISSUE57_README_UPDATED -->
+
+**Accessibility and assistive technology support (Issue #57; Milestone 5).**
+Qt widgets now expose descriptive accessible names for calculator workspaces,
+scientific entry and committed results, graph canvases and dynamically generated
+graph input rows, slider values/ranges, and all six Advanced Math panels. Advanced
+input labels use explicit Qt buddy relationships; read-only results remain
+keyboard inspectable. Committed results and changing validation descriptions
+send Qt accessibility-change notifications without moving keyboard focus.
+Dark and Light themes add visible keyboard-focus outlines for common form and
+button controls, while Issue #56 navigation and mathematical editor shortcuts
+remain intact. Graph plots provide textual analysis alternatives via existing
+Intersections/Features reports; graph contents are **not** transformed into a
+navigable semantic curve tree. Qt offscreen tests inspect accessible interfaces,
+control names, descriptions, error recovery, dynamic sliders and focus styles.
+**Screen-reader announcements and interaction require separate manual testing
+with actual assistive technology**; Qt metadata and offscreen assertions alone
+do not certify speech, braille, contrast compliance, or Windows/Qt 5 behavior.
+No numerical core, persistence schema, or graph geometry changes occur here.
+
 <!-- ISSUE56_README_UPDATED -->
 
 **Keyboard navigation and shortcuts (Issue #56; Milestone 5).** The desktop

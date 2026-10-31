@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE56_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE57_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #56 (M5-02), comprehensive keyboard navigation.** Linux GUI Debug **68/68 CTests PASS** (20.39 s); GUI Release **68/68 PASS** (13.74 s); core-only ASan/UBSan **43/43 PASS** (8.95 s). KeyboardNavigationGui **119 assertions PASS** in Debug and Release. 178 matching provenance paths; zero recorded GUI warnings. Manual keyboard-only desktop acceptance: **PASS — developer-reported**. Native Windows and Qt 5 keyboard behavior remain unverified.
+**Current status:** **PASS — Issue #57 (M5-03), accessibility and assistive technology support.** Linux GUI Debug **69/69 CTests PASS** (19.70 s); GUI Release **69/69 PASS** (13.93 s); core-only ASan/UBSan **43/43 PASS** (8.82 s). AccessibilityGui **97 assertions PASS** in Debug and Release. 175 matching source provenance paths; zero recorded compiler warnings. Manual GUI and assistive-technology acceptance: **PASS — developer-reported**. Native Windows and Qt 5 assistive-technology behavior remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,32 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #56 current keyboard navigation qualification
+## Issue #57 current accessibility qualification
+
+Issue #57 adds names, descriptive labels, Qt buddy relationships, accessible
+feedback for graph expression diagnostics, and Qt notifications for committed
+scientific/fraction/advanced results. Dynamic graph rows, sliders, advanced
+panels and the graph's textual analysis alternatives expose Qt accessibility
+metadata. Both appearance themes include keyboard focus styling. Screen-reader
+speech and braille behavior must be verified separately from offscreen metadata.
+
+- Linux GUI Debug: **69/69 CTests PASS** — 19.70 s.
+- Linux GUI Release: **69/69 CTests PASS** — 13.93 s.
+- Core-only ASan/UBSan: **43/43 CTests PASS** — 8.82 s.
+- Dedicated AccessibilityGui: **97 assertions PASS** in GUI Debug and Release.
+- Source provenance: **175 matching paths**, manifest SHA-256 `44cb35a90222e09ca372214028c9767c14fc463abb859b9f408a9b0b45238834`.
+- Recorded GUI compiler warnings: **zero**.
+- Manual keyboard, focus, and assistive-technology acceptance: **PASS — developer-reported**.
+- Toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; baseline HEAD `2320e0e451f7632ae7f2295a402298a32c93844d`.
+- GUI CTest SHA-256: Debug `1c7dd64060de2c84428e760a5a55dc2af683f13d401c7e7d8f5192f5c8b4ae35`; Release `856e6c921a658a29e9045839aef1f54e51f37542f74b6418650fd719802a168c`.
+- Sanitizer CTest SHA-256: `e4a81f3e68a66c04610c87e982c3b47a8bc10451d2d849e79f0f4592cc322fcb`.
+
+Actual screen-reader announcements can depend on OS accessibility bridges and
+assistive software. No WCAG certification or complete semantic representation
+of mathematical plot curves is claimed. Issue #56 and earlier qualifications
+remain historical below.
+
+## Issue #56 historical keyboard navigation qualification
 
 Issue #56 introduces discoverable Navigation, Graph and Help shortcuts with
 window-scoped nonrepeating actions, preserved existing local MathExpressionEdit

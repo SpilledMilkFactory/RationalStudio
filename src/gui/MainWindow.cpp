@@ -11,6 +11,7 @@
 #include "GraphFeatureDetection.hpp"
 #include "InequalityRegion.hpp"
 
+#include <QAccessible>
 #include <QAction>
 #include <QActionGroup>
 #include <QDialog>
@@ -43,6 +44,7 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QPointer>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStatusBar>
@@ -83,6 +85,13 @@ QLabel* heading(const QString& title, const QString& subtitle) {
     text->setTextFormat(Qt::RichText);
     text->setWordWrap(true);
     return text;
+}
+
+void announceLabel(QLabel* label, const QString& purpose) {
+    if (!label) return;
+    label->setAccessibleName(purpose + ": " + label->text());
+    QAccessibleEvent change(label, QAccessible::NameChanged);
+    QAccessible::updateAccessibility(&change);
 }
 
 QPushButton* makeButton(const QString& name, const QString& property = {}) {
@@ -180,8 +189,10 @@ MainWindow::MainWindow(QWidget* parent, const QString& settingsFile) : QMainWind
         QTabWidget::pane { border:none; }
         QTabBar::tab { background:#1b2839; border-radius:8px; padding:12px 24px; margin:5px 5px 10px 0; color:#a3b6cc; }
         QTabBar::tab:selected { background:#34587a; color:white; }
+        QTabBar::tab:focus { border:2px solid #81d5ff; }
         QLineEdit, QComboBox, QListWidget { background:#0e1723; border:1px solid #34475e; border-radius:8px; padding:10px; selection-background-color:#426e94; }
-        QLineEdit:focus { border:1px solid #60b5eb; }
+        QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QPlainTextEdit:focus, QPushButton:focus, QToolButton:focus { border:2px solid #81d5ff; }
+        QLineEdit[syntaxState="invalid"]:focus { border:2px solid #ff858a; }
         QLineEdit[syntaxState="invalid"] { border:2px solid #f07d86; }
         QLineEdit[syntaxState="incomplete"] { border:1px solid #d7ad63; }
         QPushButton, QToolButton { background:#25364a; color:#edf4fc; border:1px solid #32465c; border-radius:8px; padding:8px; }
@@ -198,6 +209,8 @@ MainWindow::MainWindow(QWidget* parent, const QString& settingsFile) : QMainWind
     )");
 
     tabs_ = new QTabWidget(this);
+    tabs_->setAccessibleName("Calculator workspaces");
+    tabs_->setAccessibleDescription("Scientific, Graphing, Exact Fractions and Advanced Math");
     tabs_->addTab(makeScientificPage(), "Scientific");
     tabs_->addTab(makeGraphPage(), "Graphing");
     tabs_->addTab(makeRationalPage(), "Exact Fractions");
@@ -238,6 +251,8 @@ QWidget* MainWindow::makeScientificPage() {
 
     scientificInput_ = new MathExpressionEdit;
     scientificInput_->setObjectName("ScientificExpression");
+    scientificInput_->setAccessibleName("Scientific expression");
+    scientificInput_->setAccessibleDescription("Enter a mathematical expression; Enter evaluates it");
     scientificInput_->setPlaceholderText("Try: 2sin(pi/4)^2 + sqrt(9)");
     scientificInput_->setMinimumHeight(63);
     scientificInput_->setMaxLength(2048);
@@ -247,6 +262,7 @@ QWidget* MainWindow::makeScientificPage() {
     layout->addWidget(scientificInput_);
 
     scientificResult_ = new QLabel("0");
+    scientificResult_->setAccessibleName("Scientific result: 0");
     scientificResult_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     scientificResult_->setMinimumHeight(62);
     QFont answerFont = scientificResult_->font();
@@ -258,6 +274,7 @@ QWidget* MainWindow::makeScientificPage() {
     layout->addWidget(scientificResult_);
 
     scientificHint_ = new QLabel("Enter to calculate  ·  ^ for powers  ·  ! for factorial");
+    scientificHint_->setAccessibleName("Scientific expression validation");
     scientificHint_->setTextFormat(Qt::PlainText);
     scientificHint_->setWordWrap(true);
     scientificHint_->setStyleSheet("color:#98aac0;");
@@ -317,6 +334,7 @@ QWidget* MainWindow::makeScientificPage() {
     right->addLayout(modes);
     right->addWidget(new QLabel("Angle mode applies to scientific and graphing functions."));
     history_ = new QListWidget;
+    history_->setAccessibleName("Scientific calculation history");
     history_->setWordWrap(true);
     history_->setAlternatingRowColors(true);
     right->addWidget(history_, 1);
@@ -340,6 +358,7 @@ void MainWindow::updateScientificPreview() {
     if (source.isEmpty()) {
         scientificInput_->setSyntaxState("empty");
         scientificInput_->setToolTip(QString());
+        scientificInput_->setAccessibleDescription("Enter a mathematical expression; Enter evaluates it");
         scientificResult_->setText("0"); scientificHint_->setText("Enter to calculate  ·  ^ for powers  ·  ! for factorial");
         return;
     }
@@ -354,10 +373,14 @@ void MainWindow::updateScientificPreview() {
             : inlineErrorMessage(expression, source);
         scientificHint_->setText(message);
         scientificInput_->setToolTip(message);
+        scientificInput_->setAccessibleDescription(message);
+        QAccessibleEvent change(scientificInput_, QAccessible::DescriptionChanged);
+        QAccessible::updateAccessibility(&change);
         return;
     }
     scientificInput_->setSyntaxState("valid");
     scientificInput_->setToolTip(QString());
+    scientificInput_->setAccessibleDescription("Valid mathematical expression; press Enter to calculate");
     if (expression.dependsOnX()) {
         scientificResult_->setText("f(x)");
         scientificHint_->setText("Contains x — use the Graphing tab to plot this expression.");
@@ -385,6 +408,7 @@ void MainWindow::calculateScientific() {
     if (!std::isfinite(answer)) {
         scientificResult_->setText("Undefined");
         scientificHint_->setText("Result is not a finite real number.");
+        announceLabel(scientificResult_, "Scientific result");
         return;
     }
     const QString result = prettyDouble(answer);
@@ -397,6 +421,7 @@ void MainWindow::calculateScientific() {
     invalidateAnalysisReports();
     scientificResult_->setText(result);
     scientificHint_->setText("Saved to history  ·  Use ans to reference this result.");
+    announceLabel(scientificResult_, "Scientific result");
 }
 
 QWidget* MainWindow::makeGraphPage() {
@@ -612,6 +637,7 @@ QWidget* MainWindow::makeGraphPage() {
     splitter->setSizes({320, 750});
     outer->addWidget(splitter, 1);
     graphStatus_ = new QLabel("Ready");
+    graphStatus_->setAccessibleName("Graph status");
     graphStatus_->setStyleSheet("color:#8eacc8; padding-left:8px;");
     outer->addWidget(graphStatus_);
     // Issue #41: reserve a stable, scrollable results region. Previously,
@@ -638,6 +664,8 @@ QWidget* MainWindow::makeGraphPage() {
 
     intersectionResults_ = new QLabel(analysisBody);
     intersectionResults_->setObjectName("graphIntersectionResults");
+    intersectionResults_->setAccessibleName("Graph intersection analysis report");
+    intersectionResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     intersectionResults_->setWordWrap(true);
     intersectionResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     intersectionResults_->setStyleSheet("color:#b5d4ee; padding:6px; background:#1b293b;");
@@ -646,6 +674,8 @@ QWidget* MainWindow::makeGraphPage() {
 
     featureResults_ = new QLabel(analysisBody);
     featureResults_->setObjectName("graphFeatureResults");
+    featureResults_->setAccessibleName("Graph significant-point analysis report");
+    featureResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     featureResults_->setWordWrap(true);
     featureResults_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     featureResults_->setStyleSheet("color:#b5d4ee; padding:6px; background:#1b293b;");
@@ -681,6 +711,7 @@ void MainWindow::addGraphRow(const QString& text, bool visible, QColor color) {
     controls->addWidget(row->visible);
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("GraphExpression_%1").arg(nextColor_));
+    row->input->setAccessibleName("Cartesian graph expression " + QString::number(graphRows_.size() + 1));
     row->input->setPlaceholderText("y = f(x)");
     row->input->setGraphEditingMode(true);
     row->input->setText(text);
@@ -769,12 +800,14 @@ void MainWindow::addParametricRow(const QString& x, const QString& y,
     frame->addLayout(headingRow);
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("ParametricX_%1").arg(nextColor_));
+    row->input->setAccessibleName("Parametric X(t) expression " + QString::number(graphRows_.size() + 1));
     row->input->setGraphEditingMode(true);
     row->input->setPlaceholderText("x(t) = cos(t)");
     row->input->setMaxLength(2048);
     row->input->setText(x);
     row->yInput = new MathExpressionEdit;
     row->yInput->setObjectName(QString("ParametricY_%1").arg(nextColor_));
+    row->yInput->setAccessibleName("Parametric Y(t) expression " + QString::number(graphRows_.size() + 1));
     row->yInput->setGraphEditingMode(true);
     row->yInput->setPlaceholderText("y(t) = sin(t)");
     row->yInput->setMaxLength(2048);
@@ -875,6 +908,7 @@ void MainWindow::addPolarRow(const QString& expression, double minimum, double m
     frame->addLayout(headingRow);
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("PolarRadius_%1").arg(nextColor_));
+    row->input->setAccessibleName("Polar radius expression " + QString::number(graphRows_.size() + 1));
     row->input->setGraphEditingMode(true);
     row->input->setPlaceholderText("r = 2cos(θ)");
     row->input->setMaxLength(2048);
@@ -961,6 +995,7 @@ void MainWindow::addImplicitRow(const QString& equation, bool visible, QColor co
     controls->addWidget(row->visible);
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("ImplicitEquation_%1").arg(nextColor_));
+    row->input->setAccessibleName("Implicit graph equation " + QString::number(graphRows_.size() + 1));
     row->input->setGraphEditingMode(true);
     row->input->setPlaceholderText("x² + y² = 25");
     row->input->setMaxLength(2048);
@@ -1028,6 +1063,7 @@ void MainWindow::addInequalityRow(const QString& expression, bool visible, QColo
     controls->addWidget(row->visible);
     row->input = new MathExpressionEdit;
     row->input->setObjectName(QString("InequalityEquation_%1").arg(nextColor_));
+    row->input->setAccessibleName("Inequality graph expression " + QString::number(graphRows_.size() + 1));
     row->input->setGraphEditingMode(true);
     row->input->setPlaceholderText("y > x²");
     row->input->setMaxLength(2048);
@@ -1085,6 +1121,21 @@ void MainWindow::removeGraphRow(GraphRow* row) {
 
 void MainWindow::updateGraphEditorFeedback(GraphRow* row) {
     if (!row || !row->input) return;
+    // Resolve status after the validator's early-return branches have finished.
+    // QPointer prevents use-after-free if a dynamic graph row is removed first.
+    const QPointer<QLabel> feedback = row->info;
+    const QPointer<MathExpressionEdit> first = row->input;
+    const QPointer<MathExpressionEdit> second = row->yInput;
+    QTimer::singleShot(0, row->input, [feedback, first, second] {
+        if (!feedback) return;
+        const QString message = feedback->text();
+        for (const QPointer<MathExpressionEdit>& edit : {first, second}) {
+            if (!edit || edit->accessibleDescription() == message) continue;
+            edit->setAccessibleDescription(message);
+            QAccessibleEvent change(edit, QAccessible::DescriptionChanged);
+            QAccessible::updateAccessibility(&change);
+        }
+    });
     if (row->inequality) {
         const auto source = parseInequality(row->input->text().toStdString());
         QString error;
@@ -1870,11 +1921,13 @@ QWidget* MainWindow::makeRationalPage() {
     resultTitle->setStyleSheet("color:#a8b9cc; letter-spacing:2px; margin-top:20px;");
     outer->addWidget(resultTitle);
     fractionResult_ = new QLabel("17/4");
+    fractionResult_->setAccessibleName("Exact fraction result: 17/4");
     fractionResult_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     fractionResult_->setWordWrap(true);
     fractionResult_->setStyleSheet("color:#8fe3bd; font-size:32px; font-weight:bold;");
     outer->addWidget(fractionResult_);
     fractionDecimal_ = new QLabel("Decimal approximation: 4.25");
+    fractionDecimal_->setAccessibleName("Fraction decimal approximation");
     fractionDecimal_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     fractionDecimal_->setWordWrap(true);
     fractionDecimal_->setStyleSheet("color:#b4c4d7; font-size:16px;");
@@ -1907,6 +1960,8 @@ void MainWindow::calculateFraction() {
         fractionResult_->setText("Invalid fraction");
         fractionDecimal_->setText(QString::fromUtf8(e.what()));
     }
+    announceLabel(fractionResult_, "Exact fraction result");
+    fractionDecimal_->setAccessibleDescription(fractionDecimal_->text());
 }
 
 // M5-02 / Issue #56: one discoverable owner for window-level shortcuts.
@@ -2119,8 +2174,10 @@ void MainWindow::applyAppearance() {
         QTabWidget::pane { border:none; }
         QTabBar::tab { background:#1b2839; border-radius:8px; padding:12px 24px; margin:5px 5px 10px 0; color:#a3b6cc; }
         QTabBar::tab:selected { background:#34587a; color:white; }
+        QTabBar::tab:focus { border:2px solid #81d5ff; }
         QLineEdit, QComboBox, QListWidget, QPlainTextEdit { background:#0e1723; border:1px solid #34475e; border-radius:8px; padding:10px; selection-background-color:#426e94; }
-        QLineEdit:focus { border:1px solid #60b5eb; }
+        QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QPlainTextEdit:focus, QPushButton:focus, QToolButton:focus { border:2px solid #81d5ff; }
+        QLineEdit[syntaxState="invalid"]:focus { border:2px solid #ff858a; }
         QLineEdit[syntaxState="invalid"] { border:2px solid #f07d86; }
         QLineEdit[syntaxState="incomplete"] { border:1px solid #d7ad63; }
         QPushButton, QToolButton { background:#25364a; color:#edf4fc; border:1px solid #32465c; border-radius:8px; padding:8px; }
@@ -2142,8 +2199,10 @@ void MainWindow::applyAppearance() {
         QTabWidget::pane { border:none; }
         QTabBar::tab { background:#e3eaf3; border-radius:8px; padding:12px 24px; margin:5px 5px 10px 0; color:#233a56; }
         QTabBar::tab:selected { background:#c5dcef; color:#10263c; }
+        QTabBar::tab:focus { border:2px solid #145d9c; }
         QLineEdit, QComboBox, QListWidget, QPlainTextEdit { background:white; color:#15263a; border:1px solid #a5b5c8; border-radius:8px; padding:10px; selection-background-color:#bad9f4; }
-        QLineEdit:focus { border:1px solid #246eab; }
+        QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QPlainTextEdit:focus, QPushButton:focus, QToolButton:focus { border:2px solid #145d9c; }
+        QLineEdit[syntaxState="invalid"]:focus { border:2px solid #ae2332; }
         QLineEdit[syntaxState="invalid"] { border:2px solid #ad2533; }
         QLineEdit[syntaxState="incomplete"] { border:1px solid #996018; }
         QPushButton, QToolButton { background:#e0e9f3; color:#142c45; border:1px solid #b4c5d7; border-radius:8px; padding:8px; }

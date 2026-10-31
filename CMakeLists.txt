@@ -883,6 +883,26 @@ if(RATIONALSTUDIO_BUILD_GUI)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             LABELS "gui;keyboard;navigation;regression;qt" TIMEOUT 120)
 
+        # M5-03 / Issue #57: accessibility metadata, labels, feedback and focus.
+        add_executable(RationalAccessibilityGuiTests
+            tests/AccessibilityGuiTests.cpp
+            src/gui/MainWindow.hpp src/gui/MainWindow.cpp
+            src/gui/ApplicationSettings.hpp src/gui/ApplicationSettings.cpp
+            src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
+            src/gui/GraphCanvas.hpp src/gui/GraphCanvas.cpp
+            src/gui/MathExpressionEdit.hpp src/gui/MathExpressionEdit.cpp
+            src/gui/VariableSliderPanel.hpp src/gui/VariableSliderPanel.cpp)
+        target_include_directories(RationalAccessibilityGuiTests PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui")
+        target_link_libraries(RationalAccessibilityGuiTests PRIVATE
+            RationalCore Qt${QT_VERSION_MAJOR}::Widgets)
+        target_compile_options(RationalAccessibilityGuiTests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME RationalAccessibilityGuiTests COMMAND RationalAccessibilityGuiTests)
+        set_tests_properties(RationalAccessibilityGuiTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "gui;accessibility;assistive;regression;qt" TIMEOUT 120)
+
         add_executable(RationalAdvancedMathGuiTests
             tests/AdvancedMathGuiTests.cpp
             src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp

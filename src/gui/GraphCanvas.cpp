@@ -72,6 +72,10 @@ QString numberLabel(double value) {
 
 GraphCanvas::GraphCanvas(QWidget* parent) : QWidget(parent) {
     setMouseTracking(true);
+    setAccessibleName("Interactive graph plot");
+    setAccessibleDescription("Graph curves are visual. Use keyboard expression editing and the "
+                             "Intersections and Features commands for textual analysis; "
+                             "toolbar Zoom and Home buttons control the viewport.");
     setMinimumSize(350, 300);
     setCursor(Qt::CrossCursor);
     setAttribute(Qt::WA_OpaquePaintEvent);
