@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE57_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE58_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #57 (M5-03), accessibility and assistive technology support.** Linux GUI Debug **69/69 CTests PASS** (19.70 s); GUI Release **69/69 PASS** (13.93 s); core-only ASan/UBSan **43/43 PASS** (8.82 s). AccessibilityGui **97 assertions PASS** in Debug and Release. 175 matching source provenance paths; zero recorded compiler warnings. Manual GUI and assistive-technology acceptance: **PASS — developer-reported**. Native Windows and Qt 5 assistive-technology behavior remain unverified.
+**Current status:** **PASS — Issue #58 (M5-04), responsive layout and high-DPI support.** Linux GUI Debug **71/71 CTests PASS** (20.45 s); GUI Release **71/71 PASS** (14.26 s); core-only ASan/UBSan **43/43 PASS** (8.77 s). Normal and 2× GUI display regressions PASS; 186 matching provenance paths, zero recorded GUI compiler warnings. Manual responsive layout and display scaling: **PASS — developer-reported**. Native Windows and Qt 5 remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,32 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #57 current accessibility qualification
+## Issue #58 current responsive layout and high-DPI qualification
+
+Issue #58 reduces minimum window constraints, provides scientific scrolling,
+reflows graph toolbar actions into two rows, allows a contracting analysis area,
+and retains Advanced Math tab overflow navigation. Inequality-region rasters
+now honor the Qt device-pixel ratio, while mathematical evaluation remains
+bounded by logical graph columns. Real/complex/matrix numerical services,
+existing Qt shortcuts, settings and workspace persistence remain unchanged.
+
+- Linux GUI Debug: **71/71 CTests PASS** — 20.45 s.
+- Linux GUI Release: **71/71 CTests PASS** — 14.26 s.
+- Core-only ASan/UBSan: **43/43 CTests PASS** — 8.77 s.
+- ResponsiveDisplayGui and ResponsiveDisplayHiDpi CTests: **PASS** at 1× and 2× in Debug/Release.
+- Compiler warnings: **zero recorded** for GUI builds.
+- Provenance: **186 matching paths**, manifest SHA-256 `8e01a83893f217435bcb9dd5bc66c52a8dd95220b3e757d73440c2f91c951411`.
+- Manual compact-window, graph/advanced navigation, and display-scale acceptance:
+  **PASS — developer-reported**.
+- CTest SHA-256: Debug `64799c8a4e0ebc0a21cd5deef80b5d38dd75282e7cede6d80251f3193319cc2c`; Release `a53a11d6687439e6f87982e2e065d071e1f6c6416841b8fbd8c51c9b39d08d9a`;
+  ASan/UBSan `58981abfddc1489b84a2043666f57c7513982fa2cc7f3af86dc173b3ae547335`.
+- Toolchain: c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; source baseline HEAD `5c32e7529c81caf4c6c99e648903d5bdbdce96d4`.
+
+Offscreen 2× tests are not equivalent to checking a physical high-DPI monitor;
+fractional scaling, native Windows and Qt 5 remain outside verified scope.
+Issue #57 and earlier qualifications remain historical below.
+
+## Issue #57 historical accessibility qualification
 
 Issue #57 adds names, descriptive labels, Qt buddy relationships, accessible
 feedback for graph expression diagnostics, and Qt notifications for committed
