@@ -319,6 +319,36 @@ a causal or out-of-sample guarantee. User-facing graph fitting, statistical
 expression syntax and GUI controls remain outside this core-only issue and
 are planned for Issue #53.
 
+<!-- ISSUE53_README_UPDATED -->
+
+**Advanced scientific interface (Issue #53; Milestone 4).** A fourth top-level
+**Advanced Math** tab exposes six independent Qt Widgets panels: Complex,
+Calculus, Matrices, Vectors, Statistics, and Regression. The established Scientific,
+Graphing, and Exact Fractions tabs remain at their original positions and
+continue using their existing real-valued evaluators and workspace storage.
+The complex panel evaluates the separate `ComplexExpression` grammar and
+maintains a complex-only `ans`. Calculus accepts a scalar expression in `x`
+and supports a finite-difference derivative, adaptive definite integral, and
+bracketed root with diagnostics. Matrix input uses commas for columns and
+semicolons for rows, with transpose, determinant, addition, multiplication,
+and a guarded linear-system solve (`B` is a comma-separated RHS vector).
+The vector panel exposes addition, subtraction, scaling, dot product, norm,
+and matrix-vector multiplication.
+Statistics summarizes finite datasets or computes type-7 percentiles; the
+regression panel fits degree-1–4 polynomial models and predicts at a supplied
+finite X. Input validation is strict, bounded, and Qt-independent; `AdvancedMathValue`
+retains scalar, complex, matrix, vector, statistics and regression result types
+without replacing existing expression ASTs or changing persistence formats.
+The GUI deliberately limits interactive statistical datasets to 5,000 entries.
+The numerical outputs are approximations, with explicitly reported statuses,
+error/convergence diagnostics where available, and no guarantee of mathematical
+completeness or responsive latency for worst-case computations. Polynomial
+coefficients remain in the centered/scaled predictor basis; complex user
+functions, matrices of complex numbers, and arbitrary typed expression grammar
+are not added. Results from the advanced tab are not inserted into the
+basic scientific history or its real `ans`. No GUI persistence for advanced
+panel inputs is introduced in this issue.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator

@@ -1,11 +1,11 @@
 # Rational Studio — Verification Report
 
-<!-- ISSUE52_VERIFICATION_CURRENT_BEGIN -->
+<!-- ISSUE53_VERIFICATION_CURRENT_BEGIN -->
 
 **Project version:** 0.1.0  
 **Verification date:** October 30, 2026
 **Recorded environment:** Linux, GCC 15.2.0, C++20, CMake/Ninja, Qt Widgets  
-**Current status:** **PASS — Issue #52 (M4-07), statistical regression.** Linux GUI Debug **61/61 CTests PASS** (18.30 s), GUI Release **61/61 CTests PASS** (12.13 s), core-only ASan/UBSan **40/40 CTests PASS** (8.95 s); **2330 StatisticalRegression assertions PASS** in each configuration. 153 matching provenance paths; zero GUI compiler warnings. Manual GUI not required (core-only API). QR rank/conditioning checks and fit diagnostics are numerical, not certified guarantees; Windows, Qt 5 and Qt GUI sanitizers remain unverified.
+**Current status:** **PASS — Issue #53 (M4-08), advanced scientific interface.** Linux GUI Debug **63/63 CTests PASS** (18.61 s), GUI Release **63/63 CTests PASS** (12.64 s), core-only ASan/UBSan **41/41 CTests PASS** (8.64 s). **26 AdvancedMathInput assertions PASS** in each configuration; offscreen AdvancedMathGui tests PASS in Debug and Release. 162 matching provenance paths; zero GUI compiler warnings. Manual desktop GUI: **PASS — developer-reported**. Windows, Qt 5 and Qt GUI sanitizers remain unverified.
 
 This document records Issue #44 pointer tracing from completed geometry for Cartesian, parametric, polar, implicit and inequality boundaries. Optional approximate significant-point markers are tied to the existing Features action and invalidated with stale analysis; parameter and signed-radius readouts are approximate. This adds a Qt-independent nearest-segment helper and sampled parameter provenance, not new rendering geometry or a workspace version. Previous Issue #43 and earlier results remain historical.
 
@@ -17,7 +17,35 @@ This document records Issue #41 bounded numerical feature inspection for explici
 
 This document records Issue #40 finite-domain numerical intersection detection for pairs of explicit Cartesian functions. The Qt-independent IntersectionDetection service uses bounded sign-change refinement and sampled tangency heuristics with configurable residual tolerances, callback limits, result caps, and partial/coincident status. MainWindow integrates an Intersections action for valid visible Cartesian pairs in the current X-domain. Parametric, polar, and implicit pair detection are outside this implementation. Issue #39 and all earlier qualifications remain historical, including the original Issue #25 benchmark measurements. Automated evidence and developer-reported manual GUI acceptance are distinguished.
 
-## Issue #52 current statistical regression qualification
+## Issue #53 current advanced scientific interface qualification
+
+Issue #53 introduces a fourth **Advanced Math** Qt tab with six separate
+Complex, Calculus, Matrices, Vectors, Statistics and Regression workspaces. Typed
+Qt-independent input validation prevents malformed matrices and nonfinite
+numeric lists from reaching the established core services. The basic
+Scientific, Graphing and Exact Fractions tab indices remain unchanged.
+Complex ans is separate from basic scientific ans. The graph renderer,
+existing mathematical expression grammar, and workspace persistence are
+unchanged; numerical diagnostics are not certified mathematical guarantees.
+
+- Linux GUI Debug: **63/63 CTests PASS** — 18.61 s.
+- Linux GUI Release: **63/63 CTests PASS** — 12.64 s.
+- Core-only ASan/UBSan: **41/41 CTests PASS** — 8.64 s.
+- RationalAdvancedMathInputTests: **26 assertions PASS** in all three configurations.
+- RationalAdvancedMathGuiTests: offscreen PASS in Debug and Release.
+- GUI compiler warnings: zero recorded in Debug and Release.
+- Source/documentation provenance: **162 matching paths**; manifest SHA-256 `783a725350ae22d4ba1371cd9d9b10a2d4409439b4af2f520a763f73eb5ece36`.
+- Manual desktop GUI acceptance: **PASS — developer-reported** (not instrumented).
+
+**CTest SHA-256:** Debug `a66d75f5ad583fa55af45c13c306673fb4c149cb02ea2cdad5161f4169509023`;
+Release `d9751836f16f844ac8691c30062c99779476dad811947e620635116648378f03`; ASan `348da21ccf984d0a8ee56888340f33ea7bfdb100813b91a89d1e336196f4dd46`.
+
+**Recorded environment:** c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0; cmake version 4.2.3; 1.13.2; HEAD `e86f7fa7f6ae459fc4d7ef6f837e273787a34fa5`;
+qualification timestamp `2026-10-30T21:49:50-04:00`.
+
+Issue #52 and earlier qualification records remain historical below.
+
+## Issue #52 historical statistical regression qualification
 
 Issue #52 introduces a Qt-independent `StatisticalRegression` least-squares
 service for finite X/Y pairs. Linear and degree-2–4 polynomial models use
