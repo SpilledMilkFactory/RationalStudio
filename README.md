@@ -371,6 +371,23 @@ the full GUI Debug/Release matrix. No production numerical algorithms, parser
 grammar, GUI behavior or workspace schema change in this issue. Linux evidence
 and remaining platform limitations are recorded in VERIFICATION.md.
 
+<!-- ISSUE55_README_UPDATED -->
+
+**Persistent application settings (Issue #55; Milestone 5).** Rational Studio
+persists the global RAD/DEG angle selection, Dark/Light appearance, graph grid
+and axes visibility, Qt window geometry, and an *optional* restore-last-tab
+choice through QSettings (user-scoped desktop preferences). The Preferences
+menu provides appearance and graph-view toggles and the remember-last-tab
+setting; angle controls remain in Scientific. Settings save on normal window
+close and load after application widgets exist. Corrupt, unsupported, and
+oversized values use bounded defaults. New offscreen GUI regressions use
+isolated INI files and never read or overwrite real user preferences.
+Application preferences are **not** stored in graph workspace JSON; loading a
+workspace can change the current global angle selection and that selection
+is saved on a subsequent normal close. Mathematical algorithms, user-created
+graph workspace content, advanced-panel inputs, and existing graph workspace
+versions are unchanged. Native Windows persistence behavior remains unverified.
+
 **Viewport precision and navigation stability.** The Qt-independent `GraphViewport` component uses precision-aware calculations for mouse panning and cursor-anchored zooming. Navigation incorporates fused multiply-add operations where appropriate, preserves viewport state when zoom limits are reached, and avoids unintended zoom-direction reversals when restoring views outside the normal mouse-wheel scale range. Operations that would introduce excessive screen-space error due to floating-point limitations are rejected without partially modifying the viewport.
 
 ### Exact rational calculator

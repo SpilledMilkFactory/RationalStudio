@@ -338,7 +338,7 @@ QPointF GraphCanvas::screenToWorld(const QPointF& p) const {
 
 void GraphCanvas::paintEvent(QPaintEvent*) {
     QPainter p(this);
-    p.fillRect(rect(), QColor("#101722"));
+    p.fillRect(rect(), QColor(lightAppearance_ ? "#fbfdff" : "#101722"));
     p.setRenderHint(QPainter::Antialiasing, true);
     // Qt may transiently report an empty widget or a resize that could not
     // be committed to GraphViewport. Never paint with stale dimensions.
@@ -363,7 +363,7 @@ void GraphCanvas::paintEvent(QPaintEvent*) {
     }
     drawSignificantPoints(p);
     if (pointerInside_ && !dragging_) drawTrace(p);
-    p.setPen(QColor("#8395aa"));
+    p.setPen(QColor(lightAppearance_ ? "#516478" : "#8395aa"));
     p.setFont(QFont("Sans Serif", 9));
     p.drawText(QRect(10, height() - 28, width() - 20, 22),
                Qt::AlignLeft | Qt::AlignVCenter,
@@ -381,7 +381,7 @@ void GraphCanvas::drawGrid(QPainter& p) const {
                                      viewport_.pixelsPerUnit());
     p.setFont(QFont("Sans Serif", 9));
     if (showGrid_) {
-        p.setPen(QPen(QColor("#253243"), 1));
+        p.setPen(QPen(QColor(lightAppearance_ ? "#dae4ef" : "#253243"), 1));
         if (xAxis) {
             for (int i = 0; i < 250; ++i) {
                 const double x = std::fma(double(i), xAxis->spacingPixels,
@@ -409,7 +409,7 @@ void GraphCanvas::drawGrid(QPainter& p) const {
     const double originX = viewport_.worldToScreenX(0.0);
     const double originY = viewport_.worldToScreenY(0.0);
     if (showAxes_) {
-        p.setPen(QPen(QColor("#8396ad"), 1.4));
+        p.setPen(QPen(QColor(lightAppearance_ ? "#697f93" : "#8396ad"), 1.4));
         if (std::isfinite(originY) && originY >= -2.0 &&
             originY <= height() + 2.0)
             p.drawLine(QPointF(0, originY), QPointF(width(), originY));
@@ -419,7 +419,7 @@ void GraphCanvas::drawGrid(QPainter& p) const {
     }
 
     if (!showGrid_ || width() < 90 || height() < 30) return;
-    p.setPen(QColor("#a1b3c7"));
+    p.setPen(QColor(lightAppearance_ ? "#50657a" : "#a1b3c7"));
     const double labelY = std::clamp(
         std::isfinite(originY) ? originY + 6.0 : 6.0,
         4.0, double(height() - 20));
@@ -841,7 +841,7 @@ void GraphCanvas::drawSignificantPoints(QPainter& p) const {
             point.x() < 0 || point.y() < 0 ||
             point.x() >= width() || point.y() >= height()) continue;
         p.setPen(QPen(feature.color, 2));
-        p.setBrush(QColor("#101722"));
+        p.setBrush(QColor(lightAppearance_ ? "#fbfdff" : "#101722"));
         p.drawEllipse(point, 4, 4);
     }
 }
@@ -850,7 +850,7 @@ void GraphCanvas::drawTrace(QPainter& p) const {
     const auto selected = nearestInspection();
     if (!selected) return;
     p.setPen(QPen(selected->color, 2));
-    p.setBrush(QColor("#101722"));
+    p.setBrush(QColor(lightAppearance_ ? "#fbfdff" : "#101722"));
     p.drawEllipse(selected->point, 5, 5);
     const QFontMetrics fm(p.font());
     // Never expand a tooltip beyond the actual widget, including narrow views.
@@ -862,9 +862,9 @@ void GraphCanvas::drawTrace(QPainter& p) const {
     const double top = std::clamp(selected->point.y() - 34, 2.0,
         double(std::max(2, height() - 30)));
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor("#263649"));
+    p.setBrush(QColor(lightAppearance_ ? "#e1eaf4" : "#263649"));
     p.drawRoundedRect(QRectF(left, top, boxWidth, 27), 5, 5);
-    p.setPen(QColor("#f4f7fb"));
+    p.setPen(QColor(lightAppearance_ ? "#152d42" : "#f4f7fb"));
     p.drawText(QRectF(left, top, boxWidth, 27), Qt::AlignCenter, tip);
 }
 
