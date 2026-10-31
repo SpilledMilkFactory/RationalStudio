@@ -86,6 +86,17 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
+    # M4-09 / Issue #54: cross-service correctness and domain qualification.
+    # Timings are not used as pass/fail assertions.
+    foreach(suite IN ITEMS NumericalAccuracyMatrix NumericalDomainMatrix)
+        add_executable(Rational${suite}Tests tests/${suite}Tests.cpp)
+        target_link_libraries(Rational${suite}Tests PRIVATE RationalCore)
+        target_compile_options(Rational${suite}Tests PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic>)
+        add_test(NAME Rational${suite}Tests COMMAND Rational${suite}Tests)
+        set_tests_properties(Rational${suite}Tests PROPERTIES
+            LABELS "core;advanced-math;accuracy;domain;regression")
+    endforeach()
     # M4-08 / Issue #53: typed advanced-input parsing (Qt-independent).
     add_executable(RationalAdvancedMathInputTests tests/AdvancedMathInputTests.cpp)
     target_link_libraries(RationalAdvancedMathInputTests PRIVATE RationalCore)
