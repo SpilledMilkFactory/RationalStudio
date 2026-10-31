@@ -937,6 +937,24 @@ Development work, defects, enhancements, and technical improvements are tracked 
 
 Contributions and technical discussion are welcome. Review existing issues before beginning substantial work, keep mathematical algorithms separate from presentation logic where practical, and add regression tests for changes to numerical behavior.
 
+<!-- ISSUE64_README_UPDATED -->
+
+### Third-party licensing and redistribution (Issue #64)
+
+Rational Studio remains MIT-licensed; third-party dependencies retain their
+respective licenses. The Linux `.deb` dynamically links against operating-system
+Qt6 Core, GUI, and Widgets libraries, requires system Qt platform plugins, and
+uses Boost.Multiprecision headers for exact integer arithmetic. The Debian
+package includes a `THIRD_PARTY_NOTICES.txt` and intact LGPLv3, GPLv3, and
+Boost Software License 1.0 terms in `/usr/share/doc/rationalstudio/`.
+
+The technical source/package audit checks those files and actual ELF linking,
+but **does not constitute legal certification or automatically satisfy Qt's
+corresponding-source obligations**. Release sign-off still requires a reviewed
+Qt source-availability/relinking plan and an exact dependency inventory. See
+[third-party dependency review](THIRD_PARTY_DEPENDENCIES.md) and the current
+[verification report](VERIFICATION.md).
+
 ## License
 
 Rational Studio is licensed under the **MIT License**. See [LICENSE.MD](LICENSE.MD).
