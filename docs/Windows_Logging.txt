@@ -1,0 +1,2456 @@
+PS C:\dev\vcpkg> Test-Path "C:\dev\vcpkg\installed\x64-windows\include\boost\multiprecision\cpp_int.hpp"
+True
+PS C:\dev\vcpkg> cd "C:\Users\Chris\Documents\CPP Projects\RationalStudio"
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> cmake -S . -B build-issue60-windows `
+>>     -G "Visual Studio 17 2022" `
+>>     -A x64 `
+>>     -DCMAKE_PREFIX_PATH="C:/Qt/6.10.3/msvc2022_64" `
+>>     -DRATIONALSTUDIO_BOOST_INCLUDE_DIR="C:/dev/vcpkg/installed/x64-windows/include" `
+>>     -DRATIONALSTUDIO_BUILD_GUI=ON `
+>>     -DRATIONALSTUDIO_BUILD_CLI=ON `
+>>     -DBUILD_TESTING=ON `
+>>     -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF `
+>>     -DRATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS=OFF `
+>>     -DRATIONALSTUDIO_ENABLE_LINUX_PACKAGING=OFF
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- The CXX compiler identification is MSVC 19.38.33145.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Performing Test HAVE_STDATOMIC
+-- Performing Test HAVE_STDATOMIC - Success
+-- Found WrapAtomic: TRUE
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR)
+-- Configuring done (12.2s)
+-- Generating done (2.2s)
+-- Build files have been written to: C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> cmake --build build-issue60-windows `
+>>     --config Release `
+>>     --parallel 4
+MSBuild version 17.14.40+3e7442088 for .NET Framework
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Rational.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  GraphBenchmarkStatisticsTests.cpp
+  Expression.cpp
+  VariableDefinitions.cpp
+  RationalGraphBenchmarkStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalGraphBenchmarkStatisticsTests.exe
+  FunctionDefinitions.cpp
+  GraphViewport.cpp
+  CurveSampler.cpp
+  ParametricSampler.cpp
+  ImplicitContour.cpp
+  IntersectionDetection.cpp
+  GraphFeatureDetection.cpp
+  NumericalDifferentiation.cpp
+  NumericalIntegration.cpp
+  NumericalRootFinding.cpp
+  InequalityRegion.cpp
+  GraphTrace.cpp
+  VariableSliderScale.cpp
+  ComplexMath.cpp
+  MatrixMath.cpp
+  DescriptiveStatistics.cpp
+  StatisticalRegression.cpp
+  Generating Code...
+  Compiling...
+  AdvancedMathInput.cpp
+  Generating Code...
+  RationalCore.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\RationalCo
+  re.lib
+  Automatic MOC for target RationalApplicationSettingsTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalApplicationSettingsGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalVariableSliderPanelTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalResponsiveDisplayGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalExpressionInlineFeedbackTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalParametricGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathKeyboardShortcutTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasBoundaryTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasCoverageTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalKeyboardNavigationGuiTests
+  Automatic MOC for target RationalIntersectionGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphTracingTests
+  Automatic MOC for target RationalInequalityGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphVariableRefreshTests
+  Automatic MOC for target RationalImplicitGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphWorkspacePersistenceTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathExpressionEditorTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasSchedulingTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphRepresentationControlsTests
+  Automatic MOC for target RationalGraphCanvasCacheTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalStudio
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphFeatureGraphTests
+  Automatic MOC for target RationalPolarGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasRegressionMatrixTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalAccessibilityGuiTests
+  Automatic MOC for target RationalGraphCanvasBudgetTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AccessibilityGuiTests.cpp
+  GraphViewportPrecisionTests.cpp
+  GraphViewportTests.cpp
+  VariableDefinitionsTests.cpp
+  AdvancedGraphAccuracyMatrixTests.cpp
+  CurveSamplingJobTests.cpp
+  VariableFunctionInteractionTests.cpp
+  PolarGraphTests.cpp
+  RationalViewportTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\R
+  ationalViewportTests.exe
+  NumericalRootFindingTests.cpp
+  NumericalDifferentiationTests.cpp
+  MathExpressionInputTests.cpp
+  RationalVariableFunctionInteractionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalVariableFunctionInteractionTests.exe
+  MathExpressionEditorTests.cpp
+  RationalMathExpressionInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalMathExpressionInputTests.exe
+  IntersectionDetectionTests.cpp
+  RationalNumericalDifferentiationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalNumericalDifferentiationTests.exe
+  ImplicitGraphTests.cpp
+  MainWindow.cpp
+  RationalNumericalRootFindingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalNumericalRootFindingTests.exe
+  GraphViewportBoundaryTests.cpp
+  RationalIntersectionDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalIntersectionDetectionTests.exe
+  GraphTracingTests.cpp
+  MainWindow.cpp
+  RationalGraphViewportBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphViewportBoundaryTests.exe
+  GraphRepaintSchedulerTests.cpp
+  MathExpressionEdit.cpp
+  RationalGraphRepaintSchedulerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphRepaintSchedulerTests.exe
+  GraphFeatureDetectionTests.cpp
+  MainWindow.cpp
+  GraphCanvas.cpp
+  RationalGraphFeatureDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphFeatureDetectionTests.exe
+  GraphCanvasCoverageTests.cpp
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  RationalGraphTracingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Relea
+  se\RationalGraphTracingTests.exe
+  GraphCanvasBoundaryTests.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  RationalGraphCanvasCoverageTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalGraphCanvasCoverageTests.exe
+  ExpressionInlineFeedbackTests.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalGraphCanvasBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalGraphCanvasBoundaryTests.exe
+  GraphCanvas.cpp
+  DescriptiveStatisticsTests.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  RationalDescriptiveStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalDescriptiveStatisticsTests.exe
+  CurveSteepTests.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  RationalCurveSteepTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalCurveSteepTests.exe
+  CurveGeometryCacheTests.cpp
+  mocs_compilation_Release.cpp
+  RationalCurveGeometryCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Release\RationalCurveGeometryCacheTests.exe
+  CurveCoverageRegressionTests.cpp
+  VariableSliderPanel.cpp
+  RationalCurveCoverageRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalCurveCoverageRegressionTests.exe
+  main.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  ApplicationSettings.cpp
+  RationalCLI.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\RationalCLI
+  .exe
+  Generating Code...
+  AdvancedMathInputTests.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  RationalAdvancedMathInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalAdvancedMathInputTests.exe
+  AdvancedMathPage.cpp
+  RationalAdvancedGraphAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalAdvancedGraphAccuracyMatrixTests.exe
+  CoreTests.cpp
+  Generating Code...
+  Generating Code...
+  RationalAccessibilityGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalAccessibilityGuiTests.exe
+  CurveEvaluationBudgetTests.cpp
+  RationalCoreTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\Ratio
+  nalCoreTests.exe
+  main.cpp
+  GraphCanvas.cpp
+  RationalCurveEvaluationBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalCurveEvaluationBudgetTests.exe
+  GraphCanvasCacheTests.cpp
+  RationalMathExpressionEditorTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalMathExpressionEditorTests.exe
+  GraphCanvasSchedulingTests.cpp
+  MainWindow.cpp
+  RationalPolarGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalPolarGraphTests.exe
+  GraphRegressionMatrixTests.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  RationalGraphRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphRegressionMatrixTests.exe
+  GraphTraceTests.cpp
+  GraphCanvas.cpp
+  RationalImplicitGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Rele
+  ase\RationalImplicitGraphTests.exe
+  RationalGraphTraceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalGraphTraceTests.exe
+  GraphVariableRefreshTests.cpp
+  RationalVariableDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableDefinitionsTests.exe
+  ImplicitContourTests.cpp
+  RationalImplicitContourTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalImplicitContourTests.exe
+  InequalityRegionTests.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalInequalityRegionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalInequalityRegionTests.exe
+  RationalViewportPrecisionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalViewportPrecisionTests.exe
+  PolarExpressionTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalGraphCanvasCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalGraphCanvasCacheTests.exe
+  IntersectionGraphTests.cpp
+  ApplicationSettings.cpp
+  RationalGraphCanvasSchedulingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphCanvasSchedulingTests.exe
+  MathExpressionEdit.cpp
+  MatrixMathTests.cpp
+  NumericalAccuracyMatrixTests.cpp
+  Generating Code...
+  AdvancedMathPage.cpp
+  RationalMatrixMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalMatrixMathTests.exe
+  ParametricGraphTests.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  RationalNumericalAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalNumericalAccuracyMatrixTests.exe
+  ResponsiveDisplayGuiTests.cpp
+  RationalExpressionInlineFeedbackTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalExpressionInlineFeedbackTests.exe
+  VariableSliderScaleTests.cpp
+  GraphCanvas.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  RationalVariableSliderScaleTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableSliderScaleTests.exe
+  ApplicationSettingsTests.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  RationalApplicationSettingsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalApplicationSettingsTests.exe
+  RationalPolarExpressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalPolarExpressionTests.exe
+  NumericalIntegrationTests.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  mocs_compilation_Release.cpp
+  AdvancedMathPage.cpp
+  RationalNumericalIntegrationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalNumericalIntegrationTests.exe
+  NamedVariableTests.cpp
+  RationalNamedVariableTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Rele
+  ase\RationalNamedVariableTests.exe
+  ExpressionDiagnosticTests.cpp
+  Generating Code...
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  RationalExpressionDiagnosticTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalExpressionDiagnosticTests.exe
+  CurveSamplerTests.cpp
+  RationalCurveSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Relea
+  se\RationalCurveSamplerTests.exe
+  CurveDiscontinuityTests.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  MathExpressionEdit.cpp
+  RationalCurveDiscontinuityTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Release\RationalCurveDiscontinuityTests.exe
+  ApplicationSettingsGuiTests.cpp
+  MathExpressionEdit.cpp
+  RationalStudio.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\Rational
+  Studio.exe
+  AdvancedGraphResourceMatrixTests.cpp
+  RationalAdvancedGraphResourceMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalAdvancedGraphResourceMatrixTests.exe
+  RationalCurveSamplingJobTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalCurveSamplingJobTests.exe
+  ComplexMathTests.cpp
+  mocs_compilation_Release.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  RationalComplexMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Releas
+  e\RationalComplexMathTests.exe
+  VariableSliderPanelTests.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  RationalGraphVariableRefreshTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalGraphVariableRefreshTests.exe
+  StatisticalRegressionTests.cpp
+  VariableSliderPanel.cpp
+  ApplicationSettings.cpp
+  Generating Code...
+  Generating Code...
+  RationalIntersectionGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalIntersectionGraphTests.exe
+  ParametricSamplerTests.cpp
+  RationalStatisticalRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalStatisticalRegressionTests.exe
+  NumericalDomainMatrixTests.cpp
+  RationalParametricSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalParametricSamplerTests.exe
+  MathKeyboardShortcutTests.cpp
+  AdvancedMathPage.cpp
+  MainWindow.cpp
+  RationalNumericalDomainMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalNumericalDomainMatrixTests.exe
+  KeyboardNavigationGuiTests.cpp
+  RationalResponsiveDisplayGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalResponsiveDisplayGuiTests.exe
+  InequalityGraphTests.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  RationalParametricGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalParametricGraphTests.exe
+  GraphWorkspacePersistenceTests.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  VariableSliderPanel.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  mocs_compilation_Release.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  mocs_compilation_Release.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  RationalApplicationSettingsGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Release\RationalApplicationSettingsGuiTests.exe
+  GraphVariableDependencyTests.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  RationalGraphVariableDependencyTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalGraphVariableDependencyTests.exe
+  GraphRepresentationControlsTests.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  mocs_compilation_Release.cpp
+  RationalVariableSliderPanelTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableSliderPanelTests.exe
+  GraphFeatureGraphTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  Generating Code...
+  MainWindow.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  Generating Code...
+  RationalMathKeyboardShortcutTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalMathKeyboardShortcutTests.exe
+  GraphCanvasRegressionMatrixTests.cpp
+  AdvancedMathPage.cpp
+  RationalKeyboardNavigationGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalKeyboardNavigationGuiTests.exe
+  GraphCanvasBudgetTests.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  GraphCanvas.cpp
+  RationalInequalityGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalInequalityGraphTests.exe
+  FunctionDefinitionsTests.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  RationalGraphWorkspacePersistenceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-
+  windows\Release\RationalGraphWorkspacePersistenceTests.exe
+  DynamicEvaluationMatrixTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalFunctionDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalFunctionDefinitionsTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveDomainTests.cpp
+  RationalGraphCanvasRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalGraphCanvasRegressionMatrixTests.exe
+  Automatic MOC for target RationalAdvancedMathGuiTests
+  Automatic MOC for target RationalDesktopGuiSmokeTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedMathGuiTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  RationalDynamicEvaluationMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalDynamicEvaluationMatrixTests.exe
+  DesktopGuiSmokeTests.cpp
+  MathExpressionEdit.cpp
+  RationalGraphCanvasBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalGraphCanvasBudgetTests.exe
+  RationalCurveDomainTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Releas
+  e\RationalCurveDomainTests.exe
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  MainWindow.cpp
+  mocs_compilation_Release.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  RationalGraphRepresentationControlsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalGraphRepresentationControlsTests.exe
+  GraphCanvas.cpp
+  RationalGraphFeatureGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalGraphFeatureGraphTests.exe
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  Generating Code...
+  RationalAdvancedMathGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalAdvancedMathGuiTests.exe
+  RationalDesktopGuiSmokeTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalDesktopGuiSmokeTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> $env:PATH = "C:\Qt\6.10.3\msvc2022_64\bin;" + $env:PATH
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> $env:QT_QPA_PLATFORM = "offscreen"
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> ctest --test-dir build-issue60-windows `
+>>     -C Release `
+>>     -N
+Test project C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+  Test  #1: RationalNumericalAccuracyMatrixTests
+  Test  #2: RationalNumericalDomainMatrixTests
+  Test  #3: RationalAdvancedMathInputTests
+  Test  #4: RationalStatisticalRegressionTests
+  Test  #5: RationalDescriptiveStatisticsTests
+  Test  #6: RationalMatrixMathTests
+  Test  #7: RationalComplexMathTests
+  Test  #8: RationalNumericalRootFindingTests
+  Test  #9: RationalNumericalIntegrationTests
+  Test #10: RationalNumericalDifferentiationTests
+  Test #11: RationalAdvancedGraphAccuracyMatrixTests
+  Test #12: RationalAdvancedGraphResourceMatrixTests
+  Test #13: RationalGraphTraceTests
+  Test #14: RationalInequalityRegionTests
+  Test #15: RationalCoreTests
+  Test #16: RationalViewportTests
+  Test #17: RationalCurveSamplerTests
+  Test #18: RationalCurveDomainTests
+  Test #19: RationalCurveDiscontinuityTests
+  Test #20: RationalCurveSteepTests
+  Test #21: RationalViewportPrecisionTests
+  Test #22: RationalCurveGeometryCacheTests
+  Test #23: RationalCurveEvaluationBudgetTests
+  Test #24: RationalGraphRepaintSchedulerTests
+  Test #25: RationalGraphViewportBoundaryTests
+  Test #26: RationalGraphRegressionMatrixTests
+  Test #27: RationalGraphBenchmarkStatisticsTests
+  Test #28: RationalCurveCoverageRegressionTests
+  Test #29: RationalCurveSamplingJobTests
+  Test #30: RationalNamedVariableTests
+  Test #31: RationalVariableDefinitionsTests
+  Test #32: RationalFunctionDefinitionsTests
+  Test #33: RationalVariableSliderScaleTests
+  Test #34: RationalGraphVariableDependencyTests
+  Test #35: RationalMathExpressionInputTests
+  Test #36: RationalExpressionDiagnosticTests
+  Test #37: RationalVariableFunctionInteractionTests
+  Test #38: RationalDynamicEvaluationMatrixTests
+  Test #39: RationalParametricSamplerTests
+  Test #40: RationalPolarExpressionTests
+  Test #41: RationalImplicitContourTests
+  Test #42: RationalIntersectionDetectionTests
+  Test #43: RationalGraphFeatureDetectionTests
+  Test #44: RationalApplicationSettingsTests
+  Test #45: RationalApplicationSettingsGuiTests
+  Test #46: RationalKeyboardNavigationGuiTests
+  Test #47: RationalAccessibilityGuiTests
+  Test #48: RationalDesktopGuiInteractionSmokeTests
+  Test #49: RationalDesktopStartupSmokeTests
+  Test #50: RationalResponsiveDisplayGuiTests
+  Test #51: RationalResponsiveDisplayHiDpiTests
+  Test #52: RationalAdvancedMathGuiTests
+  Test #53: RationalGraphCanvasCoverageTests
+  Test #54: RationalGraphCanvasCoverageHiDpiTests
+  Test #55: RationalGraphCanvasCacheTests
+  Test #56: RationalGraphCanvasBudgetTests
+  Test #57: RationalGraphCanvasSchedulingTests
+  Test #58: RationalGraphCanvasBoundaryTests
+  Test #59: RationalGraphCanvasRegressionMatrixTests
+  Test #60: RationalVariableSliderPanelTests
+  Test #61: RationalGraphVariableRefreshTests
+  Test #62: RationalMathExpressionEditorTests
+  Test #63: RationalExpressionInlineFeedbackTests
+  Test #64: RationalMathKeyboardShortcutTests
+  Test #65: RationalGraphWorkspacePersistenceTests
+  Test #66: RationalParametricGraphTests
+  Test #67: RationalPolarGraphTests
+  Test #68: RationalImplicitGraphTests
+  Test #69: RationalIntersectionGraphTests
+  Test #70: RationalInequalityGraphTests
+  Test #71: RationalGraphTracingTests
+  Test #72: RationalGraphRepresentationControlsTests
+  Test #73: RationalGraphFeatureGraphTests
+
+Total Tests: 73
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> ctest --test-dir build-issue60-windows `
+>>     -C Release `
+>>     --output-on-failure `
+>>     --parallel 4
+Test project C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+      Start  1: RationalNumericalAccuracyMatrixTests
+      Start  2: RationalNumericalDomainMatrixTests
+      Start  3: RationalAdvancedMathInputTests
+      Start  4: RationalStatisticalRegressionTests
+ 1/73 Test  #1: RationalNumericalAccuracyMatrixTests .......   Passed    0.19 sec
+ 2/73 Test  #2: RationalNumericalDomainMatrixTests .........   Passed    0.14 sec
+      Start  5: RationalDescriptiveStatisticsTests
+      Start  6: RationalMatrixMathTests
+ 3/73 Test  #3: RationalAdvancedMathInputTests .............   Passed    0.18 sec
+      Start  7: RationalComplexMathTests
+ 4/73 Test  #4: RationalStatisticalRegressionTests .........   Passed    0.18 sec
+ 5/73 Test  #5: RationalDescriptiveStatisticsTests .........***Failed    0.14 sec
+FAIL: percentile intermediate avoids double overflow
+FAIL: 1326 DescriptiveStatistics assertions
+
+      Start  8: RationalNumericalRootFindingTests
+      Start  9: RationalNumericalIntegrationTests
+ 6/73 Test  #6: RationalMatrixMathTests ....................   Passed    0.19 sec
+      Start 10: RationalNumericalDifferentiationTests
+ 7/73 Test  #7: RationalComplexMathTests ...................   Passed    0.19 sec
+ 8/73 Test  #8: RationalNumericalRootFindingTests ..........   Passed    0.14 sec
+      Start 11: RationalAdvancedGraphAccuracyMatrixTests
+      Start 12: RationalAdvancedGraphResourceMatrixTests
+ 9/73 Test  #9: RationalNumericalIntegrationTests ..........   Passed    0.18 sec
+      Start 13: RationalGraphTraceTests
+10/73 Test #10: RationalNumericalDifferentiationTests ......   Passed    0.18 sec
+11/73 Test #11: RationalAdvancedGraphAccuracyMatrixTests ...   Passed    0.13 sec
+      Start 14: RationalInequalityRegionTests
+      Start 15: RationalCoreTests
+12/73 Test #12: RationalAdvancedGraphResourceMatrixTests ...   Passed    0.20 sec
+      Start 16: RationalViewportTests
+13/73 Test #13: RationalGraphTraceTests ....................   Passed    0.20 sec
+14/73 Test #14: RationalInequalityRegionTests ..............   Passed    0.16 sec
+      Start 17: RationalCurveSamplerTests
+      Start 18: RationalCurveDomainTests
+15/73 Test #15: RationalCoreTests ..........................   Passed    0.21 sec
+      Start 19: RationalCurveDiscontinuityTests
+16/73 Test #16: RationalViewportTests ......................   Passed    0.21 sec
+17/73 Test #17: RationalCurveSamplerTests ..................   Passed    0.16 sec
+      Start 20: RationalCurveSteepTests
+      Start 21: RationalViewportPrecisionTests
+18/73 Test #18: RationalCurveDomainTests ...................   Passed    0.20 sec
+      Start 22: RationalCurveGeometryCacheTests
+19/73 Test #19: RationalCurveDiscontinuityTests ............   Passed    0.20 sec
+20/73 Test #20: RationalCurveSteepTests ....................   Passed    0.16 sec
+      Start 23: RationalCurveEvaluationBudgetTests
+      Start 24: RationalGraphRepaintSchedulerTests
+21/73 Test #21: RationalViewportPrecisionTests .............   Passed    0.20 sec
+      Start 25: RationalGraphViewportBoundaryTests
+22/73 Test #22: RationalCurveGeometryCacheTests ............   Passed    0.20 sec
+23/73 Test #23: RationalCurveEvaluationBudgetTests .........   Passed    0.14 sec
+      Start 26: RationalGraphRegressionMatrixTests
+      Start 27: RationalGraphBenchmarkStatisticsTests
+24/73 Test #24: RationalGraphRepaintSchedulerTests .........   Passed    0.18 sec
+      Start 28: RationalCurveCoverageRegressionTests
+25/73 Test #25: RationalGraphViewportBoundaryTests .........   Passed    0.19 sec
+26/73 Test #26: RationalGraphRegressionMatrixTests .........   Passed    0.14 sec
+      Start 29: RationalCurveSamplingJobTests
+      Start 30: RationalNamedVariableTests
+27/73 Test #27: RationalGraphBenchmarkStatisticsTests ......***Failed    0.19 sec
+FAIL: remove_all: The process cannot access the file because it is being used by another process.: "C:\Users\Chris\AppData\Local\Temp\rationalstudio-issue25-metrics-2123145647600"
+
+      Start 31: RationalVariableDefinitionsTests
+28/73 Test #28: RationalCurveCoverageRegressionTests .......   Passed    0.20 sec
+      Start 32: RationalFunctionDefinitionsTests
+29/73 Test #30: RationalNamedVariableTests .................   Passed    0.15 sec
+      Start 33: RationalVariableSliderScaleTests
+30/73 Test #31: RationalVariableDefinitionsTests ...........   Passed    0.15 sec
+      Start 34: RationalGraphVariableDependencyTests
+31/73 Test #32: RationalFunctionDefinitionsTests ...........   Passed    0.15 sec
+      Start 35: RationalMathExpressionInputTests
+32/73 Test #33: RationalVariableSliderScaleTests ...........   Passed    0.15 sec
+      Start 36: RationalExpressionDiagnosticTests
+33/73 Test #34: RationalGraphVariableDependencyTests .......   Passed    0.15 sec
+      Start 37: RationalVariableFunctionInteractionTests
+34/73 Test #35: RationalMathExpressionInputTests ...........   Passed    0.15 sec
+      Start 38: RationalDynamicEvaluationMatrixTests
+35/73 Test #36: RationalExpressionDiagnosticTests ..........   Passed    0.15 sec
+      Start 39: RationalParametricSamplerTests
+36/73 Test #37: RationalVariableFunctionInteractionTests ...   Passed    0.15 sec
+      Start 40: RationalPolarExpressionTests
+37/73 Test #38: RationalDynamicEvaluationMatrixTests .......   Passed    0.15 sec
+      Start 41: RationalImplicitContourTests
+38/73 Test #39: RationalParametricSamplerTests .............   Passed    0.15 sec
+      Start 42: RationalIntersectionDetectionTests
+39/73 Test #40: RationalPolarExpressionTests ...............   Passed    0.15 sec
+      Start 43: RationalGraphFeatureDetectionTests
+40/73 Test #41: RationalImplicitContourTests ...............   Passed    0.14 sec
+      Start 44: RationalApplicationSettingsTests
+41/73 Test #42: RationalIntersectionDetectionTests .........   Passed    0.13 sec
+      Start 45: RationalApplicationSettingsGuiTests
+42/73 Test #43: RationalGraphFeatureDetectionTests .........   Passed    0.14 sec
+      Start 46: RationalKeyboardNavigationGuiTests
+43/73 Test #44: RationalApplicationSettingsTests ...........   Passed    0.18 sec
+      Start 47: RationalAccessibilityGuiTests
+44/73 Test #29: RationalCurveSamplingJobTests ..............   Passed    0.98 sec
+      Start 48: RationalDesktopGuiInteractionSmokeTests
+45/73 Test #46: RationalKeyboardNavigationGuiTests .........   Passed    0.44 sec
+      Start 49: RationalDesktopStartupSmokeTests
+46/73 Test #48: RationalDesktopGuiInteractionSmokeTests ....   Passed    0.48 sec
+      Start 50: RationalResponsiveDisplayGuiTests
+47/73 Test #47: RationalAccessibilityGuiTests ..............   Passed    0.68 sec
+      Start 51: RationalResponsiveDisplayHiDpiTests
+48/73 Test #45: RationalApplicationSettingsGuiTests ........   Passed    0.85 sec
+      Start 52: RationalAdvancedMathGuiTests
+49/73 Test #50: RationalResponsiveDisplayGuiTests ..........   Passed    0.41 sec
+      Start 53: RationalGraphCanvasCoverageTests
+50/73 Test #52: RationalAdvancedMathGuiTests ...............   Passed    0.30 sec
+      Start 54: RationalGraphCanvasCoverageHiDpiTests
+51/73 Test #51: RationalResponsiveDisplayHiDpiTests ........   Passed    0.44 sec
+      Start 55: RationalGraphCanvasCacheTests
+52/73 Test #55: RationalGraphCanvasCacheTests ..............   Passed    0.14 sec
+      Start 56: RationalGraphCanvasBudgetTests
+53/73 Test #54: RationalGraphCanvasCoverageHiDpiTests ......   Passed    0.53 sec
+      Start 57: RationalGraphCanvasSchedulingTests
+54/73 Test #56: RationalGraphCanvasBudgetTests .............   Passed    0.46 sec
+      Start 58: RationalGraphCanvasBoundaryTests
+55/73 Test #58: RationalGraphCanvasBoundaryTests ...........   Passed    0.15 sec
+      Start 59: RationalGraphCanvasRegressionMatrixTests
+56/73 Test #57: RationalGraphCanvasSchedulingTests .........   Passed    0.36 sec
+      Start 60: RationalVariableSliderPanelTests
+57/73 Test #59: RationalGraphCanvasRegressionMatrixTests ...   Passed    0.19 sec
+      Start 61: RationalGraphVariableRefreshTests
+58/73 Test #60: RationalVariableSliderPanelTests ...........   Passed    0.39 sec
+      Start 62: RationalMathExpressionEditorTests
+59/73 Test #62: RationalMathExpressionEditorTests ..........   Passed    0.27 sec
+      Start 63: RationalExpressionInlineFeedbackTests
+60/73 Test #61: RationalGraphVariableRefreshTests ..........   Passed    0.67 sec
+      Start 64: RationalMathKeyboardShortcutTests
+61/73 Test #64: RationalMathKeyboardShortcutTests ..........   Passed    0.26 sec
+      Start 65: RationalGraphWorkspacePersistenceTests
+62/73 Test #63: RationalExpressionInlineFeedbackTests ......   Passed    0.80 sec
+      Start 66: RationalParametricGraphTests
+63/73 Test #65: RationalGraphWorkspacePersistenceTests .....   Passed    0.44 sec
+      Start 67: RationalPolarGraphTests
+64/73 Test #67: RationalPolarGraphTests ....................   Passed    0.79 sec
+      Start 68: RationalImplicitGraphTests
+65/73 Test #66: RationalParametricGraphTests ...............   Passed    0.88 sec
+      Start 69: RationalIntersectionGraphTests
+66/73 Test #49: RationalDesktopStartupSmokeTests ...........   Passed    4.96 sec
+      Start 70: RationalInequalityGraphTests
+67/73 Test #68: RationalImplicitGraphTests .................   Passed    1.13 sec
+      Start 71: RationalGraphTracingTests
+68/73 Test #71: RationalGraphTracingTests ..................   Passed    0.29 sec
+      Start 72: RationalGraphRepresentationControlsTests
+69/73 Test #69: RationalIntersectionGraphTests .............   Passed    1.46 sec
+      Start 73: RationalGraphFeatureGraphTests
+70/73 Test #72: RationalGraphRepresentationControlsTests ...   Passed    0.35 sec
+71/73 Test #70: RationalInequalityGraphTests ...............   Passed    1.12 sec
+72/73 Test #73: RationalGraphFeatureGraphTests .............   Passed    1.74 sec
+73/73 Test #53: RationalGraphCanvasCoverageTests ...........   Passed   10.45 sec
+
+97% tests passed, 2 tests failed out of 73
+
+Label Time Summary:
+accessibility      =   0.68 sec*proc (1 test)
+accuracy           =   0.66 sec*proc (4 tests)
+advanced           =   0.33 sec*proc (2 tests)
+advanced-math      =   0.81 sec*proc (4 tests)
+assistive          =   0.68 sec*proc (1 test)
+benchmark          =   0.19 sec*proc (1 test)
+calculus           =   0.36 sec*proc (2 tests)
+complex            =   0.19 sec*proc (1 test)
+core               =   4.76 sec*proc (30 tests)
+descriptive        =   0.14 sec*proc (1 test)
+diagnostics        =   0.95 sec*proc (2 tests)
+differentiation    =   0.18 sec*proc (1 test)
+domain             =   0.33 sec*proc (2 tests)
+dpi                =   0.41 sec*proc (1 test)
+dynamic            =   0.15 sec*proc (1 test)
+equations          =   0.14 sec*proc (1 test)
+expression         =   1.63 sec*proc (5 tests)
+features           =   1.88 sec*proc (2 tests)
+functions          =   0.88 sec*proc (4 tests)
+graphing           =  10.49 sec*proc (22 tests)
+gui                =  19.31 sec*proc (23 tests)
+hidpi              =   0.44 sec*proc (1 test)
+implicit           =   1.27 sec*proc (2 tests)
+inequality         =   1.28 sec*proc (2 tests)
+input              =   0.41 sec*proc (2 tests)
+integration        =   0.32 sec*proc (2 tests)
+interaction        =   0.48 sec*proc (1 test)
+intersections      =   1.60 sec*proc (2 tests)
+keyboard           =   0.70 sec*proc (2 tests)
+least-squares      =   0.18 sec*proc (1 test)
+linear-algebra     =   0.19 sec*proc (1 test)
+matrix             =   0.19 sec*proc (1 test)
+navigation         =   0.44 sec*proc (1 test)
+offscreen          =  11.08 sec*proc (16 tests)
+parametric         =   1.03 sec*proc (2 tests)
+persistence        =   1.47 sec*proc (3 tests)
+polar              =   0.94 sec*proc (2 tests)
+qt                 =  19.32 sec*proc (23 tests)
+regression         =  23.61 sec*proc (51 tests)
+representation     =   0.35 sec*proc (1 test)
+responsive         =   0.85 sec*proc (2 tests)
+roots              =   0.14 sec*proc (1 test)
+settings           =   1.03 sec*proc (2 tests)
+sliders            =   0.54 sec*proc (2 tests)
+smoke              =   5.43 sec*proc (2 tests)
+startup            =   4.96 sec*proc (1 test)
+statistics         =   0.32 sec*proc (2 tests)
+trace              =   0.49 sec*proc (2 tests)
+variables          =   1.85 sec*proc (7 tests)
+vector             =   0.19 sec*proc (1 test)
+
+Total Test time (real) =  13.72 sec
+
+The following tests FAILED:
+          5 - RationalDescriptiveStatisticsTests (Failed)       core descriptive regression statistics
+         27 - RationalGraphBenchmarkStatisticsTests (Failed)    benchmark core graphing regression
+Errors while running CTest
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> cmake -S . -B build-issue60-windows `
+>>     -G "Visual Studio 17 2022" `
+>>     -A x64 `
+>>     -DCMAKE_PREFIX_PATH="C:/Qt/6.10.3/msvc2022_64" `
+>>     -DRATIONALSTUDIO_BOOST_INCLUDE_DIR="C:/dev/vcpkg/installed/x64-windows/include" `
+>>     -DRATIONALSTUDIO_BUILD_GUI=ON `
+>>     -DRATIONALSTUDIO_BUILD_CLI=ON `
+>>     -DBUILD_TESTING=ON `
+>>     -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF `
+>>     -DRATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS=OFF `
+>>     -DRATIONALSTUDIO_ENABLE_LINUX_PACKAGING=OFF
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- The CXX compiler identification is MSVC 19.38.33145.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Performing Test HAVE_STDATOMIC
+-- Performing Test HAVE_STDATOMIC - Success
+-- Found WrapAtomic: TRUE
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR)
+-- Configuring done (8.6s)
+-- Generating done (2.7s)
+-- Build files have been written to: C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> cmake --build build-issue60-windows `
+>>     --config Release `
+>>     --parallel 4
+MSBuild version 17.14.40+3e7442088 for .NET Framework
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Rational.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  GraphBenchmarkStatisticsTests.cpp
+  Expression.cpp
+  RationalGraphBenchmarkStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalGraphBenchmarkStatisticsTests.exe
+  VariableDefinitions.cpp
+  FunctionDefinitions.cpp
+  GraphViewport.cpp
+  CurveSampler.cpp
+  ParametricSampler.cpp
+  ImplicitContour.cpp
+  IntersectionDetection.cpp
+  GraphFeatureDetection.cpp
+  NumericalDifferentiation.cpp
+  NumericalIntegration.cpp
+  NumericalRootFinding.cpp
+  InequalityRegion.cpp
+  GraphTrace.cpp
+  VariableSliderScale.cpp
+  ComplexMath.cpp
+  MatrixMath.cpp
+  DescriptiveStatistics.cpp
+  StatisticalRegression.cpp
+  Generating Code...
+  Compiling...
+  AdvancedMathInput.cpp
+  Generating Code...
+  RationalCore.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\RationalCo
+  re.lib
+  Automatic MOC for target RationalGraphCanvasCacheTests
+  Automatic MOC for target RationalGraphFeatureGraphTests
+  Automatic MOC for target RationalGraphCanvasBoundaryTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalVariableSliderPanelTests
+  Automatic MOC for target RationalGraphCanvasSchedulingTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalPolarGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphVariableRefreshTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalResponsiveDisplayGuiTests
+  Automatic MOC for target RationalParametricGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalImplicitGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathKeyboardShortcutTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalExpressionInlineFeedbackTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalIntersectionGraphTests
+  Automatic MOC for target RationalKeyboardNavigationGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalInequalityGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathExpressionEditorTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphRepresentationControlsTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphWorkspacePersistenceTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalAccessibilityGuiTests
+  Automatic MOC for target RationalGraphTracingTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasRegressionMatrixTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasCoverageTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedGraphAccuracyMatrixTests.cpp
+  AccessibilityGuiTests.cpp
+  AdvancedMathInputTests.cpp
+  GraphViewportPrecisionTests.cpp
+  ExpressionDiagnosticTests.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  GraphCanvasCoverageTests.cpp
+  main.cpp
+  RationalViewportPrecisionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalViewportPrecisionTests.exe
+  VariableDefinitionsTests.cpp
+  PolarExpressionTests.cpp
+  NumericalIntegrationTests.cpp
+  RationalPolarExpressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalPolarExpressionTests.exe
+  RationalCLI.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\RationalCLI
+  .exe
+  NumericalAccuracyMatrixTests.cpp
+  RationalAdvancedGraphAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalAdvancedGraphAccuracyMatrixTests.exe
+  MathExpressionEditorTests.cpp
+  GraphCanvas.cpp
+  RationalVariableDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableDefinitionsTests.exe
+  IntersectionGraphTests.cpp
+  RationalNumericalIntegrationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalNumericalIntegrationTests.exe
+  ImplicitGraphTests.cpp
+  MainWindow.cpp
+  RationalNumericalAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalNumericalAccuracyMatrixTests.exe
+  GraphVariableRefreshTests.cpp
+  MathExpressionEdit.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  MainWindow.cpp
+  GraphTraceTests.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  RationalGraphTraceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalGraphTraceTests.exe
+  GraphRegressionMatrixTests.cpp
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  RationalGraphRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphRegressionMatrixTests.exe
+  GraphCanvasSchedulingTests.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  RationalGraphCanvasSchedulingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphCanvasSchedulingTests.exe
+  GraphCanvasCacheTests.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  VariableSliderPanel.cpp
+  RationalGraphCanvasCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalGraphCanvasCacheTests.exe
+  RationalAdvancedMathInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalAdvancedMathInputTests.exe
+  CurveCoverageRegressionTests.cpp
+  VariableSliderPanel.cpp
+  RationalCurveCoverageRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalCurveCoverageRegressionTests.exe
+  CurveEvaluationBudgetTests.cpp
+  mocs_compilation_Release.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  RationalCurveEvaluationBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalCurveEvaluationBudgetTests.exe
+  DescriptiveStatisticsTests.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  RationalDescriptiveStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalDescriptiveStatisticsTests.exe
+  ExpressionInlineFeedbackTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  Generating Code...
+  Generating Code...
+  MathExpressionEdit.cpp
+  Generating Code...
+  RationalAccessibilityGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalAccessibilityGuiTests.exe
+  GraphViewportBoundaryTests.cpp
+  RationalGraphViewportBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphViewportBoundaryTests.exe
+  IntersectionDetectionTests.cpp
+  RationalMathExpressionEditorTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalMathExpressionEditorTests.exe
+  MathExpressionInputTests.cpp
+  RationalIntersectionGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalIntersectionGraphTests.exe
+  MatrixMathTests.cpp
+  MainWindow.cpp
+  RationalIntersectionDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalIntersectionDetectionTests.exe
+  NumericalRootFindingTests.cpp
+  RationalMathExpressionInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalMathExpressionInputTests.exe
+  PolarGraphTests.cpp
+  RationalGraphVariableRefreshTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalGraphVariableRefreshTests.exe
+  VariableFunctionInteractionTests.cpp
+  RationalImplicitGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Rele
+  ase\RationalImplicitGraphTests.exe
+  RationalMatrixMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalMatrixMathTests.exe
+  VariableSliderScaleTests.cpp
+  RationalExpressionDiagnosticTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalExpressionDiagnosticTests.exe
+  DynamicEvaluationMatrixTests.cpp
+  RationalNumericalRootFindingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalNumericalRootFindingTests.exe
+  GraphCanvasBoundaryTests.cpp
+  VariableSliderPanelTests.cpp
+  RationalVariableSliderScaleTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableSliderScaleTests.exe
+  RationalVariableFunctionInteractionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalVariableFunctionInteractionTests.exe
+  ResponsiveDisplayGuiTests.cpp
+  MainWindow.cpp
+  RationalDynamicEvaluationMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalDynamicEvaluationMatrixTests.exe
+  ParametricSamplerTests.cpp
+  ApplicationSettings.cpp
+  RationalParametricSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalParametricSamplerTests.exe
+  NumericalDifferentiationTests.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  RationalNumericalDifferentiationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalNumericalDifferentiationTests.exe
+  MathKeyboardShortcutTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  RationalGraphCanvasBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalGraphCanvasBoundaryTests.exe
+  InequalityGraphTests.cpp
+  MainWindow.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  MainWindow.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  Generating Code...
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  AdvancedMathPage.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  RationalExpressionInlineFeedbackTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Release\RationalExpressionInlineFeedbackTests.exe
+  ImplicitContourTests.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  RationalImplicitContourTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalImplicitContourTests.exe
+  GraphVariableDependencyTests.cpp
+  RationalGraphVariableDependencyTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Release\RationalGraphVariableDependencyTests.exe
+  GraphRepresentationControlsTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  VariableSliderPanel.cpp
+  MathExpressionEdit.cpp
+  Generating Code...
+  Generating Code...
+  MainWindow.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  RationalPolarGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalPolarGraphTests.exe
+  GraphFeatureDetectionTests.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  RationalVariableSliderPanelTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalVariableSliderPanelTests.exe
+  RationalGraphCanvasCoverageTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalGraphCanvasCoverageTests.exe
+  GraphFeatureGraphTests.cpp
+  RationalResponsiveDisplayGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalResponsiveDisplayGuiTests.exe
+  GraphCanvasRegressionMatrixTests.cpp
+  GraphViewportTests.cpp
+  ApplicationSettings.cpp
+  RationalGraphFeatureDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphFeatureDetectionTests.exe
+  Generating Code...
+  FunctionDefinitionsTests.cpp
+  RationalMathKeyboardShortcutTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Release\RationalMathKeyboardShortcutTests.exe
+  MainWindow.cpp
+  GraphCanvas.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveSamplingJobTests.cpp
+  AdvancedMathPage.cpp
+  RationalFunctionDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalFunctionDefinitionsTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveGeometryCacheTests.cpp
+  RationalCurveSamplingJobTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalCurveSamplingJobTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveDiscontinuityTests.cpp
+  RationalViewportTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\R
+  ationalViewportTests.exe
+  RationalCurveDiscontinuityTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Release\RationalCurveDiscontinuityTests.exe
+  StatisticalRegressionTests.cpp
+  RationalCurveGeometryCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Release\RationalCurveGeometryCacheTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  ComplexMathTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  RationalGraphCanvasRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalGraphCanvasRegressionMatrixTests.exe
+  Automatic MOC for target RationalApplicationSettingsGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  ApplicationSettingsGuiTests.cpp
+  RationalInequalityGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalInequalityGraphTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedGraphResourceMatrixTests.cpp
+  RationalStatisticalRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalStatisticalRegressionTests.exe
+  ParametricGraphTests.cpp
+  ApplicationSettings.cpp
+  RationalComplexMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Releas
+  e\RationalComplexMathTests.exe
+  NumericalDomainMatrixTests.cpp
+  RationalAdvancedGraphResourceMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalAdvancedGraphResourceMatrixTests.exe
+  NamedVariableTests.cpp
+  MathExpressionEdit.cpp
+  MainWindow.cpp
+  RationalNamedVariableTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Rele
+  ase\RationalNamedVariableTests.exe
+  AdvancedMathPage.cpp
+  RationalNumericalDomainMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalNumericalDomainMatrixTests.exe
+  KeyboardNavigationGuiTests.cpp
+  InequalityRegionTests.cpp
+  MainWindow.cpp
+  RationalInequalityRegionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\R
+  elease\RationalInequalityRegionTests.exe
+  GraphWorkspacePersistenceTests.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  Generating Code...
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  VariableSliderPanel.cpp
+  ApplicationSettings.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  mocs_compilation_Release.cpp
+  AdvancedMathPage.cpp
+  RationalGraphRepresentationControlsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Release\RationalGraphRepresentationControlsTests.exe
+  GraphTracingTests.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  Generating Code...
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  RationalGraphFeatureGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalGraphFeatureGraphTests.exe
+  GraphRepaintSchedulerTests.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalGraphRepaintSchedulerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalGraphRepaintSchedulerTests.exe
+  VariableSliderPanel.cpp
+  Automatic MOC for target RationalGraphCanvasBudgetTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Release.cpp
+  GraphCanvasBudgetTests.cpp
+  RationalGraphTracingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Relea
+  se\RationalGraphTracingTests.exe
+  Automatic MOC for target RationalStudio
+  mocs_compilation_Release.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  main.cpp
+  VariableSliderPanel.cpp
+  GraphCanvas.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  Generating Code...
+  MainWindow.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalGraphCanvasBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\
+  Release\RationalGraphCanvasBudgetTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  RationalApplicationSettingsGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Release\RationalApplicationSettingsGuiTests.exe
+  CurveSteepTests.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveSamplerTests.cpp
+  Generating Code...
+  RationalCurveSteepTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release
+  \RationalCurveSteepTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveDomainTests.cpp
+  RationalCurveSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Relea
+  se\RationalCurveSamplerTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CoreTests.cpp
+  ApplicationSettings.cpp
+  RationalParametricGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalParametricGraphTests.exe
+  Automatic MOC for target RationalApplicationSettingsTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  ApplicationSettingsTests.cpp
+  RationalKeyboardNavigationGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Release\RationalKeyboardNavigationGuiTests.exe
+  RationalCurveDomainTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Releas
+  e\RationalCurveDomainTests.exe
+  Automatic MOC for target RationalAdvancedMathGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedMathGuiTests.cpp
+  RationalCoreTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\Ratio
+  nalCoreTests.exe
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  RationalGraphWorkspacePersistenceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-
+  windows\Release\RationalGraphWorkspacePersistenceTests.exe
+  AdvancedMathPage.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  RationalApplicationSettingsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Release\RationalApplicationSettingsTests.exe
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  ApplicationSettings.cpp
+  mocs_compilation_Release.cpp
+  GraphCanvas.cpp
+  Generating Code...
+  MathExpressionEdit.cpp
+  RationalStudio.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Release\Rational
+  Studio.exe
+  Automatic MOC for target RationalDesktopGuiSmokeTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  DesktopGuiSmokeTests.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  MainWindow.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  RationalAdvancedMathGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalAdvancedMathGuiTests.exe
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  mocs_compilation_Release.cpp
+  Generating Code...
+  RationalDesktopGuiSmokeTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Re
+  lease\RationalDesktopGuiSmokeTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> ctest --test-dir build-issue60-windows `
+>>     -C Release `
+>>     -N
+Test project C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+  Test  #1: RationalNumericalAccuracyMatrixTests
+  Test  #2: RationalNumericalDomainMatrixTests
+  Test  #3: RationalAdvancedMathInputTests
+  Test  #4: RationalStatisticalRegressionTests
+  Test  #5: RationalDescriptiveStatisticsTests
+  Test  #6: RationalMatrixMathTests
+  Test  #7: RationalComplexMathTests
+  Test  #8: RationalNumericalRootFindingTests
+  Test  #9: RationalNumericalIntegrationTests
+  Test #10: RationalNumericalDifferentiationTests
+  Test #11: RationalAdvancedGraphAccuracyMatrixTests
+  Test #12: RationalAdvancedGraphResourceMatrixTests
+  Test #13: RationalGraphTraceTests
+  Test #14: RationalInequalityRegionTests
+  Test #15: RationalCoreTests
+  Test #16: RationalViewportTests
+  Test #17: RationalCurveSamplerTests
+  Test #18: RationalCurveDomainTests
+  Test #19: RationalCurveDiscontinuityTests
+  Test #20: RationalCurveSteepTests
+  Test #21: RationalViewportPrecisionTests
+  Test #22: RationalCurveGeometryCacheTests
+  Test #23: RationalCurveEvaluationBudgetTests
+  Test #24: RationalGraphRepaintSchedulerTests
+  Test #25: RationalGraphViewportBoundaryTests
+  Test #26: RationalGraphRegressionMatrixTests
+  Test #27: RationalGraphBenchmarkStatisticsTests
+  Test #28: RationalCurveCoverageRegressionTests
+  Test #29: RationalCurveSamplingJobTests
+  Test #30: RationalNamedVariableTests
+  Test #31: RationalVariableDefinitionsTests
+  Test #32: RationalFunctionDefinitionsTests
+  Test #33: RationalVariableSliderScaleTests
+  Test #34: RationalGraphVariableDependencyTests
+  Test #35: RationalMathExpressionInputTests
+  Test #36: RationalExpressionDiagnosticTests
+  Test #37: RationalVariableFunctionInteractionTests
+  Test #38: RationalDynamicEvaluationMatrixTests
+  Test #39: RationalParametricSamplerTests
+  Test #40: RationalPolarExpressionTests
+  Test #41: RationalImplicitContourTests
+  Test #42: RationalIntersectionDetectionTests
+  Test #43: RationalGraphFeatureDetectionTests
+  Test #44: RationalApplicationSettingsTests
+  Test #45: RationalApplicationSettingsGuiTests
+  Test #46: RationalKeyboardNavigationGuiTests
+  Test #47: RationalAccessibilityGuiTests
+  Test #48: RationalDesktopGuiInteractionSmokeTests
+  Test #49: RationalDesktopStartupSmokeTests
+  Test #50: RationalResponsiveDisplayGuiTests
+  Test #51: RationalResponsiveDisplayHiDpiTests
+  Test #52: RationalAdvancedMathGuiTests
+  Test #53: RationalGraphCanvasCoverageTests
+  Test #54: RationalGraphCanvasCoverageHiDpiTests
+  Test #55: RationalGraphCanvasCacheTests
+  Test #56: RationalGraphCanvasBudgetTests
+  Test #57: RationalGraphCanvasSchedulingTests
+  Test #58: RationalGraphCanvasBoundaryTests
+  Test #59: RationalGraphCanvasRegressionMatrixTests
+  Test #60: RationalVariableSliderPanelTests
+  Test #61: RationalGraphVariableRefreshTests
+  Test #62: RationalMathExpressionEditorTests
+  Test #63: RationalExpressionInlineFeedbackTests
+  Test #64: RationalMathKeyboardShortcutTests
+  Test #65: RationalGraphWorkspacePersistenceTests
+  Test #66: RationalParametricGraphTests
+  Test #67: RationalPolarGraphTests
+  Test #68: RationalImplicitGraphTests
+  Test #69: RationalIntersectionGraphTests
+  Test #70: RationalInequalityGraphTests
+  Test #71: RationalGraphTracingTests
+  Test #72: RationalGraphRepresentationControlsTests
+  Test #73: RationalGraphFeatureGraphTests               ctest --test-dir build-issue60-windows `
+>>     -C Release `
+>>     --output-on-failure `
+>>     --parallel 4ocuments\CPP Projects\RationalStudio>
+Test project C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+      Start  1: RationalNumericalAccuracyMatrixTests
+      Start  2: RationalNumericalDomainMatrixTests
+      Start  3: RationalAdvancedMathInputTests
+      Start  4: RationalStatisticalRegressionTests
+ 1/73 Test  #1: RationalNumericalAccuracyMatrixTests .......   Passed    0.18 sec
+ 2/73 Test  #2: RationalNumericalDomainMatrixTests .........   Passed    0.14 sec
+      Start  5: RationalDescriptiveStatisticsTests
+      Start  6: RationalMatrixMathTests
+ 3/73 Test  #3: RationalAdvancedMathInputTests .............   Passed    0.18 sec
+      Start  7: RationalComplexMathTests
+ 4/73 Test  #4: RationalStatisticalRegressionTests .........   Passed    0.19 sec
+ 5/73 Test  #5: RationalDescriptiveStatisticsTests .........   Passed    0.14 sec
+      Start  8: RationalNumericalRootFindingTests
+      Start  9: RationalNumericalIntegrationTests
+ 6/73 Test  #6: RationalMatrixMathTests ....................   Passed    0.19 sec
+      Start 10: RationalNumericalDifferentiationTests
+ 7/73 Test  #7: RationalComplexMathTests ...................   Passed    0.19 sec
+ 8/73 Test  #8: RationalNumericalRootFindingTests ..........   Passed    0.14 sec
+      Start 11: RationalAdvancedGraphAccuracyMatrixTests
+      Start 12: RationalAdvancedGraphResourceMatrixTests
+ 9/73 Test  #9: RationalNumericalIntegrationTests ..........   Passed    0.18 sec
+      Start 13: RationalGraphTraceTests
+10/73 Test #10: RationalNumericalDifferentiationTests ......   Passed    0.19 sec
+11/73 Test #11: RationalAdvancedGraphAccuracyMatrixTests ...   Passed    0.14 sec
+      Start 14: RationalInequalityRegionTests
+      Start 15: RationalCoreTests
+12/73 Test #12: RationalAdvancedGraphResourceMatrixTests ...   Passed    0.21 sec
+      Start 16: RationalViewportTests
+13/73 Test #13: RationalGraphTraceTests ....................   Passed    0.20 sec
+14/73 Test #14: RationalInequalityRegionTests ..............   Passed    0.16 sec
+      Start 17: RationalCurveSamplerTests
+      Start 18: RationalCurveDomainTests
+15/73 Test #15: RationalCoreTests ..........................   Passed    0.20 sec
+      Start 19: RationalCurveDiscontinuityTests
+16/73 Test #16: RationalViewportTests ......................   Passed    0.19 sec
+17/73 Test #17: RationalCurveSamplerTests ..................   Passed    0.14 sec
+      Start 20: RationalCurveSteepTests
+      Start 21: RationalViewportPrecisionTests
+18/73 Test #18: RationalCurveDomainTests ...................   Passed    0.19 sec
+      Start 22: RationalCurveGeometryCacheTests
+19/73 Test #19: RationalCurveDiscontinuityTests ............   Passed    0.19 sec
+20/73 Test #20: RationalCurveSteepTests ....................   Passed    0.15 sec
+      Start 23: RationalCurveEvaluationBudgetTests
+      Start 24: RationalGraphRepaintSchedulerTests
+21/73 Test #21: RationalViewportPrecisionTests .............   Passed    0.20 sec
+      Start 25: RationalGraphViewportBoundaryTests
+22/73 Test #22: RationalCurveGeometryCacheTests ............   Passed    0.20 sec
+23/73 Test #23: RationalCurveEvaluationBudgetTests .........   Passed    0.14 sec
+      Start 26: RationalGraphRegressionMatrixTests
+      Start 27: RationalGraphBenchmarkStatisticsTests
+24/73 Test #24: RationalGraphRepaintSchedulerTests .........   Passed    0.19 sec
+      Start 28: RationalCurveCoverageRegressionTests
+25/73 Test #25: RationalGraphViewportBoundaryTests .........   Passed    0.20 sec
+26/73 Test #26: RationalGraphRegressionMatrixTests .........   Passed    0.15 sec
+      Start 29: RationalCurveSamplingJobTests
+      Start 30: RationalNamedVariableTests
+27/73 Test #27: RationalGraphBenchmarkStatisticsTests ......   Passed    0.20 sec
+      Start 31: RationalVariableDefinitionsTests
+28/73 Test #28: RationalCurveCoverageRegressionTests .......   Passed    0.20 sec
+      Start 32: RationalFunctionDefinitionsTests
+29/73 Test #30: RationalNamedVariableTests .................   Passed    0.16 sec
+      Start 33: RationalVariableSliderScaleTests
+30/73 Test #31: RationalVariableDefinitionsTests ...........   Passed    0.15 sec
+      Start 34: RationalGraphVariableDependencyTests
+31/73 Test #32: RationalFunctionDefinitionsTests ...........   Passed    0.16 sec
+      Start 35: RationalMathExpressionInputTests
+32/73 Test #33: RationalVariableSliderScaleTests ...........   Passed    0.16 sec
+      Start 36: RationalExpressionDiagnosticTests
+33/73 Test #34: RationalGraphVariableDependencyTests .......   Passed    0.16 sec
+      Start 37: RationalVariableFunctionInteractionTests
+34/73 Test #35: RationalMathExpressionInputTests ...........   Passed    0.15 sec
+      Start 38: RationalDynamicEvaluationMatrixTests
+35/73 Test #36: RationalExpressionDiagnosticTests ..........   Passed    0.15 sec
+      Start 39: RationalParametricSamplerTests
+36/73 Test #37: RationalVariableFunctionInteractionTests ...   Passed    0.16 sec
+      Start 40: RationalPolarExpressionTests
+37/73 Test #39: RationalParametricSamplerTests .............   Passed    0.10 sec
+38/73 Test #38: RationalDynamicEvaluationMatrixTests .......   Passed    0.16 sec
+      Start 41: RationalImplicitContourTests
+      Start 42: RationalIntersectionDetectionTests
+39/73 Test #40: RationalPolarExpressionTests ...............   Passed    0.15 sec
+      Start 43: RationalGraphFeatureDetectionTests
+40/73 Test #41: RationalImplicitContourTests ...............   Passed    0.14 sec
+      Start 44: RationalApplicationSettingsTests
+41/73 Test #42: RationalIntersectionDetectionTests .........   Passed    0.13 sec
+      Start 45: RationalApplicationSettingsGuiTests
+42/73 Test #43: RationalGraphFeatureDetectionTests .........   Passed    0.15 sec
+      Start 46: RationalKeyboardNavigationGuiTests
+43/73 Test #29: RationalCurveSamplingJobTests ..............   Passed    0.94 sec
+44/73 Test #44: RationalApplicationSettingsTests ...........   Passed    0.16 sec
+      Start 47: RationalAccessibilityGuiTests
+      Start 48: RationalDesktopGuiInteractionSmokeTests
+45/73 Test #46: RationalKeyboardNavigationGuiTests .........   Passed    0.51 sec
+      Start 49: RationalDesktopStartupSmokeTests
+46/73 Test #47: RationalAccessibilityGuiTests ..............   Passed    0.73 sec
+      Start 50: RationalResponsiveDisplayGuiTests
+47/73 Test #48: RationalDesktopGuiInteractionSmokeTests ....   Passed    0.72 sec
+      Start 51: RationalResponsiveDisplayHiDpiTests
+48/73 Test #45: RationalApplicationSettingsGuiTests ........   Passed    0.92 sec
+      Start 52: RationalAdvancedMathGuiTests
+49/73 Test #50: RationalResponsiveDisplayGuiTests ..........   Passed    0.37 sec
+      Start 53: RationalGraphCanvasCoverageTests
+50/73 Test #51: RationalResponsiveDisplayHiDpiTests ........   Passed    0.42 sec
+      Start 54: RationalGraphCanvasCoverageHiDpiTests
+51/73 Test #52: RationalAdvancedMathGuiTests ...............   Passed    0.43 sec
+      Start 55: RationalGraphCanvasCacheTests
+52/73 Test #55: RationalGraphCanvasCacheTests ..............   Passed    0.25 sec
+      Start 56: RationalGraphCanvasBudgetTests
+53/73 Test #54: RationalGraphCanvasCoverageHiDpiTests ......   Passed    0.40 sec
+      Start 57: RationalGraphCanvasSchedulingTests
+54/73 Test #56: RationalGraphCanvasBudgetTests .............   Passed    0.38 sec
+      Start 58: RationalGraphCanvasBoundaryTests
+55/73 Test #57: RationalGraphCanvasSchedulingTests .........   Passed    0.36 sec
+      Start 59: RationalGraphCanvasRegressionMatrixTests
+56/73 Test #58: RationalGraphCanvasBoundaryTests ...........   Passed    0.20 sec
+      Start 60: RationalVariableSliderPanelTests
+57/73 Test #59: RationalGraphCanvasRegressionMatrixTests ...   Passed    0.20 sec
+      Start 61: RationalGraphVariableRefreshTests
+58/73 Test #60: RationalVariableSliderPanelTests ...........   Passed    0.37 sec
+      Start 62: RationalMathExpressionEditorTests
+59/73 Test #62: RationalMathExpressionEditorTests ..........   Passed    0.30 sec
+      Start 63: RationalExpressionInlineFeedbackTests
+60/73 Test #61: RationalGraphVariableRefreshTests ..........   Passed    0.67 sec
+      Start 64: RationalMathKeyboardShortcutTests
+61/73 Test #64: RationalMathKeyboardShortcutTests ..........   Passed    0.40 sec
+      Start 65: RationalGraphWorkspacePersistenceTests
+62/73 Test #63: RationalExpressionInlineFeedbackTests ......   Passed    0.82 sec
+      Start 66: RationalParametricGraphTests
+63/73 Test #65: RationalGraphWorkspacePersistenceTests .....   Passed    0.48 sec
+      Start 67: RationalPolarGraphTests
+64/73 Test #66: RationalParametricGraphTests ...............   Passed    0.81 sec
+      Start 68: RationalImplicitGraphTests
+65/73 Test #67: RationalPolarGraphTests ....................   Passed    0.75 sec
+      Start 69: RationalIntersectionGraphTests
+66/73 Test #49: RationalDesktopStartupSmokeTests ...........   Passed    4.84 sec
+      Start 70: RationalInequalityGraphTests
+67/73 Test #68: RationalImplicitGraphTests .................   Passed    0.94 sec
+      Start 71: RationalGraphTracingTests
+68/73 Test #71: RationalGraphTracingTests ..................   Passed    0.26 sec
+      Start 72: RationalGraphRepresentationControlsTests
+69/73 Test #69: RationalIntersectionGraphTests .............   Passed    1.48 sec
+      Start 73: RationalGraphFeatureGraphTests
+70/73 Test #72: RationalGraphRepresentationControlsTests ...   Passed    0.40 sec
+71/73 Test #70: RationalInequalityGraphTests ...............   Passed    1.14 sec
+72/73 Test #73: RationalGraphFeatureGraphTests .............   Passed    1.83 sec
+73/73 Test #53: RationalGraphCanvasCoverageTests ...........   Passed   10.29 sec
+
+100% tests passed, 0 tests failed out of 73
+
+Label Time Summary:
+accessibility      =   0.73 sec*proc (1 test)
+accuracy           =   0.67 sec*proc (4 tests)
+advanced           =   0.35 sec*proc (2 tests)
+advanced-math      =   0.94 sec*proc (4 tests)
+assistive          =   0.73 sec*proc (1 test)
+benchmark          =   0.20 sec*proc (1 test)
+calculus           =   0.37 sec*proc (2 tests)
+complex            =   0.19 sec*proc (1 test)
+core               =   4.86 sec*proc (30 tests)
+descriptive        =   0.14 sec*proc (1 test)
+diagnostics        =   0.97 sec*proc (2 tests)
+differentiation    =   0.19 sec*proc (1 test)
+domain             =   0.32 sec*proc (2 tests)
+dpi                =   0.37 sec*proc (1 test)
+dynamic            =   0.16 sec*proc (1 test)
+equations          =   0.14 sec*proc (1 test)
+expression         =   1.82 sec*proc (5 tests)
+features           =   1.97 sec*proc (2 tests)
+functions          =   0.97 sec*proc (4 tests)
+graphing           =  10.38 sec*proc (22 tests)
+gui                =  19.75 sec*proc (23 tests)
+hidpi              =   0.42 sec*proc (1 test)
+implicit           =   1.08 sec*proc (2 tests)
+inequality         =   1.30 sec*proc (2 tests)
+input              =   0.45 sec*proc (2 tests)
+integration        =   0.34 sec*proc (2 tests)
+interaction        =   0.72 sec*proc (1 test)
+intersections      =   1.61 sec*proc (2 tests)
+keyboard           =   0.90 sec*proc (2 tests)
+least-squares      =   0.19 sec*proc (1 test)
+linear-algebra     =   0.19 sec*proc (1 test)
+matrix             =   0.19 sec*proc (1 test)
+navigation         =   0.51 sec*proc (1 test)
+offscreen          =  11.29 sec*proc (16 tests)
+parametric         =   0.91 sec*proc (2 tests)
+persistence        =   1.57 sec*proc (3 tests)
+polar              =   0.90 sec*proc (2 tests)
+qt                 =  19.79 sec*proc (23 tests)
+regression         =  24.19 sec*proc (51 tests)
+representation     =   0.40 sec*proc (1 test)
+responsive         =   0.78 sec*proc (2 tests)
+roots              =   0.14 sec*proc (1 test)
+settings           =   1.08 sec*proc (2 tests)
+sliders            =   0.53 sec*proc (2 tests)
+smoke              =   5.56 sec*proc (2 tests)
+startup            =   4.84 sec*proc (1 test)
+statistics         =   0.32 sec*proc (2 tests)
+trace              =   0.47 sec*proc (2 tests)
+variables          =   1.95 sec*proc (7 tests)
+vector             =   0.19 sec*proc (1 test)
+
+Total Test time (real) =  13.71 sec
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> cmake --build build-issue60-windows `
+>>     --config Debug `
+>>     --parallel 4
+MSBuild version 17.14.40+3e7442088 for .NET Framework
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Rational.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  GraphBenchmarkStatisticsTests.cpp
+  Expression.cpp
+  RationalGraphBenchmarkStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Debug\RationalGraphBenchmarkStatisticsTests.exe
+  VariableDefinitions.cpp
+  FunctionDefinitions.cpp
+  GraphViewport.cpp
+  CurveSampler.cpp
+  ParametricSampler.cpp
+  ImplicitContour.cpp
+  IntersectionDetection.cpp
+  GraphFeatureDetection.cpp
+  NumericalDifferentiation.cpp
+  NumericalIntegration.cpp
+  NumericalRootFinding.cpp
+  InequalityRegion.cpp
+  GraphTrace.cpp
+  VariableSliderScale.cpp
+  ComplexMath.cpp
+  MatrixMath.cpp
+  DescriptiveStatistics.cpp
+  StatisticalRegression.cpp
+  Generating Code...
+  Compiling...
+  AdvancedMathInput.cpp
+  Generating Code...
+  RationalCore.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debug\RationalC
+  ore.lib
+  Automatic MOC for target RationalGraphCanvasCacheTests
+  Automatic MOC for target RationalGraphCanvasBudgetTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphCanvasSchedulingTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalResponsiveDisplayGuiTests
+  Automatic MOC for target RationalPolarGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphVariableRefreshTests
+  Automatic MOC for target RationalKeyboardNavigationGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalParametricGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathExpressionEditorTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalExpressionInlineFeedbackTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalMathKeyboardShortcutTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalInequalityGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalVariableSliderPanelTests
+  Automatic MOC for target RationalIntersectionGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphWorkspacePersistenceTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalApplicationSettingsTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalImplicitGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalAccessibilityGuiTests
+  Automatic MOC for target RationalGraphTracingTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Automatic MOC for target RationalGraphRepresentationControlsTests
+  Automatic MOC for target RationalGraphCanvasCoverageTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  AdvancedGraphAccuracyMatrixTests.cpp
+  mocs_compilation_Debug.cpp
+  mocs_compilation_Debug.cpp
+  ApplicationSettingsTests.cpp
+  mocs_compilation_Debug.cpp
+  GraphCanvasCoverageTests.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  StatisticalRegressionTests.cpp
+  RationalStatisticalRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalStatisticalRegressionTests.exe
+  ParametricSamplerTests.cpp
+  ApplicationSettings.cpp
+  VariableSliderPanelTests.cpp
+  AccessibilityGuiTests.cpp
+  GraphCanvas.cpp
+  GraphRepresentationControlsTests.cpp
+  RationalParametricSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalParametricSamplerTests.exe
+  NumericalDomainMatrixTests.cpp
+  RationalNumericalDomainMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalNumericalDomainMatrixTests.exe
+  MatrixMathTests.cpp
+  Generating Code...
+  MathExpressionInputTests.cpp
+  RationalMatrixMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debu
+  g\RationalMatrixMathTests.exe
+  IntersectionDetectionTests.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  RationalMathExpressionInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalMathExpressionInputTests.exe
+  ImplicitContourTests.cpp
+  mocs_compilation_Debug.cpp
+  RationalIntersectionDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalIntersectionDetectionTests.exe
+  GraphTraceTests.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  RationalImplicitContourTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalImplicitContourTests.exe
+  RationalApplicationSettingsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalApplicationSettingsTests.exe
+  RationalGraphTraceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debu
+  g\RationalGraphTraceTests.exe
+  GraphRegressionMatrixTests.cpp
+  RationalAdvancedGraphAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-iss
+  ue60-windows\Debug\RationalAdvancedGraphAccuracyMatrixTests.exe
+  mocs_compilation_Debug.cpp
+  GraphCanvasSchedulingTests.cpp
+  RationalGraphRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalGraphRegressionMatrixTests.exe
+  mocs_compilation_Debug.cpp
+  GraphCanvasCacheTests.cpp
+  GraphVariableRefreshTests.cpp
+  MainWindow.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  Generating Code...
+  RationalGraphCanvasSchedulingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalGraphCanvasSchedulingTests.exe
+  ComplexMathTests.cpp
+  AdvancedMathPage.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  RationalGraphCanvasCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Debug\RationalGraphCanvasCacheTests.exe
+  CurveDiscontinuityTests.cpp
+  MainWindow.cpp
+  RationalComplexMathTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Deb
+  ug\RationalComplexMathTests.exe
+  CurveSteepTests.cpp
+  RationalCurveDiscontinuityTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Debug\RationalCurveDiscontinuityTests.exe
+  DynamicEvaluationMatrixTests.cpp
+  RationalCurveSteepTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debu
+  g\RationalCurveSteepTests.exe
+  mocs_compilation_Debug.cpp
+  AdvancedMathPage.cpp
+  RationalDynamicEvaluationMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60
+  -windows\Debug\RationalDynamicEvaluationMatrixTests.exe
+  GraphViewportBoundaryTests.cpp
+  GraphCanvas.cpp
+  RationalGraphViewportBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalGraphViewportBoundaryTests.exe
+  InequalityRegionTests.cpp
+  GraphCanvas.cpp
+  RationalInequalityRegionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Debug\RationalInequalityRegionTests.exe
+  mocs_compilation_Debug.cpp
+  ExpressionInlineFeedbackTests.cpp
+  MathExpressionEdit.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  KeyboardNavigationGuiTests.cpp
+  MathExpressionEdit.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  Generating Code...
+  RationalVariableSliderPanelTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalVariableSliderPanelTests.exe
+  Generating Code...
+  NumericalAccuracyMatrixTests.cpp
+  NumericalRootFindingTests.cpp
+  RationalAccessibilityGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Debug\RationalAccessibilityGuiTests.exe
+  PolarExpressionTests.cpp
+  RationalNumericalAccuracyMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60
+  -windows\Debug\RationalNumericalAccuracyMatrixTests.exe
+  VariableDefinitionsTests.cpp
+  RationalPolarExpressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalPolarExpressionTests.exe
+  VariableSliderScaleTests.cpp
+  VariableSliderPanel.cpp
+  RationalNumericalRootFindingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalNumericalRootFindingTests.exe
+  CurveSamplerTests.cpp
+  RationalVariableDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalVariableDefinitionsTests.exe
+  RationalGraphCanvasCoverageTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalGraphCanvasCoverageTests.exe
+  FunctionDefinitionsTests.cpp
+  RationalVariableSliderScaleTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalVariableSliderScaleTests.exe
+  GraphViewportTests.cpp
+  ApplicationSettings.cpp
+  RationalCurveSamplerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\De
+  bug\RationalCurveSamplerTests.exe
+  ApplicationSettings.cpp
+  VariableFunctionInteractionTests.cpp
+  RationalViewportTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debug\
+  RationalViewportTests.exe
+  RationalFunctionDefinitionsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalFunctionDefinitionsTests.exe
+  RationalGraphRepresentationControlsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-iss
+  ue60-windows\Debug\RationalGraphRepresentationControlsTests.exe
+  mocs_compilation_Debug.cpp
+  NumericalIntegrationTests.cpp
+  RationalVariableFunctionInteractionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-iss
+  ue60-windows\Debug\RationalVariableFunctionInteractionTests.exe
+  NamedVariableTests.cpp
+  RationalNumericalIntegrationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalNumericalIntegrationTests.exe
+  mocs_compilation_Debug.cpp
+  RationalNamedVariableTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\D
+  ebug\RationalNamedVariableTests.exe
+  mocs_compilation_Debug.cpp
+  Generating Code...
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  RationalGraphVariableRefreshTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalGraphVariableRefreshTests.exe
+  PolarGraphTests.cpp
+  mocs_compilation_Debug.cpp
+  MathExpressionEditorTests.cpp
+  InequalityGraphTests.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  GraphWorkspacePersistenceTests.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  RationalExpressionInlineFeedbackTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Debug\RationalExpressionInlineFeedbackTests.exe
+  mocs_compilation_Debug.cpp
+  GraphTracingTests.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  Generating Code...
+  ApplicationSettings.cpp
+  RationalKeyboardNavigationGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalKeyboardNavigationGuiTests.exe
+  GraphRepaintSchedulerTests.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  RationalGraphRepaintSchedulerTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalGraphRepaintSchedulerTests.exe
+  GraphFeatureDetectionTests.cpp
+  RationalGraphFeatureDetectionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalGraphFeatureDetectionTests.exe
+  Automatic MOC for target RationalGraphCanvasBoundaryTests
+  AdvancedMathPage.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  GraphCanvasBoundaryTests.cpp
+  GraphCanvas.cpp
+  AdvancedMathPage.cpp
+  Generating Code...
+  GraphCanvas.cpp
+  RationalGraphTracingTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\De
+  bug\RationalGraphTracingTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  ExpressionDiagnosticTests.cpp
+  GraphCanvas.cpp
+  RationalExpressionDiagnosticTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalExpressionDiagnosticTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  DescriptiveStatisticsTests.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  RationalDescriptiveStatisticsTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalDescriptiveStatisticsTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveGeometryCacheTests.cpp
+  MathExpressionEdit.cpp
+  RationalCurveGeometryCacheTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wind
+  ows\Debug\RationalCurveGeometryCacheTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveDomainTests.cpp
+  GraphCanvas.cpp
+  Generating Code...
+  mocs_compilation_Debug.cpp
+  GraphCanvasBudgetTests.cpp
+  RationalCurveDomainTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Deb
+  ug\RationalCurveDomainTests.exe
+  VariableSliderPanel.cpp
+  RationalGraphCanvasBoundaryTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-win
+  dows\Debug\RationalGraphCanvasBoundaryTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CoreTests.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  RationalCoreTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debug\Rati
+  onalCoreTests.exe
+  Automatic MOC for target RationalApplicationSettingsGuiTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  Generating Code...
+  RationalPolarGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debu
+  g\RationalPolarGraphTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedGraphResourceMatrixTests.cpp
+  Generating Code...
+  RationalMathExpressionEditorTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalMathExpressionEditorTests.exe
+  GraphViewportPrecisionTests.cpp
+  ApplicationSettingsGuiTests.cpp
+  mocs_compilation_Debug.cpp
+  RationalInequalityGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalInequalityGraphTests.exe
+  Generating Code...
+  RationalAdvancedGraphResourceMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-iss
+  ue60-windows\Debug\RationalAdvancedGraphResourceMatrixTests.exe
+  RationalViewportPrecisionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalViewportPrecisionTests.exe
+  mocs_compilation_Debug.cpp
+  NumericalDifferentiationTests.cpp
+  Generating Code...
+  RationalGraphCanvasBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalGraphCanvasBudgetTests.exe
+  mocs_compilation_Debug.cpp
+  RationalNumericalDifferentiationTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue6
+  0-windows\Debug\RationalNumericalDifferentiationTests.exe
+  mocs_compilation_Debug.cpp
+  RationalGraphWorkspacePersistenceTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue
+  60-windows\Debug\RationalGraphWorkspacePersistenceTests.exe
+  mocs_compilation_Debug.cpp
+  ResponsiveDisplayGuiTests.cpp
+  MainWindow.cpp
+  ParametricGraphTests.cpp
+  MathKeyboardShortcutTests.cpp
+  IntersectionGraphTests.cpp
+  ImplicitGraphTests.cpp
+  MainWindow.cpp
+  MathExpressionEdit.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  VariableSliderPanel.cpp
+  RationalApplicationSettingsGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-
+  windows\Debug\RationalApplicationSettingsGuiTests.exe
+  GraphVariableDependencyTests.cpp
+  VariableSliderPanel.cpp
+  RationalGraphVariableDependencyTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60
+  -windows\Debug\RationalGraphVariableDependencyTests.exe
+  Automatic MOC for target RationalGraphFeatureGraphTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  Generating Code...
+  RationalResponsiveDisplayGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalResponsiveDisplayGuiTests.exe
+  Automatic MOC for target RationalGraphCanvasRegressionMatrixTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  Generating Code...
+  mocs_compilation_Debug.cpp
+  GraphCanvasRegressionMatrixTests.cpp
+  RationalMathKeyboardShortcutTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-wi
+  ndows\Debug\RationalMathKeyboardShortcutTests.exe
+  Automatic MOC for target RationalStudio
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  Generating Code...
+  RationalParametricGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalParametricGraphTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveSamplingJobTests.cpp
+  GraphFeatureGraphTests.cpp
+  Generating Code...
+  RationalIntersectionGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalIntersectionGraphTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveEvaluationBudgetTests.cpp
+  RationalCurveSamplingJobTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-window
+  s\Debug\RationalCurveSamplingJobTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  CurveCoverageRegressionTests.cpp
+  RationalImplicitGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\D
+  ebug\RationalImplicitGraphTests.exe
+  GraphCanvas.cpp
+  RationalCurveEvaluationBudgetTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-w
+  indows\Debug\RationalCurveEvaluationBudgetTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  main.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  AdvancedMathInputTests.cpp
+  RationalCurveCoverageRegressionTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60
+  -windows\Debug\RationalCurveCoverageRegressionTests.exe
+  Automatic MOC for target RationalAdvancedMathGuiTests
+  main.cpp
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  RationalAdvancedMathInputTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalAdvancedMathInputTests.exe
+  MainWindow.cpp
+  RationalCLI.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debug\RationalCL
+  I.exe
+  Generating Code...
+  MainWindow.cpp
+  RationalGraphCanvasRegressionMatrixTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-iss
+  ue60-windows\Debug\RationalGraphCanvasRegressionMatrixTests.exe
+  AdvancedMathGuiTests.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  MainWindow.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  GraphCanvas.cpp
+  ApplicationSettings.cpp
+  MathExpressionEdit.cpp
+  MathExpressionEdit.cpp
+  GraphCanvas.cpp
+  VariableSliderPanel.cpp
+  VariableSliderPanel.cpp
+  MathExpressionEdit.cpp
+  Generating Code...
+  RationalGraphFeatureGraphTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windo
+  ws\Debug\RationalGraphFeatureGraphTests.exe
+  Generating Code...
+  VariableSliderPanel.cpp
+  RationalStudio.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows\Debug\Rationa
+  lStudio.exe
+  Automatic MOC for target RationalDesktopGuiSmokeTests
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+  mocs_compilation_Debug.cpp
+  Generating Code...
+  DesktopGuiSmokeTests.cpp
+  RationalAdvancedMathGuiTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalAdvancedMathGuiTests.exe
+  MainWindow.cpp
+  ApplicationSettings.cpp
+  AdvancedMathPage.cpp
+  GraphCanvas.cpp
+  MathExpressionEdit.cpp
+  VariableSliderPanel.cpp
+  Generating Code...
+  RationalDesktopGuiSmokeTests.vcxproj -> C:\Users\Chris\Documents\CPP Projects\RationalStudio\build-issue60-windows
+  \Debug\RationalDesktopGuiSmokeTests.exe
+  Building Custom Rule C:/Users/Chris/Documents/CPP Projects/RationalStudio/CMakeLists.txt
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> ctest --test-dir build-issue60-windows `
+>>     -C Debug `
+>>     --output-on-failure `
+>>     --parallel 4
+Test project C:/Users/Chris/Documents/CPP Projects/RationalStudio/build-issue60-windows
+      Start 53: RationalGraphCanvasCoverageTests
+      Start 49: RationalDesktopStartupSmokeTests
+      Start 73: RationalGraphFeatureGraphTests
+      Start 69: RationalIntersectionGraphTests
+ 1/73 Test #49: RationalDesktopStartupSmokeTests ...........   Passed    4.94 sec
+      Start 70: RationalInequalityGraphTests
+ 2/73 Test #69: RationalIntersectionGraphTests .............   Passed    4.87 sec
+      Start 68: RationalImplicitGraphTests
+ 3/73 Test #73: RationalGraphFeatureGraphTests .............   Passed    5.53 sec
+      Start 29: RationalCurveSamplingJobTests
+ 4/73 Test #68: RationalImplicitGraphTests .................   Passed    5.55 sec
+      Start 45: RationalApplicationSettingsGuiTests
+ 5/73 Test #70: RationalInequalityGraphTests ...............   Passed    5.75 sec
+      Start 63: RationalExpressionInlineFeedbackTests
+ 6/73 Test #29: RationalCurveSamplingJobTests ..............   Passed    5.28 sec
+      Start 66: RationalParametricGraphTests
+ 7/73 Test #63: RationalExpressionInlineFeedbackTests ......   Passed    2.99 sec
+      Start 67: RationalPolarGraphTests
+ 8/73 Test #66: RationalParametricGraphTests ...............   Passed    3.37 sec
+      Start 47: RationalAccessibilityGuiTests
+ 9/73 Test #67: RationalPolarGraphTests ....................   Passed    3.45 sec
+      Start 48: RationalDesktopGuiInteractionSmokeTests
+10/73 Test #45: RationalApplicationSettingsGuiTests ........   Passed    6.85 sec
+      Start 61: RationalGraphVariableRefreshTests
+11/73 Test #47: RationalAccessibilityGuiTests ..............   Passed    4.43 sec
+      Start 46: RationalKeyboardNavigationGuiTests
+12/73 Test #61: RationalGraphVariableRefreshTests ..........   Passed    2.81 sec
+      Start 65: RationalGraphWorkspacePersistenceTests
+13/73 Test #48: RationalDesktopGuiInteractionSmokeTests ....   Passed    3.19 sec
+      Start 52: RationalAdvancedMathGuiTests
+14/73 Test #46: RationalKeyboardNavigationGuiTests .........   Passed    2.83 sec
+      Start 51: RationalResponsiveDisplayHiDpiTests
+15/73 Test #52: RationalAdvancedMathGuiTests ...............   Passed    2.46 sec
+      Start 54: RationalGraphCanvasCoverageHiDpiTests
+16/73 Test #65: RationalGraphWorkspacePersistenceTests .....   Passed    2.56 sec
+      Start 72: RationalGraphRepresentationControlsTests
+17/73 Test #54: RationalGraphCanvasCoverageHiDpiTests ......   Passed    1.02 sec
+      Start 64: RationalMathKeyboardShortcutTests
+18/73 Test #51: RationalResponsiveDisplayHiDpiTests ........   Passed    3.37 sec
+      Start 56: RationalGraphCanvasBudgetTests
+19/73 Test #72: RationalGraphRepresentationControlsTests ...   Passed    2.75 sec
+      Start 60: RationalVariableSliderPanelTests
+20/73 Test #56: RationalGraphCanvasBudgetTests .............   Passed    1.14 sec
+      Start 50: RationalResponsiveDisplayGuiTests
+21/73 Test #64: RationalMathKeyboardShortcutTests ..........   Passed    2.60 sec
+      Start 57: RationalGraphCanvasSchedulingTests
+22/73 Test #57: RationalGraphCanvasSchedulingTests .........   Passed    0.62 sec
+      Start 62: RationalMathExpressionEditorTests
+23/73 Test #60: RationalVariableSliderPanelTests ...........   Passed    2.43 sec
+      Start 71: RationalGraphTracingTests
+24/73 Test #50: RationalResponsiveDisplayGuiTests ..........   Passed    2.78 sec
+      Start 55: RationalGraphCanvasCacheTests
+25/73 Test #71: RationalGraphTracingTests ..................   Passed    0.91 sec
+      Start 12: RationalAdvancedGraphResourceMatrixTests
+26/73 Test #12: RationalAdvancedGraphResourceMatrixTests ...   Passed    0.10 sec
+      Start 15: RationalCoreTests
+27/73 Test #55: RationalGraphCanvasCacheTests ..............   Passed    0.35 sec
+      Start 13: RationalGraphTraceTests
+28/73 Test #15: RationalCoreTests ..........................   Passed    0.09 sec
+      Start 28: RationalCurveCoverageRegressionTests
+29/73 Test #13: RationalGraphTraceTests ....................   Passed    0.08 sec
+      Start 58: RationalGraphCanvasBoundaryTests
+30/73 Test #28: RationalCurveCoverageRegressionTests .......   Passed    0.09 sec
+      Start 27: RationalGraphBenchmarkStatisticsTests
+31/73 Test #62: RationalMathExpressionEditorTests ..........   Passed    2.37 sec
+      Start 59: RationalGraphCanvasRegressionMatrixTests
+32/73 Test #27: RationalGraphBenchmarkStatisticsTests ......   Passed    0.10 sec
+      Start 21: RationalViewportPrecisionTests
+33/73 Test #21: RationalViewportPrecisionTests .............   Passed    0.04 sec
+      Start 25: RationalGraphViewportBoundaryTests
+34/73 Test #25: RationalGraphViewportBoundaryTests .........   Passed    0.04 sec
+      Start 22: RationalCurveGeometryCacheTests
+35/73 Test #22: RationalCurveGeometryCacheTests ............   Passed    0.04 sec
+      Start 19: RationalCurveDiscontinuityTests
+36/73 Test #58: RationalGraphCanvasBoundaryTests ...........   Passed    0.43 sec
+      Start 24: RationalGraphRepaintSchedulerTests
+37/73 Test #59: RationalGraphCanvasRegressionMatrixTests ...   Passed    0.37 sec
+      Start 18: RationalCurveDomainTests
+38/73 Test #24: RationalGraphRepaintSchedulerTests .........   Passed    0.09 sec
+      Start  6: RationalMatrixMathTests
+39/73 Test #19: RationalCurveDiscontinuityTests ............   Passed    0.20 sec
+      Start  4: RationalStatisticalRegressionTests
+40/73 Test #18: RationalCurveDomainTests ...................   Passed    0.14 sec
+      Start 16: RationalViewportTests
+41/73 Test  #6: RationalMatrixMathTests ....................   Passed    0.17 sec
+      Start 10: RationalNumericalDifferentiationTests
+42/73 Test  #4: RationalStatisticalRegressionTests .........   Passed    0.17 sec
+      Start  7: RationalComplexMathTests
+43/73 Test #16: RationalViewportTests ......................   Passed    0.14 sec
+      Start  9: RationalNumericalIntegrationTests
+44/73 Test #10: RationalNumericalDifferentiationTests ......   Passed    0.14 sec
+      Start  3: RationalAdvancedMathInputTests
+45/73 Test  #9: RationalNumericalIntegrationTests ..........   Passed    0.10 sec
+      Start  1: RationalNumericalAccuracyMatrixTests
+46/73 Test  #7: RationalComplexMathTests ...................   Passed    0.21 sec
+      Start 38: RationalDynamicEvaluationMatrixTests
+47/73 Test  #3: RationalAdvancedMathInputTests .............   Passed    0.15 sec
+      Start 44: RationalApplicationSettingsTests
+48/73 Test  #1: RationalNumericalAccuracyMatrixTests .......   Passed    0.15 sec
+      Start 34: RationalGraphVariableDependencyTests
+49/73 Test #44: RationalApplicationSettingsTests ...........   Passed    0.11 sec
+      Start 37: RationalVariableFunctionInteractionTests
+50/73 Test #34: RationalGraphVariableDependencyTests .......   Passed    0.11 sec
+      Start 32: RationalFunctionDefinitionsTests
+51/73 Test #37: RationalVariableFunctionInteractionTests ...   Passed    0.10 sec
+      Start 30: RationalNamedVariableTests
+52/73 Test #30: RationalNamedVariableTests .................   Passed    0.05 sec
+      Start 33: RationalVariableSliderScaleTests
+53/73 Test #33: RationalVariableSliderScaleTests ...........   Passed    0.06 sec
+      Start 14: RationalInequalityRegionTests
+54/73 Test #14: RationalInequalityRegionTests ..............   Passed    0.04 sec
+      Start 36: RationalExpressionDiagnosticTests
+55/73 Test #36: RationalExpressionDiagnosticTests ..........   Passed    0.07 sec
+      Start 40: RationalPolarExpressionTests
+56/73 Test #32: RationalFunctionDefinitionsTests ...........   Passed    0.41 sec
+      Start 31: RationalVariableDefinitionsTests
+57/73 Test #40: RationalPolarExpressionTests ...............   Passed    0.08 sec
+      Start 26: RationalGraphRegressionMatrixTests
+58/73 Test #38: RationalDynamicEvaluationMatrixTests .......   Passed    0.77 sec
+      Start 35: RationalMathExpressionInputTests
+59/73 Test #26: RationalGraphRegressionMatrixTests .........   Passed    0.08 sec
+      Start 20: RationalCurveSteepTests
+60/73 Test #20: RationalCurveSteepTests ....................   Passed    0.10 sec
+      Start 43: RationalGraphFeatureDetectionTests
+61/73 Test #35: RationalMathExpressionInputTests ...........   Passed    0.21 sec
+      Start 23: RationalCurveEvaluationBudgetTests
+62/73 Test #43: RationalGraphFeatureDetectionTests .........   Passed    0.09 sec
+      Start 17: RationalCurveSamplerTests
+63/73 Test #23: RationalCurveEvaluationBudgetTests .........   Passed    0.11 sec
+      Start 11: RationalAdvancedGraphAccuracyMatrixTests
+64/73 Test #17: RationalCurveSamplerTests ..................   Passed    0.11 sec
+      Start 41: RationalImplicitContourTests
+65/73 Test #11: RationalAdvancedGraphAccuracyMatrixTests ...   Passed    0.09 sec
+      Start  8: RationalNumericalRootFindingTests
+66/73 Test #31: RationalVariableDefinitionsTests ...........   Passed    0.62 sec
+      Start  2: RationalNumericalDomainMatrixTests
+67/73 Test  #8: RationalNumericalRootFindingTests ..........   Passed    0.08 sec
+      Start  5: RationalDescriptiveStatisticsTests
+68/73 Test  #2: RationalNumericalDomainMatrixTests .........   Passed    0.08 sec
+      Start 42: RationalIntersectionDetectionTests
+69/73 Test #41: RationalImplicitContourTests ...............   Passed    0.24 sec
+      Start 39: RationalParametricSamplerTests
+70/73 Test  #5: RationalDescriptiveStatisticsTests .........   Passed    0.14 sec
+71/73 Test #42: RationalIntersectionDetectionTests .........   Passed    0.10 sec
+72/73 Test #39: RationalParametricSamplerTests .............   Passed    0.10 sec
+73/73 Test #53: RationalGraphCanvasCoverageTests ...........   Passed   46.38 sec
+
+100% tests passed, 0 tests failed out of 73
+
+advanced           =   0.19 sec*proc (2 tests)
+advanced-math      =   2.84 sec*proc (4 tests)
+assistive          =   4.43 sec*proc (1 test)
+benchmark          =   0.10 sec*proc (1 test)
+calculus           =   0.24 sec*proc (2 tests)
+complex            =   0.21 sec*proc (1 test)
+core               =   4.89 sec*proc (30 tests)
+descriptive        =   0.14 sec*proc (1 test)
+diagnostics        =   3.05 sec*proc (2 tests)
+differentiation    =   0.14 sec*proc (1 test)
+domain             =   0.23 sec*proc (2 tests)
+dpi                =   2.78 sec*proc (1 test)
+dynamic            =   0.77 sec*proc (1 test)
+equations          =   0.08 sec*proc (1 test)
+expression         =   8.22 sec*proc (5 tests)
+features           =   5.62 sec*proc (2 tests)
+functions          =   3.84 sec*proc (4 tests)
+graphing           =  36.56 sec*proc (22 tests)
+gui                =  78.88 sec*proc (23 tests)
+hidpi              =   3.37 sec*proc (1 test)
+implicit           =   5.79 sec*proc (2 tests)
+inequality         =   5.79 sec*proc (2 tests)
+input              =   2.57 sec*proc (2 tests)
+integration        =   0.20 sec*proc (2 tests)
+interaction        =   3.19 sec*proc (1 test)
+intersections      =   4.97 sec*proc (2 tests)
+keyboard           =   5.43 sec*proc (2 tests)
+least-squares      =   0.17 sec*proc (1 test)
+linear-algebra     =   0.17 sec*proc (1 test)
+matrix             =   0.17 sec*proc (1 test)
+navigation         =   2.83 sec*proc (1 test)
+offscreen          =  50.75 sec*proc (16 tests)
+parametric         =   3.47 sec*proc (2 tests)
+persistence        =   9.52 sec*proc (3 tests)
+polar              =   3.53 sec*proc (2 tests)
+qt                 =  79.14 sec*proc (23 tests)
+regression         =  83.09 sec*proc (51 tests)
+representation     =   2.75 sec*proc (1 test)
+responsive         =   6.14 sec*proc (2 tests)
+roots              =   0.08 sec*proc (1 test)
+settings           =   6.96 sec*proc (2 tests)
+sliders            =   2.49 sec*proc (2 tests)
+smoke              =   8.13 sec*proc (2 tests)
+startup            =   4.94 sec*proc (1 test)
+statistics         =   0.31 sec*proc (2 tests)
+trace              =   1.00 sec*proc (2 tests)
+variables          =   7.01 sec*proc (7 tests)
+vector             =   0.17 sec*proc (1 test)
+
+Total Test time (real) =  46.43 sec
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
+PS C:\Users\Chris\Documents\CPP Projects\RationalStudio> .\build-issue60-windows\Release\RationalStudio.exe
