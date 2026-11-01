@@ -49,6 +49,11 @@ int main() {
         data.clear();
         while (std::getline(csv, line)) data += line;
         check(data.find("\"quoted,scenario\"") != std::string::npos, "quoted CSV output");
+        // Windows generally prevents removing files with active input streams.
+        // Linux may permit unlinking them, which concealed this test defect.
+        csv.close();
+        json.close();
+        check(!csv.is_open() && !json.is_open(), "measurement files closed before cleanup");
         std::filesystem::remove_all(tmp);
         std::cout << "PASS: " << checks << " GraphBenchmarkStatistics assertions\n";
         return 0;

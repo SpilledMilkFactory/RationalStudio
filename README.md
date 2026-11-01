@@ -7,12 +7,12 @@ The project emphasizes modular architecture, numerical reliability, and independ
 | | |
 |---|---|
 | **Version** | `0.1.0` (active development) |
-| **Verified development platform** | Linux |
+| **Verified development platforms** | Linux; Windows 10 x64 (MSVC 2022) |
 | **Target platforms** | Linux and Windows |
 | **Language** | C++20 |
 | **License** | MIT |
 
-> **Status:** The application builds and runs on Linux. Native Windows builds and packaging remain unverified; Linux .deb packaging is described below. See [VERIFICATION.md](VERIFICATION.md) for the current test record.
+> **Status:** The application builds and runs on Linux and has passed native Windows 10 x64 MSVC 2022 Debug/Release qualification. Linux `.deb` packaging is verified; standalone Windows packaging remains for Issue #62. A 125% Windows display-scaling layout defect is documented below. See [VERIFICATION.md](VERIFICATION.md) for the evidence.
 
 ## Features
 
@@ -745,6 +745,58 @@ cmake --build build-debug --parallel
 ./build-debug/RationalStudio
 ```
 
+<!-- ISSUE60_WINDOWS_README_BEGIN -->
+
+### Native Windows 10 development build and verification (Issue #60; M5-06)
+
+Rational Studio was built and tested on **Windows 10 x64 (build 19045)** using
+**Visual Studio 2022 Build Tools / MSVC 19.38.33145.0**, the **Visual Studio 17 2022
+CMake generator**, **MSBuild** (not Ninja), **Windows SDK 10.0.26100.0**, and
+**Qt 6.10.3 (`msvc2022_64`)**. Boost.Multiprecision headers were supplied from
+**vcpkg (`x64-windows`)**. Both the GUI and CLI targets built successfully.
+
+Final Windows CTest qualification: **Release 73/73 PASS** (13.71 s),
+**Debug 73/73 PASS** (46.43 s). The first Release run exposed
+an overflow-prone percentile interpolation intermediate and temporary-file
+cleanup with still-open streams; both were corrected and the entire suite passed.
+The native GUI was manually exercised on Windows 10 (developer-reported PASS,
+subject to the display-scaling limitation below). These results do not establish
+Windows 11 compatibility or a self-contained Windows distribution.
+
+**Windows source build (PowerShell; adjust installed paths):**
+
+```powershell
+cmake -S . -B build-issue60-windows `
+    -G "Visual Studio 17 2022" `
+    -A x64 `
+    -DCMAKE_PREFIX_PATH="C:/Qt/6.10.3/msvc2022_64" `
+    -DRATIONALSTUDIO_BOOST_INCLUDE_DIR="C:/dev/vcpkg/installed/x64-windows/include" `
+    -DRATIONALSTUDIO_BUILD_GUI=ON `
+    -DRATIONALSTUDIO_BUILD_CLI=ON `
+    -DBUILD_TESTING=ON `
+    -DRATIONALSTUDIO_BUILD_BENCHMARKS=OFF `
+    -DRATIONALSTUDIO_BUILD_ADVANCED_GRAPH_BENCHMARKS=OFF `
+    -DRATIONALSTUDIO_ENABLE_LINUX_PACKAGING=OFF
+
+cmake --build build-issue60-windows --config Release --parallel 4
+ctest --test-dir build-issue60-windows -C Release --output-on-failure --parallel 4
+cmake --build build-issue60-windows --config Debug --parallel 4
+ctest --test-dir build-issue60-windows -C Debug --output-on-failure --parallel 4
+```
+
+For a development-machine GUI launch, ensure Qt's matching `bin` directory is
+on `PATH`, unset `QT_QPA_PLATFORM=offscreen`, and run
+`build-issue60-windows\Release\RationalStudio.exe`. Qt deployment for machines
+*without* the development SDK is reserved for **Issue #62**.
+
+**Known Windows display-scaling limitation:** On the tested 1920×1080 laptop
+at the system-recommended **125%** scaling, the **Type Guide** button is clipped
+and adjacent math-symbol controls (`π`, root, `²`, etc.) overlap even with the
+window maximized. The same controls appeared correctly at **100%** scaling.
+A separate GitHub issue is planned for this layout defect (issue link pending).
+
+<!-- ISSUE60_WINDOWS_README_END -->
+
 ### CMake options
 
 | Option | Default | Purpose |
@@ -958,7 +1010,7 @@ Expressions are parsed into an abstract syntax tree before evaluation. Exponenti
 - **Viewport precision:** Viewport navigation uses double-precision coordinates and precision-aware pan/zoom calculations. Operations that cannot be represented within the configured screen-space error tolerance are rejected without modifying viewport state. Arbitrary-precision navigation is not supported.
 - **Rendering:** Valid paths are cached, and rapid navigation coalesces geometry refreshes with temporary affine previews. Resize changes invalidate stale paths and obsolete timers. Grid lines/labels use bounded pixel-space positions; extremely large finite viewport centers may suppress unreliable grid markers. Invalidated paths rebuild incrementally under per-curve-per-paint and shared callback budgets; complete replacements may take multiple paints. Retained previews include finite surrounding coverage and can omit newly exposed regions after sufficiently large navigation changes. The single-call sampler can still return explicitly truncated geometry. Sampling and other mathematical callbacks remain on the GUI thread. Coalescing and callback ceilings do not guarantee frame time, input latency, or increased FPS.
 - **Not yet supported:** Implicit graphs; complex arithmetic; matrices; GUI authoring of reusable functions and general scalar assignments; symbolic algebra; numerical integration and differentiation; and inequality shading.
-- **Platform verification:** Linux verified; native Windows and Qt 5 builds not yet verified.
+- **Platform verification:** Linux and native Windows 10 x64 (MSVC 2022 / Qt 6.10.3) verified. Windows 11, Qt 5, and a standalone Windows release remain unverified; Windows 125% display scaling has a known Type Guide/math-button clipping defect.
 
 ## Development and contributions
 

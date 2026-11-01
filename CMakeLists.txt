@@ -35,8 +35,22 @@ add_library(RationalCore STATIC
     src/core/AdvancedMathInput.cpp
 )
 
+# Issue #60: Boost.Multiprecision is header-only for RationalStudio, but
+# MSVC does not discover vcpkg/other non-system Boost headers automatically.
+# Require the actual header and propagate its include root to all consumers.
+find_path(RATIONALSTUDIO_BOOST_INCLUDE_DIR
+    NAMES boost/multiprecision/cpp_int.hpp
+    DOC "Directory containing boost/multiprecision/cpp_int.hpp"
+)
+if(NOT RATIONALSTUDIO_BOOST_INCLUDE_DIR)
+    message(FATAL_ERROR
+        "Boost.Multiprecision headers not found. Install Boost development headers "
+        "or set -DRATIONALSTUDIO_BOOST_INCLUDE_DIR=<include-directory>.")
+endif()
+
 target_include_directories(RationalCore PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core"
+    "${RATIONALSTUDIO_BOOST_INCLUDE_DIR}"
 )
 
 target_compile_options(RationalCore PRIVATE

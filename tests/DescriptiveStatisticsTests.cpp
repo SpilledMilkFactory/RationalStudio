@@ -99,9 +99,22 @@ int main() {
     const auto extreme = summarizeStatistics(std::vector<double>{-1e308,1e308});
     check(extreme.status == StatisticsStatus::NonFiniteResult,
           "unrepresentable double range or variance rejected");
-    check(calculatePercentile(std::vector<double>{-1e308,1e308},50).successful() &&
-          near(calculatePercentile(std::vector<double>{-1e308,1e308},50).value,0),
+    const std::vector<double> extremePercentileValues{-1e308, 1e308};
+    const auto extremeP0 = calculatePercentile(extremePercentileValues, 0);
+    const auto extremeP25 = calculatePercentile(extremePercentileValues, 25);
+    const auto extremeP50 = calculatePercentile(extremePercentileValues, 50);
+    const auto extremeP75 = calculatePercentile(extremePercentileValues, 75);
+    const auto extremeP100 = calculatePercentile(extremePercentileValues, 100);
+    check(extremeP0.successful() && extremeP0.value == -1e308,
+          "extreme percentile lower endpoint");
+    check(extremeP25.successful() && near(extremeP25.value, -5e307L),
+          "extreme percentile lower quartile");
+    check(extremeP50.successful() && near(extremeP50.value, 0),
           "percentile intermediate avoids double overflow");
+    check(extremeP75.successful() && near(extremeP75.value, 5e307L),
+          "extreme percentile upper quartile");
+    check(extremeP100.successful() && extremeP100.value == 1e308,
+          "extreme percentile upper endpoint");
 
     std::vector<double> over(kMaxStatisticsSamples + 1, 0.0);
     check(summarizeStatistics(over).status == StatisticsStatus::TooManySamples,
