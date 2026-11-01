@@ -29,7 +29,14 @@ long double interpolate(const std::vector<double>& sorted, long double rank) {
     const std::size_t high = std::min(low + 1, sorted.size() - 1);
     const long double fraction = rank - static_cast<long double>(low);
     const long double a = sorted[low], b = sorted[high];
-    return a + (b - a) * fraction;
+    // MSVC represents long double with the same range as double.  The
+    // difference b - a can overflow even when the interpolated value is
+    // representable (for example, halfway between -1e308 and 1e308).
+    const long double width = b - a;
+    if (std::isfinite(width)) return a + width * fraction;
+    // A convex combination keeps each intermediate within the range of the
+    // finite endpoints, even when their difference is not representable.
+    return (1.0L - fraction) * a + fraction * b;
 }
 }
 
