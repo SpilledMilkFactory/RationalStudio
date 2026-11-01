@@ -11,7 +11,7 @@ Official clean Windows install/launch and legal sign-off are separate gates.
 param(
     [Parameter(Mandatory=$true)][string]$QtRoot,
     [Parameter(Mandatory=$true)][string]$BoostInclude,
-    [string]$SourceRoot = (Split-Path $PSScriptRoot -Parent),
+    [string]$SourceRoot = '',
     [string]$BuildRoot = '',
     [string]$EvidenceRoot = '',
     [string]$MSVCRedistDir = '',
@@ -19,6 +19,11 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+# Resolve the repository root after parameter binding is complete.
+if ([string]::IsNullOrWhiteSpace($SourceRoot)) {
+    $SourceRoot = Split-Path -Path $PSScriptRoot -Parent
+}
+$SourceRoot = (Resolve-Path -LiteralPath $SourceRoot).Path
 $SourceRoot = (Resolve-Path -LiteralPath $SourceRoot).Path
 $QtRoot = [IO.Path]::GetFullPath($QtRoot)
 $BoostInclude = [IO.Path]::GetFullPath($BoostInclude)
