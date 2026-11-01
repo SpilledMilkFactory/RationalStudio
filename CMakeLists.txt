@@ -1565,3 +1565,14 @@ option(RATIONALSTUDIO_ENABLE_LINUX_PACKAGING
 if(RATIONALSTUDIO_ENABLE_LINUX_PACKAGING)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LinuxPackaging.cmake")
 endif()
+
+# M5-08 / Issue #62 — Opt-in MSVC x64 portable Windows distribution.
+# Normal Linux/Windows development builds never invoke deployment.
+option(RATIONALSTUDIO_ENABLE_WINDOWS_PACKAGING
+    "Enable Windows x64 portable application staging" OFF)
+if(RATIONALSTUDIO_ENABLE_WINDOWS_PACKAGING)
+    if(RATIONALSTUDIO_ENABLE_LINUX_PACKAGING)
+        message(FATAL_ERROR "Linux and Windows packaging cannot both be enabled")
+    endif()
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/WindowsPackaging.cmake")
+endif()

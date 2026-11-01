@@ -1,0 +1,70 @@
+name: Windows Portable Package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rationalstudio-windows-portable-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable-zip:
+    name: Windows Server 2022 MSVC Qt 6.10.3 portable ZIP
+    runs-on: windows-2022
+    timeout-minutes: 85
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install Qt 6.10.3 for MSVC x64
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          cache: 'true'
+
+      - name: Install Boost.Multiprecision headers via vcpkg
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:VCPKG_INSTALLATION_ROOT) { throw 'Windows runner does not have vcpkg' }
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT 'vcpkg.exe'
+          & $vcpkg install boost-multiprecision:x64-windows
+          if ($LASTEXITCODE -ne 0) { throw 'vcpkg install failed' }
+          $boost = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed\x64-windows\include'
+          if (-not (Test-Path (Join-Path $boost 'boost\multiprecision\cpp_int.hpp'))) { throw 'Boost header absent' }
+          "BOOST_INCLUDE_ROOT=$boost" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Build, test, stage and audit Windows portable archive
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\verify_issue62.ps1 `
+            -QtRoot "$env:QT_ROOT_DIR" `
+            -BoostInclude "$env:BOOST_INCLUDE_ROOT" `
+            -Jobs 4
+          if ($LASTEXITCODE -ne 0) { throw 'Windows package qualification failed' }
+
+      - name: Upload package and full qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rationalstudio-issue62-windows-msvc-portable
+          path: |
+            issue62-evidence/packages/*.zip
+            issue62-evidence/packages/*.sha256
+            issue62-evidence/*.txt
+            issue62-evidence/*.log
+            issue62-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
