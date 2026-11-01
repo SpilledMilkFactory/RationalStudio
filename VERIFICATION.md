@@ -1,5 +1,45 @@
 # Rational Studio — Verification Report
 
+<!-- ISSUE60_WINDOWS_VERIFICATION_BEGIN -->
+
+## Issue #60 (M5-06) — Native Windows build and runtime verification: PASS (with documented display limitation)
+
+- **Host:** Windows 10 x64, Windows build 19045 (Windows SDK 10.0.26100.0).
+- **Compiler:** MSVC 19.38.33145.0 / Visual Studio 2022 Build Tools (v143).
+- **Build:** CMake generator `Visual Studio 17 2022` with `-A x64`, built by
+  **MSBuild** (not Ninja); CLI and Qt GUI executables linked in Release and Debug.
+- **Dependencies:** Qt 6.10.3 MSVC 2022 x64 kit, Boost.Multiprecision headers via
+  vcpkg `x64-windows`; native Windows CMake configured successfully.
+- **Release full suite:** **73/73 CTests PASS**, 13.71 s.
+- **Debug full suite:** **73/73 CTests PASS**, 46.43 s.
+- **GUI smoke cases:** interaction and separately launched desktop startup PASS
+  in both configurations as part of the 73-test matrices.
+- **Initial Release findings:** percentile interpolation across extreme values
+  exposed a floating-point overflow intermediate on MSVC; a benchmark-statistics
+  test attempted to remove files while file streams remained open on Windows.
+  The production numeric fix and test cleanup fix were applied, then all 73
+  Release and 73 Debug CTests passed. The first failing run remains in the log.
+- **Manual native GUI acceptance:** **PASS — developer-attested** on Windows 10
+  with Scientific, Graphing, Exact Fractions, Advanced Math, and application
+  interactions exercised. This is separate from the offscreen CTests.
+- **Known issue:** On a 1920×1080 Windows laptop at **125% system scaling**, the
+  Type Guide button clips and neighboring math-symbol controls overlap,
+  including when maximized. At **100%** scaling the controls fit as expected.
+  Recorded as a follow-up: Windows 125% scaling follow-up (issue not yet filed). No layout repair is claimed in #60.
+- **Evidence:** developer-supplied PowerShell transcript; SHA-256
+  `fda6fab99e878eb6710c5808cc3150f21820bff727b6c706769e45234e4e2eec`. The final runs are present after the initial Release failure.
+
+**Qualification boundaries:** A manually verified native Windows 10 development
+build is not a clean-machine, self-contained Windows distribution. Qt DLL/plugin
+and toolchain-runtime deployment remain **Issue #62**. Native Windows 11, other
+Qt/compiler configurations, and fractional-DPI correctness are not certified.
+The transcript does not provide a Git source revision/manifest or a standalone
+record of manual CLI acceptance; none is invented. Linux ASan/UBSan and Ubuntu
+packaging results remain historical elsewhere in this report. Issue #64's
+separate Qt/legal release review remains pending and unchanged.
+
+<!-- ISSUE60_WINDOWS_VERIFICATION_END -->
+
 <!-- ISSUE63_VERIFICATION_BEGIN -->
 
 **Issue #63 (M5-09) — Automated GUI smoke testing: PASS (developer-attested hosted result).**
