@@ -140,7 +140,8 @@ Invoke-Logged 'install' 'cmake.exe' @('--install',$BuildRoot,'--config','Release
 $bin = Join-Path $stageRoot 'bin'
 Assert-File (Join-Path $bin 'RationalStudio.exe') 'Staged GUI executable'
 Invoke-Logged 'windeployqt' (Join-Path $QtRoot 'bin\windeployqt.exe') @(
-    '--release','--no-compiler-runtime','--no-translations','--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
+    '--release','--no-compiler-runtime','--no-system-dxc-compiler',
+    '--no-translations','--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
 )
 Assert-File (Join-Path $bin 'platforms\qwindows.dll') 'Qt Windows platform plugin'
 # Pull only redistributable DLLs from the official MSVC app-local directory.
