@@ -1,0 +1,75 @@
+Rational Studio — Windows Portable Distribution: Third-Party Notices
+===================================================================
+
+Rational Studio is MIT licensed: share/doc/rationalstudio/LICENSE.MD
+
+Qt 6 Core / GUI / Widgets and runtime plugins
+---------------------------------------------
+The Windows portable distribution includes dynamically linked Qt libraries
+and Qt platform plugins produced by the Qt Project / The Qt Company and
+contributors. The intended open-source licensing basis for Qt's eligible
+Core, GUI and Widgets modules is LGPLv3. Review each shipped Qt plugin and
+transitive dependency against its actual Qt 6 version's module and license
+metadata; the set may differ by Qt build. LGPLv3 and GPLv3 texts are in
+share/doc/rationalstudio/licenses. Users may replace compatible LGPL Qt
+shared libraries, subject to the platform interfaces and license terms.
+
+CRITICAL RELEASE GATE: Bundling Qt requires the redistributor to provide
+sufficient corresponding source for the *exact* Qt libraries and plugins
+shipped, or a legally sufficient offer/arrangement, plus required notices and
+relinking information. Upstream URLs alone may not discharge that obligation.
+A successful automatic archive audit is not legal approval to publish.
+
+Qt licenses: https://www.qt.io/licensing/open-source-lgpl-obligations
+Qt sources:  https://code.qt.io/ ; https://download.qt.io/archive/qt/
+
+Boost.Multiprecision
+--------------------
+RationalCore uses Boost.Multiprecision header templates for exact rational
+integers. Boost Software License 1.0 is included in
+share/doc/rationalstudio/licenses/BSL-1.0.txt.
+
+Microsoft Visual C++ runtime
+----------------------------
+For standalone startup, this archive contains app-local MSVC runtime DLLs
+copied ONLY from the official redistributable directory installed with the
+matching Visual Studio Build Tools (VCToolsRedistDir / Microsoft.VC143.CRT).
+Redistribution is permitted only under the applicable Microsoft license terms.
+These files must be updated for runtime security/serviceability; central
+Microsoft Visual C++ Redistributable installation is generally recommended.
+The archive must NOT contain debug_nonredist or DLLs taken from system32 or
+Visual Studio compiler *tools* directories. The packaging script enforces
+redistributable-origin staging; a human must confirm redistribution rights.
+
+Windows system libraries and third-party transitive dependencies
+----------------------------------------------------------------
+This QWidget/QPainter-only release excludes optional `D3Dcompiler_47.dll`,
+`dxcompiler.dll`, `dxil.dll`, and Mesa `opengl32sw.dll` with explicit
+windeployqt options. These libraries are not part of the supported application
+requirements and are rejected by the ZIP validator. If a future application
+version uses Qt Quick, OpenGL or DirectX graphics, repeat the runtime and
+license audit before re-enabling any of them.
+
+The package deliberately does not copy Windows system DLLs. Any non-Qt
+third-party DLLs added by Qt deployment must be inventoried and cleared for
+redistribution with their own appropriate licenses/notices. Refer to the
+per-archive file manifest and THIRD_PARTY_DEPENDENCIES.md.
+
+Open issues: Windows 125% scaling layout (Issue #60 follow-up), release code
+signing/SmartScreen, and final Qt license/source availability review.
+
+ICU (International Components for Unicode)
+----------------------------------------
+If an ICU runtime is deployed (such as icuuc.dll), the portable ZIP also
+includes share/doc/rationalstudio/licenses/ICU-LICENSE.txt. This must be
+copied from the same ICU source release as the deployed ICU binary and
+must include all applicable ICU embedded third-party notices. The Unicode
+License and other notices may apply. The distributor must establish the
+actual ICU binary provenance and version before public release.
+
+Qt source and replacement rights
+--------------------------------
+See share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md for instructions.
+The exact Qt 6.10.3 source and applicable third-party source/license data
+will be distributed or made available using the reviewed release-specific
+mechanism stated there. Do not treat generic upstream URLs as proof.
