@@ -113,4 +113,111 @@ foreach ($name in $runtimeDlls) {
 }
 
 _______________________________________________________________________________________________
+_______________________________________________________________________________________________
+
+
+$vsRoot = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools"
+
+$crtDir = Join-Path $vsRoot `
+    "VC\Redist\MSVC\14.44.35112\x64\Microsoft.VC143.CRT"
+
+if (-not (Test-Path -LiteralPath $crtDir)) {
+    throw "CRT directory not found: $crtDir"
+}
+
+Write-Host "CRT source: $crtDir"
+
+_______________________________________________________________________________________________
+
+Set-Location "C:\Users\Chris\Documents\CPP Projects\RationalStudio"
+
+Get-ChildItem ".\issue62-evidence\packages" -Filter "*.zip"
+
+_______________________________________________________________________________________________
+
+$zip = (Resolve-Path `
+    ".\issue62-evidence\packages\RationalStudio-0.1.0-Windows-x64.zip").Path
+
+$extractDir = Join-Path $env:TEMP "RationalStudio-Issue62-CRT-Audit"
+
+New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+
+Expand-Archive -LiteralPath $zip -DestinationPath $extractDir -Force
+
+_______________________________________________________________________________________________
+
+$gui = Get-ChildItem $extractDir -Filter "RationalStudio.exe" -File -Recurse |
+    Select-Object -First 1
+
+if (-not $gui) {
+    throw "RationalStudio.exe not found in extracted archive"
+}
+
+$packageRoot = $gui.DirectoryName
+
+Write-Host "Package directory: $packageRoot"
+
+_______________________________________________________________________________________________
+
+$runtimeDlls = @(
+    "msvcp140.dll",
+    "msvcp140_1.dll",
+    "msvcp140_2.dll",
+    "msvcp140_atomic_wait.dll",
+    "msvcp140_codecvt_ids.dll",
+    "vcruntime140.dll",
+    "vcruntime140_1.dll",
+    "vcruntime140_threads.dll",
+    "concrt140.dll",
+    "vccorlib140.dll"
+)
+
+$results = foreach ($name in $runtimeDlls) {
+
+    $packaged = Join-Path $packageRoot $name
+    $original = Join-Path $crtDir $name
+
+    $status = "PASS"
+
+    if (-not (Test-Path -LiteralPath $packaged)) {
+        $status = "MISSING_PACKAGE"
+    }
+    elseif (-not (Test-Path -LiteralPath $original)) {
+        $status = "MISSING_SOURCE"
+    }
+    else {
+        $packageHash = (Get-FileHash $packaged -Algorithm SHA256).Hash
+        $sourceHash = (Get-FileHash $original -Algorithm SHA256).Hash
+
+        if ($packageHash -ne $sourceHash) {
+            $status = "HASH_MISMATCH"
+        }
+    }
+
+    [PSCustomObject]@{
+        DLL    = $name
+        Result = $status
+    }
+}
+
+$results | Format-Table -AutoSize
+
+_______________________________________________________________________________________________
+
+$results |
+    Export-Csv ".\docs\release-evidence\windows\msvc-crt-package-audit.csv" `
+    -NoTypeInformation
+
+_______________________________________________________________________________________________
+
+$icu = Join-Path $packageRoot "icuuc.dll"
+
+if (-not (Test-Path $icu)) {
+    throw "ICU DLL not found in extracted package"
+}
+
+(Get-Item $icu).VersionInfo |
+    Format-List FileVersion, ProductVersion, CompanyName, OriginalFilename
+
+_______________________________________________________________________________________________
 
