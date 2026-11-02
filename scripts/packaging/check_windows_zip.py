@@ -77,6 +77,15 @@ def inspect(path: Path, source: Path, version: str) -> dict:
                     raise ValueError('ICU license differs from approved source copy')
             elif len(archive.read(files[lic])) < 500:
                 raise ValueError('ICU license is empty or suspiciously short')
+        # A QPainter-only desktop release does not ship the optional software
+        # OpenGL rasterizer or DirectX shader compilers. If graphics features
+        # change, requalify and re-audit these dependencies before bundling.
+        forbidden_optional = {'d3dcompiler_47.dll', 'opengl32sw.dll',
+                              'dxcompiler.dll', 'dxil.dll'}
+        bundled_optional = sorted(n for n in files
+                                  if n.lower().rsplit('/', 1)[-1] in forbidden_optional)
+        if bundled_optional:
+            raise ValueError('Unreviewed optional graphics DLL(s): ' + ', '.join(bundled_optional))
         if any(x.lower().endswith(('.pdb', '.lib', '.obj', '.ilk', '.exp')) for x in files):
             raise ValueError('Debug/build artifacts found in portable package')
         if any(re.search(r'(?:^|/)qt6\w+d\.dll$', x, re.I) for x in files):

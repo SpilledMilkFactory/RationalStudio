@@ -112,3 +112,18 @@ These publication actions cannot be attested from the uploaded Windows licensing
 | Legal / public-release authorization | **PENDING** |
 
 **Closure distinction:** Issue #62's *technical packaging implementation* may be closed after final hardened tests if remaining public-release obligations are tracked as explicitly blocking Issue #66. Public distribution should not be signed off on the strength of this report alone.
+
+
+## G. Packaging follow-up after this evidence record
+
+The initial portable ZIP referenced above predates the ICU-license/relinking
+packaging hardening; it contains optional `D3Dcompiler_47.dll` and
+`opengl32sw.dll`. The next Windows package run excludes them with Qt 6.10.3
+`windeployqt` flags, validates their absence, and includes the ICU 64.2
+license and Qt source/relinking guide. **Do not treat this planned rerun as a
+completed test or the old ZIP as the final public release.**
+
+The two small corresponding-source modules are `qtbase` and `qtsvg`, each
+version 6.10.3. See `packaging/windows/QT_SOURCE_AND_RELINKING.md` for their
+official 64-character SHA-256 digests, and use a publisher-controlled public
+release source download before distributing Windows binaries.

@@ -25,7 +25,6 @@ if ([string]::IsNullOrWhiteSpace($SourceRoot)) {
     $SourceRoot = Split-Path -Path $PSScriptRoot -Parent
 }
 $SourceRoot = (Resolve-Path -LiteralPath $SourceRoot).Path
-$SourceRoot = (Resolve-Path -LiteralPath $SourceRoot).Path
 $QtRoot = [IO.Path]::GetFullPath($QtRoot)
 $BoostInclude = [IO.Path]::GetFullPath($BoostInclude)
 if (-not $BuildRoot) { $BuildRoot = Join-Path $SourceRoot 'build-issue62-windows' }
@@ -65,7 +64,8 @@ function Find-Redistributable([string]$Explicit) {
     foreach ($base in $search) {
         if (-not (Test-Path -LiteralPath $base -PathType Container)) { continue }
         $found += @(Get-ChildItem -LiteralPath $base -Directory -Recurse -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -eq 'Microsoft.VC143.CRT' -and $_.Parent.Name -eq 'x64' })
+            Where-Object { $_.Name -eq 'Microsoft.VC143.CRT' -and
+                $_.Parent.Name -eq 'x64' -and $_.Parent.Parent.Name -ne 'onecore' })
     }
     $best = $found | Sort-Object FullName -Descending | Select-Object -First 1
     if (-not $best) {
@@ -86,7 +86,7 @@ if (Test-Path -LiteralPath $BuildRoot) { throw "Refusing to overwrite build: $Bu
 if (Test-Path -LiteralPath $EvidenceRoot) { throw "Refusing to overwrite evidence: $EvidenceRoot" }
 
 $MSVCRedistDir = Find-Redistributable $MSVCRedistDir
-if ($MSVCRedistDir -notmatch '(?i)[\\/]VC[\\/]Redist[\\/]MSVC[\\/].+[\\/]x64[\\/]Microsoft\.VC143\.CRT$') {
+if ($MSVCRedistDir -notmatch '(?i)[\\/]VC[\\/]Redist[\\/]MSVC[\\/][^\\/]+[\\/]x64[\\/]Microsoft\.VC143\.CRT$') {
     throw "Redist path is NOT the official MSVC x64 redistributable CRT directory: $MSVCRedistDir"
 }
 Assert-File (Join-Path $MSVCRedistDir 'vcruntime140.dll') 'Redistributable CRT'
@@ -142,9 +142,22 @@ Invoke-Logged 'install' 'cmake.exe' @('--install',$BuildRoot,'--config','Release
 $bin = Join-Path $stageRoot 'bin'
 Assert-File (Join-Path $bin 'RationalStudio.exe') 'Staged GUI executable'
 Invoke-Logged 'windeployqt' (Join-Path $QtRoot 'bin\windeployqt.exe') @(
-    '--release','--no-compiler-runtime','--no-system-dxc-compiler','--no-translations','--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
+    '--release',
+    '--no-compiler-runtime',
+    '--no-system-dxc-compiler',
+    '--no-system-d3d-compiler',
+    '--no-opengl-sw',
+    '--no-translations',
+    '--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
 )
 Assert-File (Join-Path $bin 'platforms\qwindows.dll') 'Qt Windows platform plugin'
+# These optional rendering tools are not used by RationalStudio's QWidget/QPainter
+# code. Avoid redistributing unrelated Microsoft shader/Mesa renderer binaries.
+foreach ($optional in @('D3Dcompiler_47.dll','opengl32sw.dll','dxcompiler.dll','dxil.dll')) {
+    if (Test-Path -LiteralPath (Join-Path $bin $optional)) {
+        throw "Unexpected optional graphics runtime deployed: $optional"
+    }
+}
 # Include complete ICU upstream license (including embedded third-party notices)
 # only when Qt deployment actually includes an ICU runtime. The maintainer
 # supplies the license from the EXACT ICU source release used for the DLL.

@@ -45,6 +45,13 @@ jobs:
           if (-not (Test-Path (Join-Path $boost 'boost\multiprecision\cpp_int.hpp'))) { throw 'Boost header absent' }
           "BOOST_INCLUDE_ROOT=$boost" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
+      - name: Test Windows ZIP validator and Qt source-asset verifier
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python.exe -m unittest discover -s scripts/packaging -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Windows packaging helper unit tests failed' }
+
       - name: Build, test, stage and audit Windows portable archive
         shell: pwsh
         run: |

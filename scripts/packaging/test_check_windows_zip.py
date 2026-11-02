@@ -55,6 +55,18 @@ class Validation(unittest.TestCase):
             })
             inspect(z,s,VERSION)
 
+    def test_optional_mesa_excluded(self):
+        with tempfile.TemporaryDirectory() as d:
+            z, s = fixture(Path(d), extra={'opengl32sw.dll': b'not-approved'})
+            with self.assertRaisesRegex(ValueError, 'Unreviewed optional graphics'):
+                inspect(z, s, VERSION)
+
+    def test_optional_d3d_excluded(self):
+        with tempfile.TemporaryDirectory() as d:
+            z, s = fixture(Path(d), extra={'D3Dcompiler_47.dll': b'not-approved'})
+            with self.assertRaisesRegex(ValueError, 'Unreviewed optional graphics'):
+                inspect(z, s, VERSION)
+
     def test_missing_plugin(self):
         with tempfile.TemporaryDirectory() as d:
             z,s=fixture(Path(d),omitted=['platforms/qwindows.dll'])

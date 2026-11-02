@@ -43,6 +43,13 @@ redistributable-origin staging; a human must confirm redistribution rights.
 
 Windows system libraries and third-party transitive dependencies
 ----------------------------------------------------------------
+This QWidget/QPainter-only release excludes optional `D3Dcompiler_47.dll`,
+`dxcompiler.dll`, `dxil.dll`, and Mesa `opengl32sw.dll` with explicit
+windeployqt options. These libraries are not part of the supported application
+requirements and are rejected by the ZIP validator. If a future application
+version uses Qt Quick, OpenGL or DirectX graphics, repeat the runtime and
+license audit before re-enabling any of them.
+
 The package deliberately does not copy Windows system DLLs. Any non-Qt
 third-party DLLs added by Qt deployment must be inventoried and cleared for
 redistribution with their own appropriate licenses/notices. Refer to the

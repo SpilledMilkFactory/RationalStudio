@@ -134,10 +134,39 @@ maintainer compared ten package-local MSVC CRT DLLs to the ordinary desktop
 `docs/release-evidence/windows/ISSUE62_RUNTIME_REDISTRIBUTION_REVIEW.md` for
 the individual file list, evidence boundaries, references and pending gates.
 
-**Still pending public release:** replace the ICU `main` license copy with the
-exact `release-64-2/icu4c/LICENSE` text; reconcile all shipped Qt/plugin,
-`opengl32sw.dll`, `D3Dcompiler_47.dll` and ICU third-party notices; confirm
+**Still pending public release:** verify that the newly built archive contains
+the matching ICU 64.2 license from `release-64-2/icu4c/LICENSE`, reconcile
+the Qt 6.10.3 module/plugin third-party notices; confirm
 the applicable MSVC Build Tools 2022 redistribution terms; and publish and
 verify a sufficiently complete corresponding Qt source/relinking arrangement.
 The **next generated** Windows ZIP must be independently reaudited; earlier
 package-hash matches do not automatically apply to a future GitHub runner.
+
+
+### Issue #62 final optional-runtime scope reduction
+
+Rational Studio's current GUI uses Qt Widgets / QPainter, not QOpenGL or Qt
+Quick. Qt 6.10.3 `windeployqt` supports excluding optional DirectX shader
+compiler files and the Mesa software OpenGL rasterizer with
+`--no-system-dxc-compiler --no-system-d3d-compiler --no-opengl-sw`. The
+Windows ZIP validator now rejects those optional graphics DLLs. This removes
+`D3Dcompiler_47.dll` and `opengl32sw.dll` from the *next* release ZIP and
+eliminates their additional binary redistribution review for that artifact.
+The old 2026-11-01 ZIP still contains them and must not be mistaken for the
+post-change build. Graphics behavior must be retested from the new ZIP.
+
+The local Windows CRT review has already established SHA-256 identity for
+**10 of 10** DLLs sourced from standard x64 `Microsoft.VC143.CRT` under
+Visual Studio 2022; do not demand the same comparison again for that artifact.
+The packaging script now excludes the `onecore` redistributable folder.
+The publisher still needs to retain the applicable Microsoft Build Tools
+license/REDIST basis. The Visual Studio 2022 redistribution list permits
+qualifying unmodified files under `VC/Redist` for appropriately licensed users.
+This statement is not an independent grant of licensing rights.
+
+The `packaging/windows/QT_SOURCE_AND_RELINKING.md` guide records the two
+versioned Qt 6.10.3 source modules used by the Windows bundle: Qt Base and
+Qt SVG (about 51 MiB combined). Publish those verified corresponding-source
+archives as separate GitHub Release assets, not in Git history; validate the
+actual binaries' build provenance and required third-party notices during the
+final release process.
