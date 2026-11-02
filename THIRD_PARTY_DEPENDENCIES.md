@@ -103,3 +103,22 @@ References:
 - Qt LGPL requirements: https://www.qt.io/development/open-source-lgpl-obligations
 - MSVC runtime local deployment: https://learn.microsoft.com/en-us/cpp/windows/choosing-a-deployment-method
 - MSVC redistributable file licensing: https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files
+
+
+### Issue #62 redistribution hardening (follow-up)
+
+The portable ZIP additionally installs a Qt source-and-relinking instructions
+file. Any bundled `icu*.dll` requires an ICU source-version-matched license
+file, with relevant embedded third-party notices; the ZIP validator fails if
+that license is absent. The packaging evidence records the exact official
+`Microsoft.VC143.CRT` source paths copied into the archive. These are
+necessary technical controls, **not proof of release authorization**.
+
+Before publishing, the release owner must (a) identify the ICU DLL version
+and provenance and approve its complete notices, (b) inventory exact Qt
+6.10.3 DLLs/plugins and their third-party notices using Qt's 6.10.3 inventory
+and source/SBOM, (c) provide the corresponding Qt source and usable
+relinking/replacement instructions, and (d) confirm the precise MSVC CRT
+DLL list against the installation's `Redist.txt` and the Visual Studio 2022
+license grant. Store this signed review with release evidence; do not
+assert legal sign-off merely from an automated CI pass.

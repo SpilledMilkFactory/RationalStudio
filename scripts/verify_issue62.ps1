@@ -15,6 +15,7 @@ param(
     [string]$BuildRoot = '',
     [string]$EvidenceRoot = '',
     [string]$MSVCRedistDir = '',
+    [string]$IcuLicensePath = '',
     [ValidateRange(1,32)][int]$Jobs = 4
 )
 Set-StrictMode -Version Latest
@@ -78,6 +79,7 @@ Assert-File (Join-Path $QtRoot 'bin\windeployqt.exe') 'Qt deployment tool'
 Assert-File (Join-Path $QtRoot 'bin\Qt6Core.dll') 'Qt MSVC Release runtime'
 Assert-File (Join-Path $BoostInclude 'boost\multiprecision\cpp_int.hpp') 'Boost headers'
 Assert-File (Join-Path $SourceRoot 'scripts\packaging\check_windows_zip.py') 'Portable ZIP validator'
+Assert-File (Join-Path $SourceRoot 'packaging\windows\QT_SOURCE_AND_RELINKING.md') 'Qt source and relinking guide'
 if ($QtRoot -notmatch '(?i)msvc2022_64') { throw 'QtRoot must be an MSVC 2022 64-bit Qt kit' }
 foreach ($exe in @('cmake.exe','ctest.exe','python.exe','git.exe')) { Need-Command $exe }
 if (Test-Path -LiteralPath $BuildRoot) { throw "Refusing to overwrite build: $BuildRoot" }
@@ -140,14 +142,33 @@ Invoke-Logged 'install' 'cmake.exe' @('--install',$BuildRoot,'--config','Release
 $bin = Join-Path $stageRoot 'bin'
 Assert-File (Join-Path $bin 'RationalStudio.exe') 'Staged GUI executable'
 Invoke-Logged 'windeployqt' (Join-Path $QtRoot 'bin\windeployqt.exe') @(
-    '--release','--no-compiler-runtime','--no-system-dxc-compiler',
-    '--no-translations','--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
+    '--release','--no-compiler-runtime','--no-system-dxc-compiler','--no-translations','--dir',$bin,(Join-Path $bin 'RationalStudio.exe')
 )
 Assert-File (Join-Path $bin 'platforms\qwindows.dll') 'Qt Windows platform plugin'
+# Include complete ICU upstream license (including embedded third-party notices)
+# only when Qt deployment actually includes an ICU runtime. The maintainer
+# supplies the license from the EXACT ICU source release used for the DLL.
+$icuDlls = @(Get-ChildItem -LiteralPath $bin -File -Filter 'icu*.dll')
+if ($icuDlls.Count -gt 0) {
+    if (-not $IcuLicensePath) {
+        $IcuLicensePath = Join-Path $SourceRoot 'packaging\licenses\ICU-LICENSE.txt'
+    }
+    Assert-File $IcuLicensePath 'ICU upstream license (including third-party notices)'
+    $licDir = Join-Path $stageRoot 'share\doc\rationalstudio\licenses'
+    New-Item -ItemType Directory -Path $licDir -Force | Out-Null
+    Copy-Item -LiteralPath $IcuLicensePath -Destination (Join-Path $licDir 'ICU-LICENSE.txt') -Force
+    "ICU runtime: $($icuDlls.Name -join ', '); license source: $IcuLicensePath" |
+        Add-Content -LiteralPath (Join-Path $EvidenceRoot 'environment.txt')
+}
+# Record all official-redistributable CRT filenames and their exact origins.
+# The reviewer must independently confirm the Visual Studio licensing grant.
+
 # Pull only redistributable DLLs from the official MSVC app-local directory.
 # Do not use /MT, system32 files, compiler tools DLLs, debug_nonredist, etc.
 $crtDlls = @(Get-ChildItem -LiteralPath $MSVCRedistDir -File -Filter '*.dll')
 if ($crtDlls.Count -lt 2) { throw 'Official MSVC redistributable directory is unexpectedly empty' }
+@($crtDlls | ForEach-Object { $_.Name + '  ' + $_.FullName }) |
+    Set-Content -LiteralPath (Join-Path $EvidenceRoot 'msvc-redist-inventory.txt') -Encoding UTF8
 foreach ($dll in $crtDlls) {
     if ($dll.Name -match '(?i)d\.dll$|debug') { throw "Debug CRT DLL prohibited: $($dll.Name)" }
     Copy-Item -LiteralPath $dll.FullName -Destination (Join-Path $bin $dll.Name) -Force
@@ -164,6 +185,8 @@ Remove-Item -LiteralPath $bin -Force
     Set-Content -LiteralPath (Join-Path $stageRoot 'qt.conf') -Encoding Ascii
 Assert-File (Join-Path $stageRoot 'platforms\qwindows.dll') 'Relocated Windows platform plugin'
 
+# The Qt source/relinking instructions are shipped as documentation; the
+# exact Qt source archive is a SEPARATE release artifact and sign-off gate.
 $hashFile = Join-Path $stageRoot 'SHA256SUMS.txt'
 $lines = @()
 Get-ChildItem -LiteralPath $stageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {

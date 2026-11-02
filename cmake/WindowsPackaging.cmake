@@ -13,6 +13,7 @@ endif()
 foreach(required IN ITEMS
         LICENSE.MD README.md THIRD_PARTY_DEPENDENCIES.md
         packaging/windows/THIRD_PARTY_NOTICES.txt
+        packaging/windows/QT_SOURCE_AND_RELINKING.md
         packaging/licenses/LGPL-3.0.txt
         packaging/licenses/GPL-3.0.txt
         packaging/licenses/BSL-1.0.txt)
@@ -30,6 +31,7 @@ install(FILES
     "${PROJECT_SOURCE_DIR}/README.md"
     "${PROJECT_SOURCE_DIR}/THIRD_PARTY_DEPENDENCIES.md"
     "${PROJECT_SOURCE_DIR}/packaging/windows/THIRD_PARTY_NOTICES.txt"
+    "${PROJECT_SOURCE_DIR}/packaging/windows/QT_SOURCE_AND_RELINKING.md"
     DESTINATION share/doc/rationalstudio CONFIGURATIONS Release COMPONENT Runtime)
 install(FILES
     "${PROJECT_SOURCE_DIR}/packaging/licenses/LGPL-3.0.txt"

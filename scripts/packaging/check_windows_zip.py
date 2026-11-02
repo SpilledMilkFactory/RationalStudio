@@ -16,6 +16,7 @@ REQUIRED_DOCS = (
     'share/doc/rationalstudio/README.md',
     'share/doc/rationalstudio/THIRD_PARTY_DEPENDENCIES.md',
     'share/doc/rationalstudio/THIRD_PARTY_NOTICES.txt',
+    'share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md',
     'share/doc/rationalstudio/licenses/LGPL-3.0.txt',
     'share/doc/rationalstudio/licenses/GPL-3.0.txt',
     'share/doc/rationalstudio/licenses/BSL-1.0.txt',
@@ -25,6 +26,7 @@ SOURCE_MATCH = {
     'share/doc/rationalstudio/README.md': 'README.md',
     'share/doc/rationalstudio/THIRD_PARTY_DEPENDENCIES.md': 'THIRD_PARTY_DEPENDENCIES.md',
     'share/doc/rationalstudio/THIRD_PARTY_NOTICES.txt': 'packaging/windows/THIRD_PARTY_NOTICES.txt',
+    'share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md': 'packaging/windows/QT_SOURCE_AND_RELINKING.md',
     'share/doc/rationalstudio/licenses/LGPL-3.0.txt': 'packaging/licenses/LGPL-3.0.txt',
     'share/doc/rationalstudio/licenses/GPL-3.0.txt': 'packaging/licenses/GPL-3.0.txt',
     'share/doc/rationalstudio/licenses/BSL-1.0.txt': 'packaging/licenses/BSL-1.0.txt',
@@ -64,6 +66,17 @@ def inspect(path: Path, source: Path, version: str) -> dict:
         missing = sorted(required - set(files))
         if missing:
             raise ValueError('Missing required portable files: ' + ', '.join(missing))
+        icu_binaries = [name for name in files if re.fullmatch(r'icu[^/]*\.dll', name, re.I)]
+        if icu_binaries:
+            lic = 'share/doc/rationalstudio/licenses/ICU-LICENSE.txt'
+            if lic not in files:
+                raise ValueError('ICU DLL bundled without complete ICU-LICENSE.txt')
+            expected_icu = source / 'packaging/licenses/ICU-LICENSE.txt'
+            if expected_icu.is_file():
+                if archive.read(files[lic]) != expected_icu.read_bytes():
+                    raise ValueError('ICU license differs from approved source copy')
+            elif len(archive.read(files[lic])) < 500:
+                raise ValueError('ICU license is empty or suspiciously short')
         if any(x.lower().endswith(('.pdb', '.lib', '.obj', '.ilk', '.exp')) for x in files):
             raise ValueError('Debug/build artifacts found in portable package')
         if any(re.search(r'(?:^|/)qt6\w+d\.dll$', x, re.I) for x in files):

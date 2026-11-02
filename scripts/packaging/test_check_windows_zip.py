@@ -42,6 +42,19 @@ class Validation(unittest.TestCase):
             z,s=fixture(Path(d)); result=inspect(z,s,VERSION)
             self.assertEqual(result['files'], len(SOURCE_MATCH)+10)
 
+    def test_icu_requires_license(self):
+        with tempfile.TemporaryDirectory() as d:
+            z,s=fixture(Path(d),extra={'icuuc.dll':b'icu'})
+            with self.assertRaisesRegex(ValueError, 'ICU DLL bundled without'): inspect(z,s,VERSION)
+
+    def test_icu_with_license(self):
+        with tempfile.TemporaryDirectory() as d:
+            z,s=fixture(Path(d),extra={
+                'icuuc.dll': b'icu',
+                'share/doc/rationalstudio/licenses/ICU-LICENSE.txt': b'approved-source-license'*50,
+            })
+            inspect(z,s,VERSION)
+
     def test_missing_plugin(self):
         with tempfile.TemporaryDirectory() as d:
             z,s=fixture(Path(d),omitted=['platforms/qwindows.dll'])

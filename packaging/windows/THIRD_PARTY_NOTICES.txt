@@ -50,3 +50,19 @@ per-archive file manifest and THIRD_PARTY_DEPENDENCIES.md.
 
 Open issues: Windows 125% scaling layout (Issue #60 follow-up), release code
 signing/SmartScreen, and final Qt license/source availability review.
+
+ICU (International Components for Unicode)
+----------------------------------------
+If an ICU runtime is deployed (such as icuuc.dll), the portable ZIP also
+includes share/doc/rationalstudio/licenses/ICU-LICENSE.txt. This must be
+copied from the same ICU source release as the deployed ICU binary and
+must include all applicable ICU embedded third-party notices. The Unicode
+License and other notices may apply. The distributor must establish the
+actual ICU binary provenance and version before public release.
+
+Qt source and replacement rights
+--------------------------------
+See share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md for instructions.
+The exact Qt 6.10.3 source and applicable third-party source/license data
+will be distributed or made available using the reviewed release-specific
+mechanism stated there. Do not treat generic upstream URLs as proof.
