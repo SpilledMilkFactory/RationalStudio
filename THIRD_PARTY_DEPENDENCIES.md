@@ -122,3 +122,22 @@ relinking/replacement instructions, and (d) confirm the precise MSVC CRT
 DLL list against the installation's `Redist.txt` and the Visual Studio 2022
 license grant. Store this signed review with release evidence; do not
 assert legal sign-off merely from an automated CI pass.
+
+
+### Issue #62 release-evidence status (2026-11-02)
+
+The Windows 10 x64 maintainer test identifies Qt Core, GUI, Widgets, Network
+and SVG as Qt **6.10.3**, and bundled `icuuc.dll` as **ICU 64.2**. The
+maintainer compared ten package-local MSVC CRT DLLs to the ordinary desktop
+`VC/Redist/MSVC/14.44.35112/x64/Microsoft.VC143.CRT` directory, obtaining
+**10/10 SHA-256 matches**. See
+`docs/release-evidence/windows/ISSUE62_RUNTIME_REDISTRIBUTION_REVIEW.md` for
+the individual file list, evidence boundaries, references and pending gates.
+
+**Still pending public release:** replace the ICU `main` license copy with the
+exact `release-64-2/icu4c/LICENSE` text; reconcile all shipped Qt/plugin,
+`opengl32sw.dll`, `D3Dcompiler_47.dll` and ICU third-party notices; confirm
+the applicable MSVC Build Tools 2022 redistribution terms; and publish and
+verify a sufficiently complete corresponding Qt source/relinking arrangement.
+The **next generated** Windows ZIP must be independently reaudited; earlier
+package-hash matches do not automatically apply to a future GitHub runner.
