@@ -211,31 +211,60 @@ try {
     'PASS: extracted GUI initializes without Qt SDK directories on PATH (same host)' |
         Add-Content -LiteralPath (Join-Path $EvidenceRoot 'results.txt')
     # End-user CLI also needs the redistributable runtime but does not need Qt.
+    # Portable CLI smoke test.
+    #
+    # Use an explicitly ASCII-encoded input file to avoid differences in
+    # .NET Framework redirected-stdin encodings between Windows hosts.
+    # In particular, no UTF-8 BOM or UTF-16 preamble may precede "1/2". 
+
+    $cliExe = Join-Path $extracted 'RationalCLI.exe'
+    $cliInput = Join-Path $EvidenceRoot 'cli-smoke-input.txt'   
+
+    Assert-File $cliExe 'Extracted CLI executable'  
+
+    [System.IO.File]::WriteAllText(
+        $cliInput,
+        "1/2 1/3`r`n+`r`n",
+        [System.Text.Encoding]::ASCII
+    )   
+
     $start = New-Object System.Diagnostics.ProcessStartInfo
-    $start.FileName = Join-Path $extracted 'RationalCLI.exe'
+    $start.FileName = $env:ComSpec
+    $start.Arguments = '/d /s /c ""' + $cliExe + '" < "' + $cliInput + '""'
     $start.WorkingDirectory = $extracted
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
-    $start.RedirectStandardInput = $true
     $start.RedirectStandardOutput = $true
-    $start.RedirectStandardError = $true
+    $start.RedirectStandardError = $true    
+
     $cli = New-Object System.Diagnostics.Process
-    $cli.StartInfo = $start
+    $cli.StartInfo = $start 
+
     try {
-        if (-not $cli.Start()) { throw 'Portable CLI did not start' }
-        $cli.StandardInput.WriteLine('1/2 1/3')
-        $cli.StandardInput.WriteLine('+')
-        $cli.StandardInput.Close()
+        if (-not $cli.Start()) {
+            throw 'Portable CLI did not start'
+        }   
+
         $cliOutput = $cli.StandardOutput.ReadToEnd()
-        $cliError = $cli.StandardError.ReadToEnd()
+        $cliError = $cli.StandardError.ReadToEnd()  
+
         if (-not $cli.WaitForExit(10000)) {
             $cli.Kill()
             throw 'Portable CLI timed out'
-        }
-        if ($cli.ExitCode -ne 0 -or $cliOutput -notmatch '1/2 \+ 1/3 = 5/6') {
+        }   
+
+        $cli.Refresh()  
+
+        if (
+            $cli.ExitCode -ne 0 -or
+            $cliOutput -notmatch '1/2 \+ 1/3 = 5/6'
+        ) {
             throw "Portable CLI calculation failed: exit=$($cli.ExitCode), stdout=$cliOutput, stderr=$cliError"
         }
-    } finally { $cli.Dispose() }
+    }
+    finally {
+        $cli.Dispose()
+    }
     'PASS: extracted CLI calculates 1/2 + 1/3 = 5/6 without Qt SDK on PATH (same host)' |
         Add-Content -LiteralPath (Join-Path $EvidenceRoot 'results.txt')
 } finally {
