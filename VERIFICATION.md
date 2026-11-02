@@ -1,5 +1,37 @@
 # Rational Studio — Verification Report
 
+<!-- ISSUE62_VERIFICATION_BEGIN -->
+
+## Issue #62 (M5-08) — Windows portable application packaging: TECHNICAL PASS
+
+- **Build:** Windows x64, Visual Studio 2022 generator/MSBuild, MSVC and
+  matching Qt 6.10.3 MSVC x64 kit; Boost.Multiprecision via development headers.
+- **Fresh Release build / full CTest:** **73/73 PASS** (Windows evidence).
+- **Package:** `RationalStudio-0.1.0-Windows-x64.zip`; GUI and CLI at archive root,
+  deployed Qt runtime and `platforms/qwindows.dll`, official app-local MSVC
+  redistributable CRT DLLs, MIT/Qt/Boost notices, byte-matched license terms.
+- **Technical checks:** ZIP safe paths, manifest checksum coverage, required
+  Qt/plugin/CRT DLLs, and release-only payload: PASS.
+- **SHA-256:** `04e2d0292049ba42f4bd4a9dda57bef3601e9e66f46e80ec2a1c749510ab12bf`.
+- **Isolated extraction:** GUI process startup and CLI `1/2 + 1/3 = 5/6`
+  PASS with Qt SDK excluded from the launch PATH (same development host).
+- **Independent clean-machine acceptance:** **PASS — developer-attested** on
+  Windows without Qt SDK or development tools. This is not established by the
+  automated PATH-isolation test alone.
+- **Hosted Windows packaging:** developer-verified [GitHub Actions run](https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/41368806419).
+- **Evidence:** Windows `issue62-evidence/results.txt`, package ZIP/sha256,
+  build/configure/CTest/install/deploy logs and ZIP inventory; user-supplied.
+
+**Outstanding release gates:** Qt LGPLv3 exact plugin/runtime licensing,
+corresponding-source availability/relinking plan, MSVC app-local redistribution
+permissions, audit of non-Qt transitive DLLs and manual legal approval. The
+known Windows 125% DPI layout defect is not repaired by this package. No
+installer, code signing, Windows 11 workstation attestation or bit-for-bit
+reproducibility is claimed. Prior Issue #60 and Linux verification remain
+historical and unchanged.
+
+<!-- ISSUE62_VERIFICATION_END -->
+
 <!-- ISSUE60_WINDOWS_VERIFICATION_BEGIN -->
 
 ## Issue #60 (M5-06) — Native Windows build and runtime verification: PASS (with documented display limitation)

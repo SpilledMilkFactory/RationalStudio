@@ -1,0 +1,52 @@
+Rational Studio — Windows Portable Distribution: Third-Party Notices
+===================================================================
+
+Rational Studio is MIT licensed: share/doc/rationalstudio/LICENSE.MD
+
+Qt 6 Core / GUI / Widgets and runtime plugins
+---------------------------------------------
+The Windows portable distribution includes dynamically linked Qt libraries
+and Qt platform plugins produced by the Qt Project / The Qt Company and
+contributors. The intended open-source licensing basis for Qt's eligible
+Core, GUI and Widgets modules is LGPLv3. Review each shipped Qt plugin and
+transitive dependency against its actual Qt 6 version's module and license
+metadata; the set may differ by Qt build. LGPLv3 and GPLv3 texts are in
+share/doc/rationalstudio/licenses. Users may replace compatible LGPL Qt
+shared libraries, subject to the platform interfaces and license terms.
+
+CRITICAL RELEASE GATE: Bundling Qt requires the redistributor to provide
+sufficient corresponding source for the *exact* Qt libraries and plugins
+shipped, or a legally sufficient offer/arrangement, plus required notices and
+relinking information. Upstream URLs alone may not discharge that obligation.
+A successful automatic archive audit is not legal approval to publish.
+
+Qt licenses: https://www.qt.io/licensing/open-source-lgpl-obligations
+Qt sources:  https://code.qt.io/ ; https://download.qt.io/archive/qt/
+
+Boost.Multiprecision
+--------------------
+RationalCore uses Boost.Multiprecision header templates for exact rational
+integers. Boost Software License 1.0 is included in
+share/doc/rationalstudio/licenses/BSL-1.0.txt.
+
+Microsoft Visual C++ runtime
+----------------------------
+For standalone startup, this archive contains app-local MSVC runtime DLLs
+copied ONLY from the official redistributable directory installed with the
+matching Visual Studio Build Tools (VCToolsRedistDir / Microsoft.VC143.CRT).
+Redistribution is permitted only under the applicable Microsoft license terms.
+These files must be updated for runtime security/serviceability; central
+Microsoft Visual C++ Redistributable installation is generally recommended.
+The archive must NOT contain debug_nonredist or DLLs taken from system32 or
+Visual Studio compiler *tools* directories. The packaging script enforces
+redistributable-origin staging; a human must confirm redistribution rights.
+
+Windows system libraries and third-party transitive dependencies
+----------------------------------------------------------------
+The package deliberately does not copy Windows system DLLs. Any non-Qt
+third-party DLLs added by Qt deployment must be inventoried and cleared for
+redistribution with their own appropriate licenses/notices. Refer to the
+per-archive file manifest and THIRD_PARTY_DEPENDENCIES.md.
+
+Open issues: Windows 125% scaling layout (Issue #60 follow-up), release code
+signing/SmartScreen, and final Qt license/source availability review.
