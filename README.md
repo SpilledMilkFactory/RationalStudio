@@ -12,7 +12,7 @@ The project emphasizes modular architecture, numerical reliability, and independ
 | **Language** | C++20 |
 | **License** | MIT |
 
-> **Status:** The application builds and runs on Linux and has passed native Windows 10 x64 MSVC 2022 Debug/Release qualification. Linux `.deb` packaging is verified; standalone Windows packaging remains for Issue #62. A 125% Windows display-scaling layout defect is documented below. See [VERIFICATION.md](VERIFICATION.md) for the evidence.
+> **Status:** Linux `.deb` and native Windows 10 MSVC Debug/Release builds are verified. Issue #62 portable Windows ZIP distribution is developer-verified on a clean Windows machine; bundled runtime licensing review remains a release gate. See [VERIFICATION.md](VERIFICATION.md).
 
 ## Features
 
@@ -796,6 +796,46 @@ window maximized. The same controls appeared correctly at **100%** scaling.
 A separate GitHub issue is planned for this layout defect (issue link pending).
 
 <!-- ISSUE60_WINDOWS_README_END -->
+
+<!-- ISSUE62_README_BEGIN -->
+
+### Portable Windows x64 distribution (Issue #62)
+
+The **portable ZIP** `RationalStudio-0.1.0-Windows-x64.zip` contains
+`RationalStudio.exe` and `RationalCLI.exe` at the extracted folder's top level,
+Qt 6 runtime DLLs and the `platforms/qwindows.dll` plugin, official app-local
+MSVC redistributable CRT DLLs, and the project/third-party license notices.
+**End users do not install Qt, Boost, a compiler, or CMake.** Extract the ZIP
+and double-click `RationalStudio.exe`; use `RationalCLI.exe` from a terminal.
+
+**Maintainer packaging procedure:** On a Windows 10/11 x64 build host with the
+MSVC 2022 Build Tools, the matching Qt 6.10.3 MSVC desktop kit, vcpkg Boost
+headers and Python 3, run in PowerShell (adjust installed paths):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\verify_issue62.ps1 `
+    -QtRoot "C:\Qt\6.10.3\msvc2022_64" `
+    -BoostInclude "C:\dev\vcpkg\installed\x64-windows\include" `
+    -Jobs 4
+```
+
+The script builds from fresh sources with CMake's **Visual Studio 17 2022 x64**
+generator, runs all **73 Release CTests**, installs owned targets, deploys Qt
+with `windeployqt --no-compiler-runtime`, copies allowed MSVC redistributables
+from the official Visual Studio CRT directory, checks licenses, writes a SHA-256
+manifest and produces `issue62-evidence/packages/*.zip`. It also extracts and
+smoke-tests the ZIP with SDK paths removed from the launch environment.
+The separate clean-machine launch test is **developer-attested PASS**.
+GitHub-hosted Windows package qualification: [successful run](https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/41366115124).
+
+**Limitations:** This is a portable ZIP, not an installer, MSIX, code-signed
+binary or reproducible build proof. Windows SmartScreen can warn for unsigned
+binaries; Windows 125% scaling remains a known layout issue. Bundled Qt
+corresponding-source/relinking rights, exact plugin licenses, app-local MSVC CRT
+permissions and final legal approval remain separate **release gates**.
+See `THIRD_PARTY_DEPENDENCIES.md` and `VERIFICATION.md`.
+
+<!-- ISSUE62_README_END -->
 
 ### CMake options
 
