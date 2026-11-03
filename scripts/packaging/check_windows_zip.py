@@ -14,6 +14,7 @@ from zipfile import ZipFile, BadZipFile
 REQUIRED_DOCS = (
     'share/doc/rationalstudio/LICENSE.MD',
     'share/doc/rationalstudio/README.md',
+    'share/doc/rationalstudio/USER_GUIDE.md',
     'share/doc/rationalstudio/THIRD_PARTY_DEPENDENCIES.md',
     'share/doc/rationalstudio/THIRD_PARTY_NOTICES.txt',
     'share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md',
@@ -24,6 +25,7 @@ REQUIRED_DOCS = (
 SOURCE_MATCH = {
     'share/doc/rationalstudio/LICENSE.MD': 'LICENSE.MD',
     'share/doc/rationalstudio/README.md': 'README.md',
+    'share/doc/rationalstudio/USER_GUIDE.md': 'docs/USER_GUIDE.md',
     'share/doc/rationalstudio/THIRD_PARTY_DEPENDENCIES.md': 'THIRD_PARTY_DEPENDENCIES.md',
     'share/doc/rationalstudio/THIRD_PARTY_NOTICES.txt': 'packaging/windows/THIRD_PARTY_NOTICES.txt',
     'share/doc/rationalstudio/QT_SOURCE_AND_RELINKING.md': 'packaging/windows/QT_SOURCE_AND_RELINKING.md',

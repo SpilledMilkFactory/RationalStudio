@@ -138,10 +138,14 @@ def inspect_deb(root, deb, source):
         require(not any('Qt6' in s for s in needed.get('usr/bin/RationalCLI', [])),
                 'Qt dependencies unexpectedly introduced into RationalCLI')
         payload=sorted(files)
-        allowed={*REQUIRED,'usr/bin/RationalCLI',
-                 'usr/share/applications/rationalstudio.desktop',
-                 'usr/share/doc/rationalstudio/README.md',
-                 *(f'usr/share/doc/rationalstudio/licenses/{item}' for item in LICENSES)}
+        allowed = {
+            *REQUIRED,
+            'usr/bin/RationalCLI',
+            'usr/share/applications/rationalstudio.desktop',
+            'usr/share/doc/rationalstudio/README.md',
+            'usr/share/doc/rationalstudio/USER_GUIDE.md',
+            *(f'usr/share/doc/rationalstudio/licenses/{item}' for item in LICENSES)
+        }
         require(set(payload) <= allowed,
                 f'unreviewed file(s) in package payload: {sorted(set(payload)-allowed)}')
     return {'package':'rationalstudio', 'deb_sha256':sha(deb), 'depends':depends,

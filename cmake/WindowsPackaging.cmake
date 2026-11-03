@@ -11,7 +11,7 @@ if(NOT QT_VERSION_MAJOR EQUAL 6)
     message(FATAL_ERROR "Windows packaging requires Qt 6 (MSVC 2022 x64 kit)")
 endif()
 foreach(required IN ITEMS
-        LICENSE.MD README.md THIRD_PARTY_DEPENDENCIES.md
+        LICENSE.MD README.md docs/USER_GUIDE.md THIRD_PARTY_DEPENDENCIES.md
         packaging/windows/THIRD_PARTY_NOTICES.txt
         packaging/windows/QT_SOURCE_AND_RELINKING.md
         packaging/licenses/LGPL-3.0.txt
@@ -29,6 +29,7 @@ endif()
 install(FILES
     "${PROJECT_SOURCE_DIR}/LICENSE.MD"
     "${PROJECT_SOURCE_DIR}/README.md"
+    "${PROJECT_SOURCE_DIR}/docs/USER_GUIDE.md"
     "${PROJECT_SOURCE_DIR}/THIRD_PARTY_DEPENDENCIES.md"
     "${PROJECT_SOURCE_DIR}/packaging/windows/THIRD_PARTY_NOTICES.txt"
     "${PROJECT_SOURCE_DIR}/packaging/windows/QT_SOURCE_AND_RELINKING.md"

@@ -45,7 +45,7 @@ jobs:
           if (-not (Test-Path (Join-Path $boost 'boost\multiprecision\cpp_int.hpp'))) { throw 'Boost header absent' }
           "BOOST_INCLUDE_ROOT=$boost" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
-      - name: Test Windows ZIP validator and Qt source-asset verifier
+      - name: Test Windows ZIP validator, Qt source assets and user documentation
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

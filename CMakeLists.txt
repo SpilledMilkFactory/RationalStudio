@@ -805,6 +805,7 @@ if(RATIONALSTUDIO_BUILD_GUI)
 
         src/gui/MainWindow.hpp
         src/gui/MainWindow.cpp
+        src/gui/UserHelpContent.hpp
             src/gui/ApplicationSettings.hpp src/gui/ApplicationSettings.cpp
             src/gui/AdvancedMathPage.hpp src/gui/AdvancedMathPage.cpp
 

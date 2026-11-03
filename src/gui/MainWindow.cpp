@@ -5,6 +5,7 @@
 #include "MathExpressionEdit.hpp"
 #include "MathExpressionInput.hpp"
 #include "GraphWorkspacePersistence.hpp"
+#include "UserHelpContent.hpp"
 #include "PolarExpression.hpp"
 #include "ImplicitContour.hpp"
 #include "IntersectionDetection.hpp"
@@ -2089,6 +2090,27 @@ void MainWindow::createKeyboardNavigationMenus() {
             QKeySequence("Ctrl+Shift+F"),
             [this] { if (tabs_->currentIndex() == 1) findGraphFeatures(); });
 
+    // Issue #65: always-available offline help, independent of install paths,
+    // network access, or optional Markdown viewers.
+    command(helpMenu, "User guide...", "userGuideHelp", QKeySequence("Ctrl+F1"),
+            [this] {
+                auto* dialog = new QDialog(this);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
+                dialog->setObjectName("userGuideDialog");
+                dialog->setWindowTitle("Rational Studio — User guide");
+                dialog->resize(700, 520);
+                auto* layout = new QVBoxLayout(dialog);
+                auto* contents = new QTextBrowser(dialog);
+                contents->setObjectName("userGuideReference");
+                contents->setAccessibleName("Rational Studio user guide");
+                contents->setHtml(userHelpHtml());
+                layout->addWidget(contents);
+                auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
+                connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::close);
+                layout->addWidget(buttons);
+                dialog->show();
+            });
+    helpMenu->addSeparator();
     command(helpMenu, "Keyboard shortcuts...", "keyboardShortcutsHelp", QKeySequence("F1"),
             [this] {
                 auto* dialog = new QDialog(this);
@@ -2123,6 +2145,16 @@ be reserved by your window manager.</p>
                 connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::close);
                 layout->addWidget(buttons);
                 dialog->show();
+            });
+    helpMenu->addSeparator();
+    command(helpMenu, "About Rational Studio...", "aboutRationalStudio", QKeySequence(),
+            [this] {
+                QMessageBox::about(this, "About Rational Studio",
+                    "<h3>Rational Studio 0.1.0</h3>"
+                    "<p>Scientific, graphing, exact-fraction and advanced mathematics calculator.</p>"
+                    "<p>First-party source: MIT License. Qt and other components retain "
+                    "their separate licenses; consult the package's third-party notices.</p>"
+                    "<p>Source: https://github.com/SpilledMilkFactory/RationalStudio</p>");
             });
 }
 

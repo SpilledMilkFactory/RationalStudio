@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
         {"keyboardGraphHome", "Ctrl+0"},
         {"keyboardGraphIntersections", "Ctrl+Shift+I"},
         {"keyboardGraphFeatures", "Ctrl+Shift+F"},
-        {"keyboardShortcutsHelp", "F1"},
+        {"keyboardShortcutsHelp", "F1"}, {"userGuideHelp", "Ctrl+F1"},
     };
     std::set<QString> seen;
     for (const auto& [name, key] : keys) {
@@ -167,6 +167,21 @@ int main(int argc, char** argv) {
     check(reference && reference->toPlainText().contains("Alt+Up/Down"),
           "help explains existing graph row shortcuts");
     if (dialog) { dialog->close(); app.processEvents(); }
+
+    auto* guideAction = action(w, "userGuideHelp");
+    check(guideAction != nullptr, "user guide action exists in Help menu");
+    if (guideAction) guideAction->trigger();
+    app.processEvents();
+    auto* userGuide = w.findChild<QDialog*>("userGuideDialog");
+    check(userGuide && userGuide->isVisible(), "user guide is available offline");
+    auto* guideText = userGuide ? userGuide->findChild<QTextBrowser*>("userGuideReference") : nullptr;
+    check(guideText && guideText->toPlainText().contains("Exact Fractions") &&
+          guideText->toPlainText().contains("Intersections") &&
+          guideText->toPlainText().contains("Advanced Math"),
+          "user guide describes current workspaces and graph analysis");
+    if (userGuide) { userGuide->close(); app.processEvents(); }
+    check(action(w, "aboutRationalStudio") != nullptr,
+          "about action available without external browser");
 
     w.close();
     std::cout << (failures ? "FAIL: " : "PASS: ") << checks

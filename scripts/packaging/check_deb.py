@@ -42,7 +42,8 @@ def check(path: Path, cli: bool) -> str:
                        stdout=subprocess.DEVNULL)
         expected = ['usr/bin/RationalStudio', 'usr/share/applications/rationalstudio.desktop',
                     'usr/share/doc/rationalstudio/copyright',
-                    'usr/share/doc/rationalstudio/README.md']
+                    'usr/share/doc/rationalstudio/README.md',
+                    'usr/share/doc/rationalstudio/USER_GUIDE.md']
         if cli:
             expected.append('usr/bin/RationalCLI')
         for rel in expected:
