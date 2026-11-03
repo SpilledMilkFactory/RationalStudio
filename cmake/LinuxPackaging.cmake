@@ -31,6 +31,8 @@ install(FILES "${PROJECT_SOURCE_DIR}/LICENSE.MD"
     RENAME copyright COMPONENT Runtime)
 install(FILES "${PROJECT_SOURCE_DIR}/README.md"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rationalstudio" COMPONENT Runtime)
+install(FILES "${PROJECT_SOURCE_DIR}/docs/USER_GUIDE.md"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rationalstudio" COMPONENT Runtime)
 
 # M5 / Issue #64 — install notices and unmodified upstream license texts.
 # These are first-party package metadata, not bundled Qt shared libraries.

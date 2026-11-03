@@ -1,5 +1,19 @@
 # Rational Studio — Verification Report
 
+<!-- ISSUE65_VERIFICATION_BEGIN -->
+
+## Issue #65 (M5-11) — User documentation and application help: PENDING HOSTED SIGN-OFF
+
+- **Source review:** Replaced the lengthy user-facing README with a release-oriented entry page; the prior milestone-by-milestone narrative is retained in `docs/ENGINEERING_HISTORY.md` as explicitly historical material.
+- **User guide:** `docs/USER_GUIDE.md` covers Linux and Windows installation/removal, the four current workspaces, mathematical syntax, keyboard controls, graph persistence/export, accessibility, known limitations and troubleshooting.
+- **Application help:** Help → User guide (Ctrl+F1) provides a compiled-in offline reference; Help → Keyboard shortcuts (F1) remains unchanged. Help → About identifies the application and licenses.
+- **Packaging:** both the Debian and Windows portable packages now install `USER_GUIDE.md`; the package validators require its presence, and the Windows validator checks exact source matching.
+- **Local source-only verification:** 17/17 packaging and documentation Python regression tests PASS. No native Qt GUI build or full CTest was executed in this analysis environment.
+- **Required sign-off:** GitHub hosted Linux GUI Debug/Release, core sanitizer, Debian/Windows packaging, and Windows 73/73 CTest results must be rechecked after the documentation changes; verify Ctrl+F1/F1/Help About manually on a native display.
+- **Non-goals:** no parser, numerical algorithm, graph rendering, JSON workspace schema, Qt/CRT licensing approval or general Windows 125% scaling repair is claimed.
+
+<!-- ISSUE65_VERIFICATION_END -->
+
 <!-- ISSUE62_VERIFICATION_BEGIN -->
 
 ## Issue #62 (M5-08) — Windows portable application packaging: TECHNICAL PASS
