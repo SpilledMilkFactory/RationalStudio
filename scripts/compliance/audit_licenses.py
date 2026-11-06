@@ -110,6 +110,11 @@ def inspect_deb(root, deb, source):
         require(packaged_notice.read_bytes() ==
                 (root/'packaging/linux/THIRD_PARTY_NOTICES.txt').read_bytes(),
                 'notice missing or differs from versioned source')
+        for name, original in (('README.md', 'README.md'), ('USER_GUIDE.md', 'docs/USER_GUIDE.md')):
+            path=dest/'usr/share/doc/rationalstudio'/name
+            require(path.is_file() and not path.is_symlink(), f'missing packaged documentation: {name}')
+            require(path.read_bytes() == (root/original).read_bytes(),
+                    f'packaged documentation differs from source: {name}')
         for name in LICENSES:
             path=dest/'usr/share/doc/rationalstudio/licenses'/name
             require(path.is_file() and not path.is_symlink(), f'missing packaged license: {name}')

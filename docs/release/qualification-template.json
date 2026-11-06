@@ -1,17 +1,105 @@
 {
   "source_commit": "REPLACE_WITH_40_CHARACTER_TAG_COMMIT_SHA",
   "checks": {
-    "linux_debug": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
-    "linux_release": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
-    "core_sanitize": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 43, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake from run"},
-    "linux_deb": {"artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_DEB_RUN", "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
-    "linux_license": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
-    "linux_gui_smoke": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 2, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run (also verify Xvfb)"},
-    "windows_portable": {"artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_WINDOWS_ZIP_RUN", "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "windows-2022", "toolchain": "REPLACE: MSVC, CMake, Qt 6.10.3 from run"}
+    "linux_debug": {
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 73,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake, Qt version from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results"
+    },
+    "linux_release": {
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 73,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake, Qt version from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results"
+    },
+    "core_sanitize": {
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 43,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results"
+    },
+    "linux_deb": {
+      "artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_DEB_RUN",
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 73,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake, Qt version from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results",
+      "artifact_id": 0
+    },
+    "linux_license": {
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 73,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake, Qt version from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results"
+    },
+    "linux_gui_smoke": {
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 2,
+      "runner": "ubuntu-24.04",
+      "toolchain": "REPLACE: GCC, CMake, Qt version from run (also verify Xvfb)",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results"
+    },
+    "windows_portable": {
+      "artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_WINDOWS_ZIP_RUN",
+      "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE",
+      "source_commit": "REPLACE",
+      "ctests_passed": 73,
+      "runner": "windows-2022",
+      "toolchain": "REPLACE: MSVC, CMake, Qt 6.10.3 from run",
+      "conclusion": "PENDING",
+      "workflow": "REPLACE: workflow name",
+      "evidence_paths": [
+        "REPLACE: logs and environment evidence references"
+      ],
+      "results": "REPLACE: CTest, packaging, licensing or offscreen/Xvfb smoke results",
+      "artifact_id": 0
+    }
   },
   "review": {
-    "reviewer": "REPLACE: identified release owner/reviewer",
-    "reviewed_utc": "REPLACE: ISO-8601 time, e.g. 2026-11-03T15:00:00Z",
+    "reviewer": "",
+    "reviewed_utc": "",
     "linux_qt": "PENDING: exact Linux Qt package versions, deployed source availability, dynamic replacement and notices",
     "windows_qt": "PENDING: exact Windows Qt modules/plugins, third-party notices, replacement/build configuration",
     "windows_icu": "PENDING: exact ICU DLL provenance and matched license/notices",
@@ -20,6 +108,35 @@
     "clean_linux": "PENDING: independent Ubuntu 24.04 clean-machine package installation and GUI run",
     "clean_windows": "PENDING: independent Windows 10 clean-machine portable launch/CLI/graph acceptance, fractional-DPI limitation acknowledged",
     "license_approval": "PENDING: named reviewer and record of approval of exact release binary inventory and source delivery",
-    "approval_statement": "REPLACE AFTER MANUAL REVIEW: I have reviewed the exact release assets and approve public distribution."
+    "approval_statement": "",
+    "clean_ubuntu_26_04": "PENDING: independent Ubuntu 26.04 installation, CLI, GUI/graphing and removal acceptance"
+  },
+  "ubuntu_26_04": {
+    "source_commit": "REPLACE_WITH_TAG_SHA",
+    "build_host": "REPLACE: native build host",
+    "os_version": "REPLACE: Ubuntu 26.04 OS version",
+    "cmake_version": "REPLACE",
+    "compiler_version": "REPLACE",
+    "qt_version": "REPLACE",
+    "ctests_passed": 73,
+    "artifact_sha256": "REPLACE_WITH_NATIVE_PACKAGE_SHA256",
+    "build_configuration": "Release",
+    "native_build": true,
+    "packaging_validation": "REPLACE_WITH_PASS_AFTER_VALIDATION",
+    "licensing_audit": "REPLACE_WITH_PASS_AFTER_AUDIT",
+    "depends": "REPLACE: exact dpkg-deb Depends output",
+    "runtime": {
+      "extracted_gui": "PENDING",
+      "cli_arithmetic": "PENDING",
+      "clean_install": "PENDING",
+      "desktop_graphing": "PENDING",
+      "package_removal": "PENDING"
+    },
+    "evidence_paths": [
+      "REPLACE: public-safe native build/test/audit/runtime evidence references"
+    ],
+    "limitations": [
+      "PENDING: independent clean-machine installation, graphing and removal acceptance"
+    ]
   }
 }

@@ -170,3 +170,18 @@ Qt SVG (about 51 MiB combined). Publish those verified corresponding-source
 archives as separate GitHub Release assets, not in Git history; validate the
 actual binaries' build provenance and required third-party notices during the
 final release process.
+
+## Issue #66 expanded Ubuntu distribution scope
+
+Release assets distinguish Ubuntu 24.04 and Ubuntu 26.04 AMD64 builds with
+`_ubuntu24.04_amd64.deb` and `_ubuntu26.04_amd64.deb` filenames. Both retain
+internal version `0.1.0-1` and use external system Qt6. Each requires its own
+actual dependency inventory, source-matched documentation/notices, ELF audit
+and native acceptance evidence. Earlier Ubuntu 24.04 review is not evidence
+for the Ubuntu 26.04 package. The archived October 31 Ubuntu 26.04 package
+lacks the current documentation/license payload and is excluded from release.
+
+An unpublished draft candidate may carry pending owner review fields. This
+does not approve public distribution; the default final-approval assembler
+continues to reject incomplete owner review and native acceptance. Qt source
+checksums do not independently establish complete binary/source correspondence.

@@ -1,40 +1,80 @@
-# Rational Studio v0.1.0
+# Rational Studio v0.1.0 — Initial Public Release
 
-**Initial public release — scientific and graphing calculator (C++20 / Qt Widgets)**
+## Overview
 
-Rational Studio combines a scientific calculator, interactive mathematical graphs, exact arbitrary-precision fractions, and advanced numerical tools in a desktop application. A standalone `RationalCLI` is included with both supported distributions.
+Rational Studio is a free and open-source scientific and graphing calculator built with C++20 and Qt Widgets. Four desktop workspaces combine expression evaluation, interactive graphs, exact fractions and numerical analysis. Each application package includes the separate `RationalCLI` calculator.
 
-## Included in v0.1.0
+## Major features
 
-- **Scientific:** expression entry, constants, trigonometric functions, RAD/DEG operation, history, and live feedback.
-- **Graphing:** Cartesian, parametric, polar and implicit equations; vertical inequalities; variables and sliders; numerical tracing, intersections and features; JSON graph workspace save/open; PNG export.
-- **Exact Fractions:** reduced arbitrary-precision rational arithmetic.
-- **Advanced Math:** complex numbers, differentiation, integration, numerical roots, matrices, vectors, descriptive statistics, and regression.
-- **Desktop usability:** keyboard navigation, accessibility metadata, persistent preferences, built-in offline help and installation/user documentation.
+- **Scientific:** expression evaluation, scientific functions, mathematical constants, RAD/DEG angle modes, history and input diagnostics.
+- **Graphing:** Cartesian, parametric, polar and implicit graphs; supported vertical inequalities; variables and sliders; tracing; numerical intersections and significant points; JSON workspace save/load; PNG export.
+- **Exact Fractions:** arbitrary-precision rational arithmetic, exact reduced fractions and terminal access through RationalCLI.
+- **Advanced Math:** complex-number calculations, numerical differentiation and integration, root finding, matrix and vector operations, descriptive statistics and regression.
 
-## Release assets
+## Downloads and installation
 
-| Platform | Distribution | Requirements |
-|---|---|---|
-| Ubuntu 24.04 amd64 | `rationalstudio_0.1.0-1_amd64.deb` | Linux x86-64 and distro-supplied Qt6 packages (installed by the package manager). |
-| Windows 10/11 x64 | `RationalStudio-0.1.0-Windows-x64.zip` | Extract the inner `RationalStudio-0.1.0-Windows-x64/` directory; launch `RationalStudio.exe`. Bundles Qt and supported MSVC runtime DLLs. |
+| Platform | Package |
+|---|---|
+| Ubuntu 24.04 LTS x64 | `rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb` |
+| Ubuntu 26.04 LTS x64 | `rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb` |
+| Windows 10/11 x64 | `RationalStudio-0.1.0-Windows-x64.zip` |
 
-The release also provides a **versioned first-party source archive**, **Qt Base and Qt SVG 6.10.3 corresponding-source archives** for the bundled Windows libraries, `SHA256SUMS.txt`, a source/asset manifest, and a `RELEASE_QUALIFICATION.md` with platform build/test evidence and explicit review boundaries.
+Choose the Debian package matching your Ubuntu release. Install the downloaded local file with APT, which resolves its system runtime dependencies:
 
-See [the installation and user guide](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/docs/USER_GUIDE.md) for installation, operation, verification and removal. Use the checksums provided with **this release** to verify downloads; do not reuse checksums from a previous CI build.
+```bash
+# Ubuntu 24.04
+sudo apt install ./rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb
+# Ubuntu 26.04
+sudo apt install ./rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb
+```
 
-## Known limitations and scope
+Launch **Rational Studio** from the application menu or run `RationalStudio`. Run `RationalCLI` for terminal arithmetic. For example, enter `1/2 1/3`, then `+` at the operation prompt to obtain `5/6`. Remove the package with `sudo apt remove rationalstudio`.
 
-- Windows binaries are unsigned and may trigger SmartScreen warnings; no signed installer is supplied.
-- On Windows 10 at **125% display scaling**, the Type Guide and adjacent math-symbol controls may clip/overlap. This is a known, documented limitation; 100% scaling was verified previously.
-- Numerical calculations and graph sampling are approximate where noted. Exact fraction arithmetic is separate from floating-point numerical analysis.
-- Windows 11 and Qt 5 are not separately qualified native test environments; native Linux distribution targets **Ubuntu 24.04**, not arbitrary Linux distributions.
-- Tagged, rebuilt source and auditable release records support repeatable procedures; **identical binary bytes across independent builds are not guaranteed**.
+On Windows, extract the application ZIP into a writable folder and run `RationalStudio.exe` inside `RationalStudio-0.1.0-Windows-x64/`. Keep its DLLs, plugin directories and documentation together. Run `RationalCLI.exe` from a terminal in that folder. The release asset is the application ZIP itself; GitHub Actions transport archives are development downloads. To remove the portable application, close it and delete its extracted folder; saved workspaces and user preferences are separate.
 
-## Licensing and redistribution
+## System requirements and qualification scope
 
-First-party source is MIT-licensed. Qt, Boost, ICU (where bundled) and Microsoft runtime libraries retain their own licenses. The bundled Qt source files and relinking/replacement instructions are supplied in accordance with the release owner's recorded source-availability plan; refer to the accompanying package notices and `RELEASE_QUALIFICATION.md` for the exact publication review and evidence. Automated CI results are not a legal certification.
+Application packages target x86-64/AMD64. The Ubuntu packages use external, distribution-supplied Qt6 Core, GUI, Widgets and platform plugins, together with the GNU C/C++ runtime and glibc. Their actual `Depends` metadata is generated separately on each target OS; a package for one Ubuntu release is not a substitute for the other.
 
-## Technical verification
+The portable Windows package targets Windows 10/11 x64 and includes Qt 6.10.3 and app-local MSVC runtime libraries. No Qt SDK or compiler is required to run it. Windows Server 2022 hosted build/testing and historical Windows 10 workstation acceptance are distinct evidence. Windows 11 has not been independently qualified on a native workstation.
 
-See `RELEASE_QUALIFICATION.md` and `RELEASE_MANIFEST.json` **attached to this exact GitHub Release** for the source commit, hosted build/test results, package hashes, and named review attestation. `VERIFICATION.md` contains the historical issue-by-issue evidence and is not a substitute for a tag-matched final release audit.
+Consult the attached `RELEASE_QUALIFICATION.md` for completed checks on the exact tagged packages and for pending native acceptance or owner reviews. Earlier development-package acceptance does not qualify newly generated packages. Qt 5 and other Linux distributions are outside this release's qualification scope.
+
+## Source code and licensing
+
+Rational Studio's first-party source is [MIT licensed](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/LICENSE.MD). `RationalStudio-0.1.0-source.tar.gz` is exported from the exact tagged Git commit.
+
+The release also supplies `qtbase-everywhere-src-6.10.3.tar.xz` and `qtsvg-everywhere-src-6.10.3.tar.xz` for the bundled Windows Qt components. See [Qt source and replacement instructions](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/packaging/windows/QT_SOURCE_AND_RELINKING.md) and [third-party dependency review](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/THIRD_PARTY_DEPENDENCIES.md). Qt, Boost, ICU where bundled, and Microsoft runtime libraries retain their own terms. Archive availability and automated audits do not constitute legal certification or owner approval of public distribution. Exact binary/source correspondence, third-party notices and redistribution terms remain explicit owner review obligations.
+
+## Known limitations
+
+- On Windows at **125% display scaling**, the Type Guide and nearby mathematical controls may clip or overlap. This issue remains open; historical acceptance at 100% scaling does not establish a fix.
+- Numerical methods and graphical sampling are approximate and can miss features, particularly near discontinuities or narrow structures. Exact fractions are a separate arithmetic mode.
+- Windows binaries are unsigned and may produce a SmartScreen warning. Verify the source and checksum before deciding whether to run a download; keep Windows security protections enabled.
+- Release procedures preserve source provenance. Byte-for-byte equality of independently rebuilt binaries has not been demonstrated.
+
+## Verification and checksums
+
+Download `SHA256SUMS.txt` alongside the assets. Compare each downloaded file's hash with its matching entry:
+
+```bash
+sha256sum rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb
+# With all assets downloaded into one directory:
+sha256sum --check SHA256SUMS.txt
+```
+
+On Windows PowerShell:
+
+```powershell
+Get-FileHash .\RationalStudio-0.1.0-Windows-x64.zip -Algorithm SHA256
+```
+
+`RELEASE_MANIFEST.json` records source revision, artifact sizes/digests, build provenance and review limitations. `RELEASE_QUALIFICATION.md` records exact-release evidence and review status. Only those completed, revision-matched results apply to these binaries; historical green PR checks alone are insufficient. The checksum inventory covers both Qt modules and the manifest; the inventory does not checksum itself.
+
+## Documentation
+
+- [README](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/README.md)
+- [User guide](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/docs/USER_GUIDE.md)
+- [Historical verification report](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/VERIFICATION.md)
+- [Engineering history](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/docs/ENGINEERING_HISTORY.md)
+- [Third-party dependency review](https://github.com/SpilledMilkFactory/RationalStudio/blob/v0.1.0/THIRD_PARTY_DEPENDENCIES.md)
