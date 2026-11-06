@@ -1,0 +1,25 @@
+{
+  "source_commit": "REPLACE_WITH_40_CHARACTER_TAG_COMMIT_SHA",
+  "checks": {
+    "linux_debug": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
+    "linux_release": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
+    "core_sanitize": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 43, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake from run"},
+    "linux_deb": {"artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_DEB_RUN", "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
+    "linux_license": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run"},
+    "linux_gui_smoke": {"run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 2, "runner": "ubuntu-24.04", "toolchain": "REPLACE: GCC, CMake, Qt version from run (also verify Xvfb)"},
+    "windows_portable": {"artifact_sha256": "REPLACE_WITH_SHA256_FROM_TAGGED_WINDOWS_ZIP_RUN", "run_url": "https://github.com/SpilledMilkFactory/RationalStudio/actions/runs/REPLACE", "source_commit": "REPLACE", "ctests_passed": 73, "runner": "windows-2022", "toolchain": "REPLACE: MSVC, CMake, Qt 6.10.3 from run"}
+  },
+  "review": {
+    "reviewer": "REPLACE: identified release owner/reviewer",
+    "reviewed_utc": "REPLACE: ISO-8601 time, e.g. 2026-11-03T15:00:00Z",
+    "linux_qt": "PENDING: exact Linux Qt package versions, deployed source availability, dynamic replacement and notices",
+    "windows_qt": "PENDING: exact Windows Qt modules/plugins, third-party notices, replacement/build configuration",
+    "windows_icu": "PENDING: exact ICU DLL provenance and matched license/notices",
+    "msvc_redist": "PENDING: exact redistributed CRT DLL list and applicable Build Tools REDIST license grant",
+    "qt_source": "PENDING: publish tagged matching Qt Base and Qt SVG archives, source provenance, relinking/replacement instructions",
+    "clean_linux": "PENDING: independent Ubuntu 24.04 clean-machine package installation and GUI run",
+    "clean_windows": "PENDING: independent Windows 10 clean-machine portable launch/CLI/graph acceptance, fractional-DPI limitation acknowledged",
+    "license_approval": "PENDING: named reviewer and record of approval of exact release binary inventory and source delivery",
+    "approval_statement": "REPLACE AFTER MANUAL REVIEW: I have reviewed the exact release assets and approve public distribution."
+  }
+}

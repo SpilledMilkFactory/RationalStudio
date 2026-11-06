@@ -79,6 +79,8 @@ if(RATIONALSTUDIO_BUILD_CLI)
     target_link_libraries(RationalCLI PRIVATE
         RationalCore
     )
+    target_compile_definitions(RationalCLI PRIVATE
+        RATIONALSTUDIO_VERSION="${PROJECT_VERSION}")
 
 endif()
 
@@ -812,6 +814,9 @@ if(RATIONALSTUDIO_BUILD_GUI)
         src/gui/GraphCanvas.hpp
         src/gui/GraphCanvas.cpp
     )
+
+    target_compile_definitions(RationalStudio PRIVATE
+        RATIONALSTUDIO_VERSION="${PROJECT_VERSION}")
 
     target_sources(RationalStudio PRIVATE
         src/gui/MathExpressionEdit.hpp

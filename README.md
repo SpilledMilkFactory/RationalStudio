@@ -7,7 +7,7 @@
 
 **Version:** 0.1.0 (release preparation) · **Platforms:** Linux and Windows x64 · **License:** [MIT](LICENSE.MD).
 
-> **Release status:** The GitHub Actions build/package jobs and regression suites are qualified. A public v0.1.0 GitHub Release is planned for Issue #66. Until that release exists, workflow artifacts are development artifacts, not official release downloads. Consult [VERIFICATION.md](VERIFICATION.md) for platform-specific evidence and limitations.
+> **Release status:** The GitHub Actions build/package jobs and regression suites are qualified. Issue #66 establishes the tag-matched release qualification and publication procedure; a public v0.1.0 GitHub Release must not be assumed until it is visibly published. Until that release exists, workflow artifacts are development artifacts, not official release downloads. Consult [VERIFICATION.md](VERIFICATION.md) for platform-specific evidence and [the release procedure](docs/release/RELEASE_PROCEDURE.md) for tag, checksum, review, and publication requirements.
 
 ## Download and run
 

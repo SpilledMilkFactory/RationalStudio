@@ -52,6 +52,12 @@ jobs:
           python.exe -m unittest discover -s scripts/packaging -p 'test_*.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Windows packaging helper unit tests failed' }
 
+      - name: Validate release version and source qualification protocol (Issue #66)
+        shell: pwsh
+        run: |
+          python.exe -m unittest discover -s scripts/release -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Release protocol regression tests failed' }
+
       - name: Build, test, stage and audit Windows portable archive
         shell: pwsh
         run: |

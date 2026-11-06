@@ -23,8 +23,10 @@ def check(path: Path, cli: bool) -> str:
                 for key in ('Package', 'Version', 'Architecture', 'Depends')}
     if metadata['Package'] != 'rationalstudio':
         raise ValueError(f"Unexpected package name: {metadata['Package']!r}")
-    if not re.fullmatch(r'0\.1\.0-\d+', metadata['Version']):
-        raise ValueError(f"Unexpected Issue #61 package version: {metadata['Version']!r}")
+    cmake = (Path(__file__).resolve().parents[2] / "CMakeLists.txt").read_text(encoding="utf-8")
+    project = re.search(r"(?m)^project\(RationalStudio\s+VERSION\s+(\d+\.\d+\.\d+)\s+LANGUAGES\s+CXX\)", cmake)
+    if project is None or metadata["Version"] != project.group(1) + "-1":
+        raise ValueError(f"Unexpected package version for this source revision: {metadata['Version']!r}")
     arch = run('dpkg', '--print-architecture').strip()
     if metadata['Architecture'] != arch:
         raise ValueError(f"Architecture mismatch: package={metadata['Architecture']} host={arch}")

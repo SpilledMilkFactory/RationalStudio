@@ -1,5 +1,18 @@
 # Rational Studio — Verification Report
 
+<!-- ISSUE66_VERIFICATION_BEGIN -->
+
+## Issue #66 (M5-12) — Versioning and reproducible source-revision releases: PENDING HOSTED AND PUBLIC RELEASE SIGN-OFF
+
+- **Implementation:** Canonical `project(RationalStudio VERSION 0.1.0)` supplies package naming, `RationalCLI --version` and Qt application/About version. Added explicit annotated-tag + clean-tree source revision checks, offline release-asset assembly, release notes, release qualification/manifest/SHA-256 generation, and a documented draft-then-publish procedure.
+- **Source-revision reproducibility:** Git-exported source archive is derived from the checked annotated tag commit, not a mutable filesystem snapshot. Binary packages are tied to specific declared hosted runs and checked as distribution files; bit-for-bit binary rebuild reproducibility is **not asserted**.
+- **Evidence/reviewer gate:** Seven expected hosted checks must be recorded for the same tag commit (73/73 Linux Debug, 73/73 Linux Release, 43/43 core ASan/UBSan, 73/73 Debian package, 73/73 Linux license audit, two Linux GUI smoke CTests plus Xvfb, 73/73 Windows package). The assembler verifies structured evidence, but **does not independently fetch GitHub runs**; the release owner must verify run conclusion/commit/attachments and preserve provenance. A reviewer attestation with exact Qt/ICU/MSVC/Linux/Windows/source-release details is separately required; automated passing tests are **not legal certification**.
+- **Local source-only tests:** Issue #66 Python release-protocol regressions **18/18 PASS** on disposable Git fixtures (tag/version/dirty checks, evidence rejection, source archive and SHA validation). These are analysis-environment results, not Windows/Qt-hosted qualification.
+- **Still required:** Merge Issue #66, tag the finalized commit, rerun all final tag GitHub workflows, collect matching package artifacts, finish human distribution/source review, assemble and verify the final manifest, draft GitHub Release, and publish only when signed off. **No public v0.1.0 Release, legal clearance, or clean-machine deployment is claimed by this entry.**
+- **Historical preservation:** Issue #65 and earlier evidence remain below unchanged. The user's report that Issue #65 CI returned all green after tracking fixes has not been converted into independent hosted-run attestation in this file.
+
+<!-- ISSUE66_VERIFICATION_END -->
+
 <!-- ISSUE65_VERIFICATION_BEGIN -->
 
 ## Issue #65 (M5-11) — User documentation and application help: PENDING HOSTED SIGN-OFF

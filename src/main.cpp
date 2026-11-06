@@ -15,6 +15,8 @@ int main(int argc, char* argv[]) {
         "RationalStudio"
     );
 
+    QCoreApplication::setApplicationVersion(QStringLiteral(RATIONALSTUDIO_VERSION));
+
     rationalstudio::MainWindow window;
 
     window.show();
