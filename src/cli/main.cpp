@@ -7,7 +7,16 @@
 #include <iostream>
 #include <string>
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc == 2 && std::string(argv[1]) == "--version") {
+        std::cout << "Rational Studio " << RATIONALSTUDIO_VERSION << '\n';
+        return 0;
+    }
+    if (argc != 1) {
+        std::cerr << "Usage: RationalCLI [--version]\n";
+        return 2;
+    }
 
     using rationalstudio::Rational;
 

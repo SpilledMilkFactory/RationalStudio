@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include "MainWindow.hpp"
 #include "AdvancedMathPage.hpp"
 #include "Rational.hpp"
@@ -2150,7 +2151,7 @@ be reserved by your window manager.</p>
     command(helpMenu, "About Rational Studio...", "aboutRationalStudio", QKeySequence(),
             [this] {
                 QMessageBox::about(this, "About Rational Studio",
-                    "<h3>Rational Studio 0.1.0</h3>"
+                    QString("<h3>Rational Studio %1</h3>").arg(QCoreApplication::applicationVersion()) +
                     "<p>Scientific, graphing, exact-fraction and advanced mathematics calculator.</p>"
                     "<p>First-party source: MIT License. Qt and other components retain "
                     "their separate licenses; consult the package's third-party notices.</p>"
