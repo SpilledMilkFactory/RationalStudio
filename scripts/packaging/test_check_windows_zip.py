@@ -37,6 +37,32 @@ def fixture(root: Path, extra=None, omitted=None):
 
 
 class Validation(unittest.TestCase):
+    def test_windows_separator_directories(self):
+        with tempfile.TemporaryDirectory() as d:
+            z, s = fixture(Path(d))
+            with ZipFile(z, 'a') as archive:
+                for directory in ('share/', 'share/doc/'):
+                    archive.writestr((ROOT + directory).replace('/', '\\'), b'')
+            result = inspect(z, s, VERSION)
+            self.assertEqual(result['files'], len(SOURCE_MATCH) + 10)
+
+    def test_windows_directory_traversal_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            z, s = fixture(Path(d))
+            with ZipFile(z, 'a') as archive:
+                archive.writestr((ROOT + '../escape/').replace('/', '\\'), b'')
+            with self.assertRaisesRegex(ValueError, 'Unsafe'):
+                inspect(z, s, VERSION)
+
+    def test_directory_with_data_rejected(self):
+        for separator in ('/', '\\'):
+            with self.subTest(separator=separator), tempfile.TemporaryDirectory() as d:
+                z, s = fixture(Path(d))
+                with ZipFile(z, 'a') as archive:
+                    archive.writestr((ROOT + 'share/').replace('/', separator), b'hidden data')
+                with self.assertRaisesRegex(ValueError, 'Directory entry contains file data'):
+                    inspect(z, s, VERSION)
+
     def test_positive(self):
         with tempfile.TemporaryDirectory() as d:
             z,s=fixture(Path(d)); result=inspect(z,s,VERSION)

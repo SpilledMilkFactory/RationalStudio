@@ -49,7 +49,11 @@ def inspect(path: Path, source: Path, version: str) -> dict:
             if (not raw.startswith(archive_root) or raw.startswith('/') or
                     any(x in ('.', '..') for x in pp.parts) or ':' in raw or '\x00' in raw):
                 raise ValueError(f'Unsafe/outside-root ZIP member: {raw}')
-            if item.is_dir():
+            # ZipInfo.is_dir() handles trailing backslashes differently on
+            # Windows and POSIX. Classify using the already normalized name.
+            if raw.endswith('/'):
+                if item.file_size:
+                    raise ValueError(f'Directory entry contains file data: {raw}')
                 continue
             key = raw.casefold()
             if key in seen:
