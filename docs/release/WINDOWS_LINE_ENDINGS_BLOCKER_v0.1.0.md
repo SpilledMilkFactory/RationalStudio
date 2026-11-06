@@ -37,20 +37,23 @@ creates a real Git checkout with `core.autocrlf=true` and checks every packaged
 source document byte-for-byte. The release tag verifier also requires the
 attributes file to be tracked. Existing exact-byte validators remain intact.
 
-This correction is subsequent, unmerged source. It does not change the
-existing tag, package or qualification results. It has not been pushed and
-does not trigger Actions. Calculator implementation and historical records
-are unchanged.
+This correction is subsequent source submitted for normal PR review and
+checks. It does not change the existing package or qualification results.
+Calculator implementation and historical records are unchanged.
 
-## Owner decision required
+## Authorized correction and remaining release gate
 
 Release readiness is **BLOCKED — ARTIFACT VALIDATION FAILED**. No GitHub
 Release draft or upload was created. The public release remains unpublished.
 
-The existing pushed `v0.1.0` tag is preserved. The owner must review this fix
-and decide the tag/release correction policy before any source acceptance,
-tag changes or corrective qualification. Never silently move the existing
-tag or claim that old qualification covers changed source. Corrected Windows
-packaging must pass the unchanged validator before release assembly resumes.
-Any new source revision requires the normal review and qualification process;
-no new workflows are authorized by this record.
+The owner explicitly authorized applying this fix, opening a PR and updating
+the already-pushed `v0.1.0` tag after the correction is accepted. The tag must
+continue to identify accepted, merged `main`; leave it unchanged until this PR
+is merged. Record the old and new tag objects and commits when performing the
+authorized correction. This authorization does not approve public release.
+
+The owner will monitor PR checks and handle merging. Old qualification does
+not cover changed source. After merge and tag correction, qualify the exact
+corrected tagged revision and require Windows packaging to pass the unchanged
+validator before assembly resumes. Any resulting GitHub Release must remain
+an unpublished draft for owner inspection.
