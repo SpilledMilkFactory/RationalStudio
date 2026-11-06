@@ -187,6 +187,7 @@ class ReleaseProtocolTests(unittest.TestCase):
         self.assertEqual(manifest['source_commit'], self.commit)
         self.assertEqual(manifest['tag'], 'v0.1.0')
         self.assertEqual(len(manifest['distribution_targets']), 3)
+        self.assertEqual(manifest['assets']['rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb']['qualification_reference'], 'ubuntu_26_04')
         self.assertIn('rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb', manifest['assets'])
         self.assertTrue(manifest['public_distribution_approved'])
         self.assertFalse(any('qt-everywhere-full' in n for n in manifest['assets']))
@@ -227,6 +228,20 @@ class ReleaseProtocolTests(unittest.TestCase):
             with self.assertRaisesRegex(release.ReleaseError, 'differs'):
                 release.assemble(self.root, 'v0.1.0', deb, portable, self.work,
                                  self.write_evidence(), self.work / 'output')
+
+    def test_assembly_rejects_native_hash_mismatch(self):
+        deb = self.work / 'rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb'
+        native = self.work / 'rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb'
+        portable = self.work / 'RationalStudio-0.1.0-Windows-x64.zip'
+        for path in (deb, native, portable):
+            path.write_bytes(path.name.encode())
+        d = self.evidence()
+        d['checks']['linux_deb']['artifact_sha256'] = release.sha256(deb)
+        d['checks']['windows_portable']['artifact_sha256'] = release.sha256(portable)
+        with patch.object(release, 'validate_packages', return_value={deb.name: deb, native.name: native, portable.name: portable}):
+            with self.assertRaisesRegex(release.ReleaseError, 'Ubuntu 26.04 package differs'):
+                release.assemble(self.root, 'v0.1.0', deb, portable, self.work,
+                                 self.write_evidence(d), self.work / 'output', native)
 
     def test_tag_wrong_head_rejected(self):
         (self.root / 'extra').write_text('next commit')

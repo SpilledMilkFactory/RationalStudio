@@ -357,6 +357,13 @@ def assemble(root: Path, tag: str, deb: Path, windows_zip: Path, qt_sources: Pat
         # Manifest contains only source/environment/evidence metadata and checksums.
         payload = {name: {'sha256': sha256(path), 'size_bytes': path.stat().st_size}
                    for name, path in sorted(files.items())}
+        for filename, target, reference in (
+            (f'rationalstudio_{version}-1_ubuntu24.04_amd64.deb', 'ubuntu-24.04-amd64', 'checks.linux_deb'),
+            (f'rationalstudio_{version}-1_ubuntu26.04_amd64.deb', 'ubuntu-26.04-amd64', 'ubuntu_26_04'),
+            (f'RationalStudio-{version}-Windows-x64.zip', 'windows-x64', 'checks.windows_portable'),
+        ):
+            payload[filename].update(distribution_target=target, qualification_reference=reference)
+        payload[source_name]['provenance'] = f'git archive of {commit}'
         manifest = {'schema': 2, 'project': 'RationalStudio', 'version': version, 'tag': tag,
                     'source_commit': commit, 'assets': payload, 'checks': evidence['checks'],
                     'assembly_mode': 'draft-candidate' if draft_candidate else 'approved',
