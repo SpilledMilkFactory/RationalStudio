@@ -5,13 +5,13 @@
 
 **Rational Studio** is a free, open-source C++20/Qt Widgets scientific and graphing calculator with exact fraction arithmetic and numerical analysis. It has four desktop workspaces: **Scientific**, **Graphing**, **Exact Fractions**, and **Advanced Math**. A separate `RationalCLI` program offers exact fractions in a terminal.
 
-**Version:** 0.1.0 (release preparation) · **Platforms:** Linux and Windows x64 · **License:** [MIT](LICENSE.MD).
+**Release update:** v0.1.1 · **Application version:** 0.1.0 · **Platforms:** Linux and Windows x64 · **License:** [MIT](LICENSE.MD).
 
-> **Release status:** The GitHub Actions build/package jobs and regression suites are qualified. Issue #66 establishes the tag-matched release qualification and publication procedure; a public v0.1.0 GitHub Release must not be assumed until it is visibly published. Until that release exists, workflow artifacts are development artifacts, not official release downloads. Consult [VERIFICATION.md](VERIFICATION.md) for platform-specific evidence and [the release procedure](docs/release/RELEASE_PROCEDURE.md) for tag, checksum, review, and publication requirements.
+> Download official packages from [published GitHub Releases](https://github.com/SpilledMilkFactory/RationalStudio/releases). The v0.1.1 tooling update incorporates the cross-platform ZIP validation fix and reuses the newly qualified PR #124 packages, which retain application version 0.1.0. Draft releases await owner review. Each release provides its own package checksums, source provenance, qualification evidence and review limitations.
 
 ## Download and run
 
-When v0.1.0 is published, use the assets under [GitHub Releases](https://github.com/SpilledMilkFactory/RationalStudio/releases). Do not assume a Release exists until an asset is visible there.
+Choose the package matching your operating system from a published release. Verify its SHA-256 against that release’s `SHA256SUMS.txt`; package filenames identify the application version.
 
 | Platform | Intended release asset | How to run |
 |---|---|---|
