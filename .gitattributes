@@ -1,2 +1,9 @@
-# Auto detect text files and perform LF normalization
+# Auto detect text files and perform LF normalization.
 * text=auto
+
+# Package validators compare documentation and license bytes with tagged source.
+# Keep those bytes identical even on Windows with core.autocrlf=true.
+.gitattributes text eol=lf
+*.md text eol=lf
+*.MD text eol=lf
+packaging/**/*.txt text eol=lf

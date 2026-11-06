@@ -39,7 +39,7 @@ REVIEW_KEYS = (
     'qt_source', 'clean_linux', 'clean_ubuntu_26_04', 'clean_windows', 'license_approval',
 )
 REQUIRED_SOURCE = (
-    'CMakeLists.txt', 'LICENSE.MD', 'README.md', 'docs/USER_GUIDE.md',
+    '.gitattributes', 'CMakeLists.txt', 'LICENSE.MD', 'README.md', 'docs/USER_GUIDE.md',
     'docs/ENGINEERING_HISTORY.md', 'VERIFICATION.md', 'THIRD_PARTY_DEPENDENCIES.md',
     'scripts/packaging/test_user_documentation.py', 'scripts/packaging/check_deb.py',
     'scripts/packaging/check_windows_zip.py', 'scripts/packaging/prepare_qt_source_assets.py',
