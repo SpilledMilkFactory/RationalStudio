@@ -50,7 +50,7 @@ def prepare(output: Path, offline: bool) -> None:
         print(f"PASS {name}: SHA-256 {observed}")
     (output / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="ascii")
     print(f"PASS: Qt Base + Qt SVG source assets ready in {output}")
-    print("Upload these 3 files to the SAME GitHub Release as the Windows ZIP.")
+    print("Upload both archives to the SAME GitHub Release as the Windows ZIP. If retaining this Qt-only inventory, name its release copy QT_SOURCE_SHA256SUMS.txt to avoid the top-level SHA256SUMS.txt.")
 
 
 def main() -> int:

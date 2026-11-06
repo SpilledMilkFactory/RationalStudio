@@ -15,8 +15,9 @@ When v0.1.0 is published, use the assets under [GitHub Releases](https://github.
 
 | Platform | Intended release asset | How to run |
 |---|---|---|
-| Ubuntu 24.04 x86-64 (Qt6) | `rationalstudio_0.1.0-1_amd64.deb` | `sudo apt install ./rationalstudio_0.1.0-1_amd64.deb`; launch **Rational Studio** from the app menu or run `RationalStudio`. |
-| Windows 10/11 x64 | `RationalStudio-0.1.0-Windows-x64.zip` | Extract the **inner application ZIP**, then double-click `RationalStudio.exe` at the extracted folder root. Qt and the supported MSVC runtime DLLs are already included. |
+| Ubuntu 24.04 x86-64 (Qt6) | `rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb` | `sudo apt install ./rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb`; launch **Rational Studio** from the app menu or run `RationalStudio`. |
+| Ubuntu 26.04 x86-64 (Qt6) | `rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb` | `sudo apt install ./rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb`; launch **Rational Studio** from the app menu or run `RationalStudio`. |
+| Windows 10/11 x64 | `RationalStudio-0.1.0-Windows-x64.zip` | Extract the **application ZIP**, then double-click `RationalStudio.exe` at the extracted folder root. Qt and the supported MSVC runtime DLLs are already included. |
 
 Windows builds are **unsigned**; SmartScreen may display a publisher warning. Verify that you downloaded the exact release asset and checksum from this project's Releases page before deciding whether to run it. On Windows, `RationalCLI.exe` can be run from a terminal. For installation, package checksum verification, troubleshooting, and removal, see the [user guide](docs/USER_GUIDE.md).
 

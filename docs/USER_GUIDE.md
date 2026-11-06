@@ -4,16 +4,16 @@ This guide describes the **current** C++20/Qt desktop application, not the histo
 
 ## Getting started
 
-### Linux (Ubuntu 24.04, x86-64)
+### Linux (Ubuntu 24.04 / 26.04 LTS, x86-64)
 
-Once a public release is available, download `rationalstudio_0.1.0-1_amd64.deb` from [Rational Studio Releases](https://github.com/SpilledMilkFactory/RationalStudio/releases). In the directory containing the downloaded file:
+Once a public release is available, download `rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb` from [Rational Studio Releases](https://github.com/SpilledMilkFactory/RationalStudio/releases). Choose the package matching your OS: Ubuntu 26.04 uses `rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb`. In the directory containing the downloaded file (Ubuntu 24.04 example):
 
 ```bash
-sudo apt install ./rationalstudio_0.1.0-1_amd64.deb
+sudo apt install ./rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb
 RationalStudio
 ```
 
-The package uses **system Qt6 libraries**; APT resolves its declared package dependencies. The installed app is also available in the desktop application menu. The Qt-independent terminal program runs as `RationalCLI`. To uninstall, use `sudo apt remove rationalstudio`. This `.deb` is qualified for Ubuntu 24.04; Debian derivatives and other releases may have different dependency availability.
+The package uses **system Qt6 libraries**; APT resolves its declared package dependencies. The installed app is also available in the desktop application menu. The Qt-independent terminal program runs as `RationalCLI`. To uninstall, use `sudo apt remove rationalstudio`. The release targets Ubuntu 24.04 and Ubuntu 26.04 with separately built packages. Consult the exact release qualification report for completed acceptance and pending reviews; Debian derivatives and other releases may have different dependency availability.
 
 ### Windows (10/11 x64)
 
@@ -27,7 +27,7 @@ Compare the SHA-256 digest of your downloaded file with the value published for 
 
 ```bash
 # Linux
-sha256sum rationalstudio_0.1.0-1_amd64.deb
+sha256sum rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb
 # Windows PowerShell
 Get-FileHash .\RationalStudio-0.1.0-Windows-x64.zip -Algorithm SHA256
 ```

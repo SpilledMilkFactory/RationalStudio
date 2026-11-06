@@ -64,9 +64,9 @@ jobs:
           }
           echo 'Boost.Multiprecision headers available'
 
-      - name: Check user documentation contracts (Issue #65)
+      - name: Check packaging and user documentation contracts
         shell: bash
-        run: python3 -m unittest discover -s scripts/packaging -p 'test_user_documentation.py' -v
+        run: python3 -m unittest discover -s scripts/packaging -p 'test_*.py' -v
 
       - name: Validate release version and source qualification protocol (Issue #66)
         shell: bash

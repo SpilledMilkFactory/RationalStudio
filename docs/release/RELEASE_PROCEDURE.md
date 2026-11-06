@@ -6,7 +6,7 @@
 
 - `CMakeLists.txt` `project(RationalStudio VERSION X.Y.Z LANGUAGES CXX)` is the **only canonical application version**. It supplies the CMake package version, the Windows portable ZIP naming, `RationalCLI --version`, and the GUI application/About version.
 - First public release tag is **`v0.1.0`**, an **annotated** Git tag on the reviewed, merged source commit. Do **not** create a tag before Issue #66 is merged and all subsequent release fixes have landed. Never move or reuse a published tag.
-- Debian package version is `<project_version>-1` (`rationalstudio_0.1.0-1_amd64.deb`). The suffix `-1` is the packaging revision, not a new application feature version.
+- Debian package version is `<project_version>-1` (`rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb`). CPack initially produces `rationalstudio_0.1.0-1_amd64.deb`; the assembler names each release copy with `_ubuntu24.04_amd64.deb` or `_ubuntu26.04_amd64.deb`, retaining bytes and internal metadata. The suffix `-1` is the packaging revision, not a new application feature version.
 - Windows application ZIP is `RationalStudio-0.1.0-Windows-x64.zip`. Its **inner directory is also** `RationalStudio-0.1.0-Windows-x64/`. Do not upload the GitHub Actions transport ZIP as the user-facing application ZIP.
 - A release always identifies the exact commit SHA-1, source-archive hash, binary archive hashes, Qt-source archive hashes and qualification-run identifiers. Do not upload binaries built from a different commit or reuse previous issue artifacts.
 - Historical build/test details remain in `VERIFICATION.md`; historical feature engineering notes remain in `docs/ENGINEERING_HISTORY.md`; neither is a mutable, version-specific release manifest. Public release notes reside in `docs/release/RELEASE_NOTES_v0.1.0.md` and are copied to the assembled release assets.
@@ -22,7 +22,7 @@ git pull --ff-only origin main
 git status --short
 # Review and record: git rev-parse HEAD
 # Only after the final source is accepted:
-git tag -a v0.1.0 -m 'Rational Studio v0.1.0 — verified release candidate'
+git tag -a v0.1.0 -m 'Rational Studio v0.1.0 — Initial Public Release'
 python3 scripts/release/prepare_release.py --tag v0.1.0 check-tag
 # Compare tag commit to main, then push the tag (manual action):
 git rev-parse v0.1.0^{}
@@ -49,6 +49,32 @@ For **every job**, inspect the *actual* successful GitHub Actions run, job concl
 
 Retrieve the actual `.deb` from the tagged **Linux Debian Package** run, the actual portable inner ZIP from the tagged **Windows Portable Package** run, and inspect and retain `SHA256` values before packaging the final bundle. The `prepare_release.py` assembler *re-runs* the Debian and Windows package validators and **requires their original tagged-run SHA-256 values in the evidence record to match the supplied binary assets**. The release owner must independently verify that those recorded digests really came from the specified successful run; the assembler cannot independently query GitHub. Do not fabricate run results to satisfy the template.
 
+## 2a. Build Ubuntu 26.04 natively from the same tagged commit
+
+Use a native Ubuntu 26.04 AMD64 host. Verify `/etc/os-release`, architecture,
+compiler, CMake and Qt versions; record them with the exact tag SHA. Perform a
+fresh Release configure with `RATIONALSTUDIO_ENABLE_LINUX_PACKAGING=ON`,
+`CMAKE_INSTALL_PREFIX=/usr`, GUI/CLI and testing enabled. Build, run all 73
+CTests, generate the DEB with CPack and run both `check_deb.py` and
+`audit_licenses.py --root . --deb PACKAGE --json REPORT`. Retain configure,
+build, CTest/JUnit, package metadata/contents, ELF dependencies and hashes.
+`scripts/verify_issue61.sh` provides the existing fresh-build sequence and
+extracted GUI startup check; run the separate licensing audit as well.
+
+Verify the extracted RationalCLI arithmetic and GUI. Independently test APT
+installation/dependency resolution, native desktop/graph/save/load/export,
+and removal on a clean Ubuntu 26.04 machine where available. Mark unavailable
+clean-machine acceptance **PENDING**. Offscreen/Xvfb or extracted execution on
+the build host must be labeled as such. Never install/remove packages on the
+developer's host merely to simulate a clean machine.
+
+Populate `ubuntu_26_04` separately from the seven hosted checks: exact commit,
+native Release status, host/OS/toolchain, CTests, original package digest,
+actual `Depends`, validation/audit results, runtime status, public-safe evidence
+references and acceptance limitations. The Ubuntu 24.04 Actions run cannot
+qualify this package. The older archived Ubuntu 26.04 DEB is a reference only:
+it lacks the required guide/notices and must never be uploaded.
+
 ## 3. Prepare matching corresponding Qt source assets
 
 This Windows distribution bundles Qt 6.10.3 libraries. Complete the Qt Base/Qt SVG provenance and third-party notice review specified in `THIRD_PARTY_DEPENDENCIES.md` and `packaging/windows/QT_SOURCE_AND_RELINKING.md`, including ICU 64.2, individual platform plugins, corresponding source and any modifications, and LGPL library replacement. Qt-source assets are **not** committed to Git:
@@ -58,17 +84,37 @@ python3 scripts/packaging/prepare_qt_source_assets.py --output /path/to/qt-sourc
 python3 scripts/packaging/prepare_qt_source_assets.py --output /path/to/qt-source-assets --offline
 ```
 
+Use the existing local Qt module archives when available. Copy only the two named module files to a staging directory and verify the original Qt-only inventory before invoking the helper offline. Never recursively copy `qt-everywhere-full` or include a full-source archive. The helper writes `SHA256SUMS.txt` in its output directory; do not point it at a read-only archive store. The assembler copies only the two whitelisted module assets. If publishing a Qt-only inventory separately, name it `QT_SOURCE_SHA256SUMS.txt`; the final top-level inventory covers all assets.
+
 The prepare helper checks the expected upstream Qt 6.10.3 SHA-256 values for *both* source modules. Those hashes do not independently prove correspondence to a *specific* uploaded Qt binary: record that comparison as a separate human release review. **Do not publish** until a valid corresponding-source arrangement and the necessary notices/build/replacement instructions are in place, including relevant transitive source where required.
 
-## 4. Complete a signed-off qualification record
+## 4. Record technical evidence and owner review status
 
 Copy `docs/release/qualification-template.json` to a working location **outside the repo** (such as `/tmp/rationalstudio-release/qualification.json`). Replace every placeholder with evidence for **the exact tag and packages**. Check all workflow run URLs and SHA values in the GitHub UI/API, and capture actual toolchains; the template's expected CTest counts are not themselves proof of a run.
 
-Fill out every human review field with a named reviewer, timestamp and an actual **specific evidence reference** for the Linux Qt distribution, exact Windows Qt modules/plugins and third-party terms, ICU, the official CRT redistribution basis, clean Linux and Windows runs, Qt corresponding-source/relinking, and final licensing approval. The tool rejects missing/pending fields and requires this literal human approval statement:
+Each hosted job records the successful conclusion, workflow name, exact
+revision, runner/toolchain, CTest count, result summary and public-safe evidence
+references. Packaging jobs additionally record their numeric Actions artifact
+ID and original inner-package SHA-256. Inspect actual run logs/API results;
+the assembler validates supplied evidence and does not independently contact
+GitHub. Preserve detailed raw provenance privately; avoid private paths or
+credentials in public evidence references.
+
+For **final approval mode**, fill out every human review field with a named reviewer, timestamp and an actual **specific evidence reference** for the Linux Qt distribution, exact Windows Qt modules/plugins and third-party terms, ICU, the official CRT redistribution basis, clean Linux and Windows runs, Qt corresponding-source/relinking, and final licensing approval. The tool rejects missing/pending fields and requires this literal human approval statement:
 
 > I have reviewed the exact release assets and approve public distribution.
 
 The assembler validates the record's **structure** and SHA agreement; it does not contact GitHub to attest run success or determine whether the stated distribution rights are legally sufficient. Preserve the signed/approved raw review record and review artifacts privately with the release evidence. Do not present its existence as independent legal certification.
+
+For an **unpublished draft candidate**, leave `reviewer`, `reviewed_utc` and
+`approval_statement` empty unless there is genuine reviewer metadata to retain;
+keep all unresolved reviews explicitly `PENDING`. Use `--draft-candidate`.
+This mode permits pending human review and clean-machine acceptance, but still
+requires all seven successful hosted jobs, a native Ubuntu 26.04 Release build,
+73 passing native CTests, extracted GUI/CLI smoke, both package validators,
+licensing audits, source revision agreement and every artifact hash. It never
+creates approval evidence. Final mode (the default) still fails closed for
+missing approval, pending reviews or pending Ubuntu 26.04 native acceptance.
 
 ## 5. Assemble release assets offline
 
@@ -77,14 +123,16 @@ Run this on an Ubuntu/Debian host with `dpkg-deb`, Python 3, Git and the complet
 ```bash
 python3 scripts/release/prepare_release.py \
   --root . --tag v0.1.0 assemble \
-  --deb /path/to/rationalstudio_0.1.0-1_amd64.deb \
+  --draft-candidate \
+  --deb /path/to/ubuntu24/rationalstudio_0.1.0-1_amd64.deb \
+  --deb-ubuntu26 /path/to/ubuntu26/rationalstudio_0.1.0-1_amd64.deb \
   --windows-zip /path/to/RationalStudio-0.1.0-Windows-x64.zip \
   --qt-source-dir /path/to/qt-source-assets \
   --evidence /path/to/qualification.json \
   --output /path/to/RationalStudio-v0.1.0-release-assets
 ```
 
-The assembler refuses a dirty checkout, mismatched/missing/lightweight Git tag, untracked required files, conflicting versions, mismatched run commits, missing/pass-count evidence, missing or mismatched tagged-run package SHA-256 values, incomplete reviewer sign-off, incomplete/invalid Windows/Linux packages, mismatched Qt source checksums, and an existing output directory. It exports a first-party source `tar.gz` **directly from the immutable Git commit object** and writes these accompanying files:
+The assembler refuses a dirty checkout, mismatched/missing/lightweight Git tag, untracked required files, conflicting versions, mismatched run commits, missing/pass-count evidence, missing or mismatched tagged-run package SHA-256 values, incomplete reviewer sign-off in final mode, incomplete/invalid Windows or either Ubuntu package (including licensing audits), mismatched Qt source checksums, and an existing output directory. It exports a first-party source `tar.gz` **directly from the immutable Git commit object** and writes these accompanying files:
 
 - `RELEASE_NOTES.md` — complete, versioned public release notes.
 - `RELEASE_QUALIFICATION.md` — source commit and reviewer-supplied hosted test/release gate evidence.
@@ -93,7 +141,7 @@ The assembler refuses a dirty checkout, mismatched/missing/lightweight Git tag, 
 
 The machine check is structural/cryptographic; it is **not** a blanket audit of transitive licenses or a proof of bitwise-reproducible binaries.
 
-## 6. Manually publish a draft, inspect, then publish
+## 6. Create and inspect an unpublished draft
 
 The scripts never invoke GitHub publishing operations. Create a **draft** GitHub Release from the pushed, verified annotated tag, upload *individual files* from the release-assets directory, and compare GitHub uploaded asset SHA-256 values with the bundled `SHA256SUMS.txt`:
 
@@ -102,9 +150,10 @@ cd /path/to/RationalStudio-v0.1.0-release-assets
 # Ensure "gh auth status" and that the chosen repository/tag are correct.
 gh release create v0.1.0 \
   --repo SpilledMilkFactory/RationalStudio \
-  --verify-tag --draft --title 'Rational Studio v0.1.0' \
+  --verify-tag --draft --title 'Rational Studio v0.1.0 — Initial Public Release' \
   --notes-file RELEASE_NOTES.md \
-  rationalstudio_0.1.0-1_amd64.deb \
+  rationalstudio_0.1.0-1_ubuntu24.04_amd64.deb \
+  rationalstudio_0.1.0-1_ubuntu26.04_amd64.deb \
   RationalStudio-0.1.0-Windows-x64.zip \
   RationalStudio-0.1.0-source.tar.gz \
   qtbase-everywhere-src-6.10.3.tar.xz \
@@ -112,13 +161,27 @@ gh release create v0.1.0 \
   RELEASE_NOTES.md RELEASE_QUALIFICATION.md RELEASE_MANIFEST.json SHA256SUMS.txt
 ```
 
-Before public publication, **verify the draft** displays the correct tag/commit, all 9 expected assets, download/checksum integrity, release notes, source/relinking assets and final owner sign-off. Validate downloading and extracting both platform packages. Never use `gh release upload --clobber` to silently replace signed-off assets. Once all manual gates are genuinely satisfied, publish the draft via GitHub UI or explicitly:
+Verify the draft displays the correct tag/commit/title, **Draft** status and
+all **10** expected assets. Compare asset sizes and server digests with the
+manifest and independently download to a fresh directory to verify
+`SHA256SUMS.txt`. Validate extraction of all three application packages and
+confirm the two Qt module archives are the only Qt source downloads. The
+manifest inventories payloads and reports (excluding itself to avoid a hash
+cycle); the top-level checksum file additionally covers the manifest and
+excludes only itself. No duplicate names or transport wrappers are allowed.
 
-```bash
-gh release edit v0.1.0 --repo SpilledMilkFactory/RationalStudio --draft=false
-```
+If a draft already exists, inspect it before updating. Never silently replace
+an asset or use `--clobber`. If hashes differ, stop and report the discrepancy.
+After upload, query the release again and confirm `isDraft: true` and no
+publication timestamp. A successful upload alone does not establish integrity.
 
-This command has a **public distribution effect**; execute it only after separate final approval. To verify an already published release, use `gh release view v0.1.0 --json tagName,isDraft,assets` and compare downloaded hashes to the released `SHA256SUMS.txt`. Do not close Issue #66 merely because source-only tests or a draft assembly succeeded; close after final appropriate publication/technical qualification, noting any outstanding legal gate if release is deliberately withheld.
+**Stop with the release unpublished for owner inspection.** This task does not
+authorize publication. Before a future owner publication decision, complete
+pending native acceptance/distribution reviews, rerun default final-approval
+assembly and reconcile its changed manifest/report/checksums with the draft.
+Changing candidate metadata requires explicit, reviewed asset replacement;
+never silently overwrite accepted hashes. Do not close Issue #66 merely
+because a draft exists. Only the owner handles publication and issue closure.
 
 ## 7. Automated regression and provenance checks
 
